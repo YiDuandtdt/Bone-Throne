@@ -18,6 +18,7 @@ Unity 6000.3.10f1 / Unity 6.3 LTS series
 - Docs/Unity63PackageBaseline.md
 - Docs/ACTIVE_TASK.md
 - Docs/DevLogs/Phase01_PackageBaseline.md
+- Assets/TextMesh Pro/** only for TMP Essential Resources import
 - AGENTS.md only if the Unity version or package baseline rule is outdated
 
 ## Forbidden changes
