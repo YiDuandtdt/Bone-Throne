@@ -1,78 +1,91 @@
 # ACTIVE_TASK.md
 
 ## Current phase
-Phase 1 - Unity 6.3 Project and Package Baseline
+Phase 2 - Project Folders and Core Architecture Skeleton
 
 ## Goal
-Verify that the Unity project uses the correct Unity 6.3 LTS baseline and has the required packages/settings for later singleplayer and LAN multiplayer development.
+Create the minimal architecture skeleton for the Unity 6.3 LTS tactics demo.
 
-This phase only checks and prepares the project baseline. It must not implement gameplay code.
+This phase only creates foundational types, interfaces, enums, and folder-level organization. It must not implement gameplay behavior.
 
 ## Unity version
 Unity 6000.3.10f1 / Unity 6.3 LTS series
 
 ## Allowed files
-- Packages/manifest.json
-- Packages/packages-lock.json
-- ProjectSettings/* only when necessary
-- Docs/Unity63PackageBaseline.md
+- Assets/_BoneThrone/Scripts/Core/**
+- Assets/_BoneThrone/Scripts/Data/**
+- Assets/_BoneThrone/Scripts/Grid/**
+- Assets/_BoneThrone/Scripts/Units/**
+- Assets/_BoneThrone/Scripts/Turns/**
+- Assets/_BoneThrone/Scripts/Combat/**
+- Assets/_BoneThrone/Scripts/Skills/**
+- Assets/_BoneThrone/Scripts/Rooms/**
+- Assets/_BoneThrone/Scripts/Levels/**
+- Assets/_BoneThrone/Scripts/Interactables/**
+- Assets/_BoneThrone/Scripts/UI/**
+- Assets/_BoneThrone/Scripts/Networking/**
 - Docs/ACTIVE_TASK.md
-- Docs/DevLogs/Phase01_PackageBaseline.md
-- Assets/TextMesh Pro/** only for TMP Essential Resources import
-- AGENTS.md only if the Unity version or package baseline rule is outdated
+- Docs/DevLogs/Phase02_ArchitectureSkeleton.md
 
 ## Forbidden changes
-- Do not implement grid, movement, combat, AI, rooms, levels, skills, UI, or networking gameplay in this phase.
-- Do not add gameplay scripts.
-- Do not create Unit, Tile, GridManager, TurnManager, CombatSystem, SkillSystem, RoomController, or Network gameplay classes in this phase.
-- Do not modify scenes unless explicitly confirmed.
-- Do not add large art, audio, model, VFX, or animation assets.
-- Do not modify Library, Temp, Obj, Logs, UserSettings, or generated IDE files.
+- Do not implement grid generation, tile clicking, movement, pathfinding, combat, enemy AI, room progression, skills, UI behavior, or LAN gameplay in this phase.
+- Do not create scene objects, prefabs, ScriptableObject assets, character data assets, enemy data assets, or level data assets yet.
+- Do not modify Unity scenes unless explicitly confirmed.
+- Do not modify Packages, ProjectSettings, Library, Temp, Obj, Logs, UserSettings, or generated IDE files.
+- Do not add art, audio, model, animation, VFX, or large binary assets.
 
-## Required package baseline
-The project should confirm or install the following:
+## Required skeleton scope
+Codex may create only a small set of foundational code files, preferably 3-6 core files.
 
-1. URP / Universal Render Pipeline
-   - The project should use Universal 3D / URP.
-   - URP asset should be assigned in Graphics / Quality settings.
+Suggested scope:
+1. GameMode enum
+   - Represents SinglePlayer, LANHost, LANClient, and future Online modes.
 
-2. TextMeshPro
-   - TMP Essentials should be imported.
-   - Used later for battle HUD, D20 logs, skill text, health text, and prompts.
+2. RoleId enum
+   - Represents Fighter, Ranger, Mage, Barbarian, Enemy, None.
 
-3. Netcode for GameObjects
-   - Required for later LAN multiplayer phase.
-   - Do not implement multiplayer gameplay in this phase.
+3. ActionCommand base structure
+   - Abstract or base serializable command concept.
+   - Only defines data fields and intent.
+   - No actual movement, attack, skill, or network execution.
 
-4. Unity Transport
-   - Required transport layer for Netcode for GameObjects.
-   - Do not implement Host/Client logic in this phase.
+4. GameStateSnapshot placeholder
+   - Defines the idea of current level, current actor, unit states, room states, and key state.
+   - Placeholder only; no real gameplay state collection yet.
 
-5. Multiplayer Tools
-   - Recommended for later debugging and profiling.
+5. IGameSession interface
+   - Defines how local or future network sessions submit commands.
+   - No Netcode implementation in this phase.
 
-6. Multiplayer Play Mode
-   - Recommended for early four-client simulation.
-   - Final LAN validation will still need builds or multiple devices.
+6. LocalGameSession stub
+   - Minimal local implementation that can receive a command and expose an event/callback.
+   - No gameplay execution yet.
+
+## Architecture rules
+- Use namespace style under BoneThrone.*.
+- Keep gameplay rules transport-agnostic.
+- Do not make core gameplay depend directly on LAN/IP/Relay/Netcode.
+- Do not convert gameplay classes to NetworkBehaviour in this phase.
+- Singleplayer must remain possible without NetworkManager.
+- Multiplayer will later use Host authority, but this phase only prepares interfaces.
 
 ## Acceptance tests in Unity
 1. Unity 6.3 LTS opens the project without compile errors.
-2. Console has no red compile errors after package import.
-3. URP asset is assigned correctly.
-4. TextMeshPro Essentials are imported.
-5. Netcode for GameObjects is installed or clearly documented as missing.
-6. Unity Transport is installed or clearly documented as missing.
-7. Multiplayer Tools and Multiplayer Play Mode are installed or clearly documented as optional.
-8. No gameplay scripts or gameplay systems are added in this phase.
-9. Git status does not include Library, Temp, Obj, Logs, UserSettings, or generated IDE files.
+2. Console has no red compile errors.
+3. New scripts compile successfully.
+4. No scene or prefab setup is required.
+5. No gameplay feature is implemented.
+6. No NetworkManager, Lobby, Host, Client, GridManager, Unit, CombatSystem, TurnManager, SkillSystem, RoomController, or AI behavior is implemented in this phase.
+7. Git status does not include Library, Temp, Obj, Logs, UserSettings, or generated IDE files.
 
 ## Expected Codex output for this phase
 Codex should first perform a read-only scan and output:
-1. Current package status.
-2. Missing packages.
-3. Files that may need modification.
-4. Risks related to Unity 6.3 package versions.
-5. Local Unity manual test steps.
-6. Confirmation that no gameplay code is implemented.
+1. Current repository status.
+2. Proposed files, limited to 3-6 core files.
+3. Responsibility of each file.
+4. Why the proposed skeleton supports later singleplayer and LAN multiplayer.
+5. What will not be implemented in this phase.
+6. Local Unity manual test steps.
+7. Risks and rollback method.
 
 Codex must not write code until explicitly confirmed.
