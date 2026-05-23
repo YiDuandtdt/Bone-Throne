@@ -1,12 +1,12 @@
 # ACTIVE_TASK.md
 
 ## Current phase
-Phase 7 - D20 Basic Attack Combat
+Phase 8 - Basic Enemy AI
 
 ## Goal
-Implement the minimal basic attack combat loop for the Unity 6.3 LTS tactics demo.
+Implement the minimal enemy AI loop for the Unity 6.3 LTS tactics demo.
 
-This phase should allow a player Unit to attack a target Unit within basic attack range, roll a D20, resolve hit/miss by D20 + attackModifier >= target defense, apply baseDamage on hit, mark the attacker as acted, and release Tile occupancy when a target dies.
+This phase should allow an enemy Unit to choose the nearest alive player Unit, decide whether to attack or move closer, use existing movement/pathfinding/combat systems, and safely skip when no valid action is possible.
 
 ## Unity version
 Unity 6000.3.10f1 / Unity 6.3 LTS series
@@ -18,96 +18,93 @@ Unity 6000.3.10f1 / Unity 6.3 LTS series
 - Assets/_BoneThrone/Scripts/Movement/**
 - Assets/_BoneThrone/Scripts/Turns/**
 - Assets/_BoneThrone/Scripts/Combat/**
+- Assets/_BoneThrone/Scripts/AI/**
 - Assets/_BoneThrone/Scripts/Tests/**
 - Docs/ACTIVE_TASK.md
-- Docs/DevLogs/Phase07_D20BasicCombat.md
+- Docs/DevLogs/Phase08_BasicEnemyAI.md
 
 ## Forbidden changes
-- Do not implement skills, cooldowns, enemy AI behavior, room progression, fog/shadow rooms, stairs, keys, level switching, UI HUD, LAN multiplayer, lobby, NetworkManager, or Netcode synchronization in this phase.
-- Do not implement skill targeting or skill effects.
-- Do not implement enemy AI decision making.
-- Do not implement formal UI buttons or HUD panels.
+- Do not implement rooms, fog/shadow rooms, enemy spawning, keys, stairs, level switching, skill effects, cooldowns, UI HUD, LAN multiplayer, lobby, NetworkManager, or Netcode synchronization in this phase.
+- Do not implement complex behavior trees, utility AI, patrol, aggro memory, group tactics, or advanced tactical scoring.
+- Do not implement new combat formulas beyond the existing Phase 7 basic attack.
+- Do not implement new movement rules beyond the existing Phase 5 four-direction movement.
 - Do not modify Packages, ProjectSettings, Library, Temp, Obj, Logs, UserSettings, or generated IDE files.
 - Do not add large art/audio/model assets.
 - Do not convert gameplay classes to NetworkBehaviour.
 - Do not require NetworkManager.
 
 ## Required scope
-Codex may propose and implement only a small set of combat-related scripts, preferably 4-6 files.
+Codex may propose and implement only a small set of AI-related scripts, preferably 4-6 files.
 
 Expected files may include:
-1. D20Roller.cs
-   - Rolls 1-20.
-   - Can support deterministic seed or debug override only if simple.
-   - Does not reference networking.
 
-2. CombatLog.cs
-   - Records or prints combat results.
-   - Can initially use Debug.Log.
-   - Does not implement UI HUD.
+1. EnemyTargetSelector.cs
+   - Finds the nearest alive Player Unit.
+   - Uses GridPosition / CurrentTile distance.
+   - Does not implement threat tables or advanced scoring.
 
-3. DamageResolver.cs
-   - Applies damage to Unit runtime HP.
-   - If HP <= 0, calls existing Unit death/release logic.
-   - Does not implement damage types, armor types, buffs, or skills.
+2. EnemyAIController.cs
+   - Represents one enemy Unit's simple AI decision.
+   - If target is in basic attack range, attacks.
+   - Otherwise moves closer.
+   - If no valid target/path/action exists, safely skips.
+   - Does not implement behavior trees.
 
-4. CombatSystem.cs
-   - Validates basic attack range.
-   - Rolls D20.
-   - Checks D20 + attackModifier >= target defense.
-   - Applies baseDamage on hit.
-   - Marks attacker UnitTurnState as acted after a valid attack attempt.
-   - Does not implement skills, AI, UI, networking.
+3. EnemyActionRunner.cs
+   - Temporary runner for executing one enemy action or all enemy actions.
+   - May be used through ContextMenu for Play Mode testing.
+   - Does not implement full formal enemy round UI.
 
-5. CombatInputTester.cs
-   - Temporary Play Mode controller or ContextMenu test helper.
-   - Allows selecting attacker and target for manual combat testing.
+4. EnemyMovementPlanner.cs
+   - Uses existing Pathfinder / MovementRangeFinder / UnitMover to move closer to the selected target.
+   - Four-direction only.
+   - Avoids occupied and unwalkable Tiles through existing GridManager.CanEnter.
+
+5. EnemyAITester.cs
+   - Temporary Play Mode / ContextMenu test helper.
    - Clearly marked as temporary/test helper.
 
 Optional only if necessary:
-6. AttackRangeService.cs
-   - Computes simple Manhattan attack distance.
-   - Four-direction/grid-distance based.
-   - No AOE, no skill range, no line of sight unless explicitly minimal.
+6. EnemyAIResult.cs
+   - Small result struct/class for logging success, attack, move, or skipped.
+   - No complex state machine.
 
 ## Architecture rules
-- Use namespace BoneThrone.Combat for combat scripts.
-- Use BoneThrone.Grid, BoneThrone.Units, and BoneThrone.Turns only when necessary.
+- Use namespace BoneThrone.AI for AI scripts.
+- Use BoneThrone.Grid, BoneThrone.Units, BoneThrone.Movement, BoneThrone.Combat, and BoneThrone.Turns only when necessary.
 - Do not reference Netcode.
 - Do not inherit NetworkBehaviour.
-- Keep combat independent from skills, AI, rooms, levels, UI, and networking.
-- Use existing UnitStats fields: attackModifier, defense, baseDamage.
-- Use existing UnitRuntimeState currentHp / isDead if available.
-- Use existing Unit.MarkDeadAndReleaseTile() or equivalent death method.
-- Preserve Phase 5 movement and Phase 6 turn behavior.
-- If integrating with UnitTurnState, do it only to MarkActed after a valid attack attempt.
-- Do not implement Host authority yet, but keep D20 rolling centralized in D20Roller for future Host authority.
+- Keep AI independent from rooms, levels, UI, and networking.
+- Reuse Phase 5 movement systems instead of writing new movement logic.
+- Reuse Phase 7 CombatSystem instead of writing a second attack resolver.
+- EnemyTurn can remain a placeholder; testing may use ContextMenu.
+- If using UnitTurnState, mark enemy moved/acted only after valid movement/attack.
+- Singleplayer must remain playable without NetworkManager.
 
 ## Acceptance tests in Unity
 1. Unity 6.3 LTS opens the project without compile errors.
 2. Console has no red compile errors.
-3. A player Unit can attack a target Unit within range.
-4. D20 roll is logged.
-5. Hit is resolved by D20 + attackModifier >= target defense.
-6. On hit, target currentHp decreases by attacker baseDamage.
-7. On miss, target currentHp does not decrease.
-8. If target HP <= 0, target is marked dead and its Tile is released.
-9. Attacker UnitTurnState is marked HasActed after a valid attack attempt.
-10. A Unit that has already acted cannot attack again if ActionPermissionService is bound.
-11. Out-of-range attack is rejected.
-12. Dead attacker or dead target cannot participate.
-13. No skills, cooldowns, enemy AI behavior, rooms, UI HUD, or networking is implemented.
-14. Git status does not include Library, Temp, Obj, Logs, UserSettings, or generated IDE files.
+3. Enemy can find the nearest alive Player Unit.
+4. Enemy attacks when target is within basic attack range.
+5. Enemy attack uses existing CombatSystem and D20 logic.
+6. Enemy moves closer when target is out of range.
+7. Enemy movement uses existing four-direction Pathfinder / UnitMover behavior.
+8. Enemy does not move onto occupied or unwalkable Tiles.
+9. Enemy safely skips if no alive player target exists.
+10. Enemy safely skips if no path or valid move exists.
+11. Dead enemy does not act.
+12. Enemy action does not implement rooms, spawning, skills, UI HUD, or networking.
+13. Git status does not include Library, Temp, Obj, Logs, UserSettings, or generated IDE files.
 
 ## Expected Codex output for this phase
 Codex should first perform a read-only scan and output:
 1. Current repository status.
-2. Proposed files, limited to 4-6 combat-related files.
+2. Proposed files, limited to 4-6 AI-related files.
 3. Responsibility of each file.
-4. How D20 rolling is centralized.
-5. How hit/miss is resolved using UnitStats.
-6. How damage and death reuse existing Unit runtime/death logic.
-7. How Phase 6 UnitTurnState is marked acted without implementing skills.
+4. How nearest target selection works.
+5. How enemy decides attack vs move.
+6. How existing Movement and Combat systems are reused.
+7. How failure/skip cases are handled safely.
 8. Unity scene setup instructions for manual testing.
 9. Risks and rollback method.
 
