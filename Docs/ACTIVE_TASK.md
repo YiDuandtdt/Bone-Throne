@@ -1,12 +1,12 @@
 # ACTIVE_TASK.md
 
 ## Current phase
-Phase 4 - Unit System and Data Model
+Phase 5 - Selection, BFS Range and A* Movement
 
 ## Goal
-Implement the minimal unit system and data model for the Unity 6.3 LTS tactics demo.
+Implement the minimal playable movement loop for the Unity 6.3 LTS tactics demo.
 
-This phase should allow player/enemy units to store basic stats, faction, runtime HP/death state, and occupy/release grid tiles.
+This phase should allow selecting a player unit, showing reachable tiles with BFS, clicking a valid target tile, moving the unit along an A* path, and updating tile occupancy.
 
 ## Unity version
 Unity 6000.3.10f1 / Unity 6.3 LTS series
@@ -15,75 +15,83 @@ Unity 6000.3.10f1 / Unity 6.3 LTS series
 - Assets/_BoneThrone/Scripts/Core/**
 - Assets/_BoneThrone/Scripts/Grid/**
 - Assets/_BoneThrone/Scripts/Units/**
-- Assets/_BoneThrone/Scripts/Data/**
+- Assets/_BoneThrone/Scripts/Movement/**
 - Assets/_BoneThrone/Scripts/Tests/**
 - Docs/ACTIVE_TASK.md
-- Docs/DevLogs/Phase04_UnitSystem.md
+- Docs/DevLogs/Phase05_SelectionMovement.md
 
 ## Forbidden changes
-- Do not implement player input control, unit selection, BFS movement range, A* pathfinding, real movement animation, combat, D20 attacks, skills, enemy AI, room progression, UI HUD, LAN multiplayer, lobby, stairs, keys, or level switching in this phase.
-- Do not implement turn management yet.
-- Do not create full character balance tables or final ScriptableObject assets unless explicitly confirmed.
+- Do not implement turn management, D20 combat, skills, enemy AI, room progression, fog/shadow rooms, stairs, keys, level switching, UI HUD, LAN multiplayer, lobby, or NetworkManager in this phase.
+- Do not implement attack actions or damage.
+- Do not implement skill targeting or cooldowns.
 - Do not modify Packages, ProjectSettings, Library, Temp, Obj, Logs, UserSettings, or generated IDE files.
 - Do not add large art/audio/model assets.
-- Do not convert Unit or gameplay classes to NetworkBehaviour.
+- Do not convert gameplay classes to NetworkBehaviour.
 - Do not require NetworkManager.
 
 ## Required scope
-Codex may propose and implement only a small set of unit-related scripts, preferably 4-6 files.
+Codex may propose and implement only a small set of movement-related scripts, preferably 4-6 files.
 
 Expected files may include:
-1. UnitFaction.cs
-   - Defines Player, Enemy, Neutral, None.
+1. SelectionManager.cs
+   - Selects a Unit by clicking it.
+   - Stores current selected Unit.
+   - Does not implement UI.
 
-2. UnitStats.cs
-   - Serializable stats data: max HP, move range placeholder, attack modifier placeholder, defense placeholder, base damage placeholder.
-   - No combat formula yet.
+2. MovementRangeFinder.cs
+   - Uses BFS to calculate reachable GridPosition values within Unit move range.
+   - Uses GridManager.CanEnter.
+   - Does not move the unit.
 
-3. UnitRuntimeState.cs
-   - Runtime HP, alive/dead state, hasMoved/hasActed placeholders if needed.
-   - No turn system yet.
+3. Pathfinder.cs
+   - Uses A* to find a path from current Unit position to target GridPosition.
+   - Four-direction movement only.
+   - Does not implement animation.
 
-4. Unit.cs
-   - MonoBehaviour attached to a unit object.
-   - Stores unit id, display name, role id, faction, stats, runtime state.
-   - Can be placed on a Tile through GridPosition/GridManager.
-   - Can release occupied tile on death.
-   - Does not move, attack, or act.
+4. UnitMover.cs
+   - Moves a Unit along a path.
+   - Updates Tile occupancy.
+   - Can initially use simple transform movement or instant stepping.
 
-5. UnitData.cs
-   - Optional ScriptableObject definition for future character/enemy data.
-   - Only class definition, no actual asset creation unless confirmed.
+5. PlayerMovementController.cs
+   - Temporary Play Mode controller for clicking selected unit and target tile.
+   - Clearly marked as temporary/test controller.
+   - Does not implement turn system or networking.
 
-6. UnitPlacementTester.cs
-   - Optional temporary test helper to place a unit on a tile and test occupancy/death release.
-   - Clearly marked as debug/test helper.
+Optional only if needed:
+6. MovementDebugHighlighter.cs
+   - Highlights reachable tiles with simple material/color changes.
+   - No complex UI or VFX.
 
 ## Architecture rules
-- Use namespace BoneThrone.Units for unit scripts.
-- Use BoneThrone.Grid types for tile occupancy.
-- Unit must not depend on Netcode, NetworkManager, LAN, Lobby, or NetworkBehaviour.
-- Unit must not directly implement movement/pathfinding/combat/turn flow.
-- Keep unit state simple and inspectable in Unity.
-- Unit should be usable later by both singleplayer and host-authoritative multiplayer.
+- Use namespace BoneThrone.Movement for movement scripts.
+- Use BoneThrone.Grid and BoneThrone.Units.
+- Do not reference Netcode.
+- Do not inherit NetworkBehaviour.
+- Keep movement independent from combat, turns, skills, AI, rooms, and networking.
+- Movement must update Tile occupancy correctly.
+- Four-direction movement only.
 
 ## Acceptance tests in Unity
 1. Unity 6.3 LTS opens the project without compile errors.
 2. Console has no red compile errors.
-3. A test scene can contain several Tile objects and several Unit objects.
-4. Four player units can be assigned to four different tiles.
-5. Occupied tiles return CanEnter false.
-6. A unit death/release test clears its tile occupancy.
-7. No movement, BFS, A*, combat, turn system, skills, AI, UI, or networking is implemented.
-8. Git status does not include Library, Temp, Obj, Logs, UserSettings, or generated IDE files.
+3. A player Unit can be selected.
+4. Reachable tiles are calculated by BFS.
+5. Clicking a reachable tile moves the Unit to that tile.
+6. Original tile is released and target tile becomes occupied.
+7. Clicking an unreachable or occupied tile does not move the Unit.
+8. Movement uses four-direction rules only.
+9. No combat, turn system, skills, AI, UI, or networking is implemented.
+10. Git status does not include Library, Temp, Obj, Logs, UserSettings, or generated IDE files.
 
 ## Expected Codex output for this phase
 Codex should first perform a read-only scan and output:
 1. Current repository status.
-2. Proposed files, limited to 4-6 unit-related files.
+2. Proposed files, limited to 4-6 movement-related files.
 3. Responsibility of each file.
-4. How the unit system uses GridManager/Tile without implementing movement.
-5. Unity scene setup instructions for manual testing.
-6. Risks and rollback method.
+4. How movement uses GridManager, Tile, and Unit.
+5. How BFS and A* are bounded to this phase.
+6. Unity scene setup instructions for manual testing.
+7. Risks and rollback method.
 
 Codex must not write code until explicitly confirmed.
