@@ -202,7 +202,7 @@ namespace BoneThrone.Movement
             }
 
             Ray ray = cameraToUse.ScreenPointToRay(Input.mousePosition);
-            return Physics.Raycast(ray, out hit, maxRayDistance, inputLayerMask);
+            return Physics.Raycast(ray, out hit, maxRayDistance, inputLayerMask, QueryTriggerInteraction.Ignore);
         }
 
         private bool HasRequiredReferences()
