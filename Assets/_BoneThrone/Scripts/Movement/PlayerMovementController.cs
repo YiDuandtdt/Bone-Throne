@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using BoneThrone.Grid;
+using BoneThrone.Turns;
 using BoneThrone.Units;
 using UnityEngine;
 
@@ -19,6 +20,8 @@ namespace BoneThrone.Movement
         [SerializeField] private Pathfinder pathfinder;
         [SerializeField] private UnitMover unitMover;
         [SerializeField] private MovementDebugHighlighter debugHighlighter;
+        [SerializeField] private TurnManager turnManager;
+        [SerializeField] private ActionPermissionService actionPermissionService;
 
         private readonly HashSet<GridPosition> reachablePositions = new HashSet<GridPosition>();
 
@@ -91,6 +94,11 @@ namespace BoneThrone.Movement
                 return;
             }
 
+            if (!CanSelectedUnitMove(selectedUnit))
+            {
+                return;
+            }
+
             List<GridPosition> path;
             if (!pathfinder.TryFindPath(gridManager, selectedUnit.CurrentTile.Position, targetPosition, out path))
             {
@@ -100,6 +108,11 @@ namespace BoneThrone.Movement
 
             if (unitMover.TryMove(selectedUnit, gridManager, path))
             {
+                if (IsTurnGatingConfigured())
+                {
+                    MarkSelectedUnitMoved(selectedUnit);
+                }
+
                 RefreshReachablePositions();
             }
         }
@@ -110,6 +123,16 @@ namespace BoneThrone.Movement
 
             Unit selectedUnit = selectionManager.SelectedUnit;
             if (selectedUnit == null || selectedUnit.CurrentTile == null)
+            {
+                if (debugHighlighter != null)
+                {
+                    debugHighlighter.Clear();
+                }
+
+                return;
+            }
+
+            if (!CanSelectedUnitMove(selectedUnit))
             {
                 if (debugHighlighter != null)
                 {
@@ -136,6 +159,36 @@ namespace BoneThrone.Movement
             }
 
             Debug.Log("Reachable tile count for unit " + selectedUnit.UnitId + ": " + reachablePositions.Count + ".", selectedUnit);
+        }
+
+        private bool CanSelectedUnitMove(Unit selectedUnit)
+        {
+            if (!IsTurnGatingConfigured() && turnManager == null && actionPermissionService == null)
+            {
+                return true;
+            }
+
+            if (turnManager == null || actionPermissionService == null)
+            {
+                Debug.LogWarning("PlayerMovementController turn gating is partially configured. Bind both TurnManager and ActionPermissionService, or leave both empty.", this);
+                return false;
+            }
+
+            return actionPermissionService.CanMove(selectedUnit, turnManager);
+        }
+
+        private bool IsTurnGatingConfigured()
+        {
+            return turnManager != null && actionPermissionService != null;
+        }
+
+        private static void MarkSelectedUnitMoved(Unit selectedUnit)
+        {
+            UnitTurnState turnState = selectedUnit != null ? selectedUnit.GetComponent<UnitTurnState>() : null;
+            if (turnState != null)
+            {
+                turnState.MarkMoved();
+            }
         }
 
         private bool TryGetInputHit(out RaycastHit hit)
