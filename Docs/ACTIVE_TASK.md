@@ -1,12 +1,12 @@
 # ACTIVE_TASK.md
 
 ## Current phase
-Phase 6 - Turn System and Fixed Action Order
+Phase 7 - D20 Basic Attack Combat
 
 ## Goal
-Implement the minimal turn system for the Unity 6.3 LTS tactics demo.
+Implement the minimal basic attack combat loop for the Unity 6.3 LTS tactics demo.
 
-This phase should allow the game to track player/enemy turn phases, track whether each Unit has moved and acted during the current round, restrict repeated movement within a turn, and prepare the fixed multiplayer order: Fighter -> Ranger -> Mage -> Barbarian -> Enemy Turn.
+This phase should allow a player Unit to attack a target Unit within basic attack range, roll a D20, resolve hit/miss by D20 + attackModifier >= target defense, apply baseDamage on hit, mark the attacker as acted, and release Tile occupancy when a target dies.
 
 ## Unity version
 Unity 6000.3.10f1 / Unity 6.3 LTS series
@@ -17,86 +17,98 @@ Unity 6000.3.10f1 / Unity 6.3 LTS series
 - Assets/_BoneThrone/Scripts/Units/**
 - Assets/_BoneThrone/Scripts/Movement/**
 - Assets/_BoneThrone/Scripts/Turns/**
+- Assets/_BoneThrone/Scripts/Combat/**
 - Assets/_BoneThrone/Scripts/Tests/**
 - Docs/ACTIVE_TASK.md
-- Docs/DevLogs/Phase06_TurnSystem.md
+- Docs/DevLogs/Phase07_D20BasicCombat.md
 
 ## Forbidden changes
-- Do not implement D20 combat, attack damage, skills, cooldowns, enemy AI behavior, room progression, fog/shadow rooms, stairs, keys, level switching, UI HUD, LAN multiplayer, lobby, NetworkManager, or Netcode synchronization in this phase.
-- Do not implement actual attack resolution.
+- Do not implement skills, cooldowns, enemy AI behavior, room progression, fog/shadow rooms, stairs, keys, level switching, UI HUD, LAN multiplayer, lobby, NetworkManager, or Netcode synchronization in this phase.
 - Do not implement skill targeting or skill effects.
+- Do not implement enemy AI decision making.
+- Do not implement formal UI buttons or HUD panels.
 - Do not modify Packages, ProjectSettings, Library, Temp, Obj, Logs, UserSettings, or generated IDE files.
 - Do not add large art/audio/model assets.
 - Do not convert gameplay classes to NetworkBehaviour.
 - Do not require NetworkManager.
 
 ## Required scope
-Codex may propose and implement only a small set of turn-related scripts, preferably 4-6 files.
+Codex may propose and implement only a small set of combat-related scripts, preferably 4-6 files.
 
 Expected files may include:
-1. TurnPhase.cs
-   - Defines simple turn phase enum values.
-   - Example: None, PlayerTurn, EnemyTurn.
+1. D20Roller.cs
+   - Rolls 1-20.
+   - Can support deterministic seed or debug override only if simple.
+   - Does not reference networking.
 
-2. UnitTurnState.cs
-   - Tracks whether a Unit has moved and acted this round.
-   - Does not contain combat logic.
+2. CombatLog.cs
+   - Records or prints combat results.
+   - Can initially use Debug.Log.
+   - Does not implement UI HUD.
 
-3. TurnOrderService.cs
-   - Provides fixed role order for future multiplayer:
-     Fighter -> Ranger -> Mage -> Barbarian -> Enemy Turn.
-   - Does not use Netcode.
-   - Does not check client ownership yet.
+3. DamageResolver.cs
+   - Applies damage to Unit runtime HP.
+   - If HP <= 0, calls existing Unit death/release logic.
+   - Does not implement damage types, armor types, buffs, or skills.
 
-4. TurnManager.cs
-   - Maintains current phase and active actor/role.
-   - Starts player round.
-   - Ends actor turn or advances to next actor.
-   - Resets movement/action flags at the correct time.
-   - Does not implement combat, skill, AI, room, or networking logic.
+4. CombatSystem.cs
+   - Validates basic attack range.
+   - Rolls D20.
+   - Checks D20 + attackModifier >= target defense.
+   - Applies baseDamage on hit.
+   - Marks attacker UnitTurnState as acted after a valid attack attempt.
+   - Does not implement skills, AI, UI, networking.
 
-5. ActionPermissionService.cs
-   - Answers whether a Unit is allowed to move or act based on turn state.
-   - Does not execute the move or action.
-
-6. TurnSystemTester.cs
-   - Temporary Play Mode / ContextMenu test helper.
-   - Verifies turn order, hasMoved, hasActed, reset behavior.
+5. CombatInputTester.cs
+   - Temporary Play Mode controller or ContextMenu test helper.
+   - Allows selecting attacker and target for manual combat testing.
    - Clearly marked as temporary/test helper.
 
+Optional only if necessary:
+6. AttackRangeService.cs
+   - Computes simple Manhattan attack distance.
+   - Four-direction/grid-distance based.
+   - No AOE, no skill range, no line of sight unless explicitly minimal.
+
 ## Architecture rules
-- Use namespace BoneThrone.Turns for turn scripts.
-- Use BoneThrone.Core and BoneThrone.Units only when necessary.
+- Use namespace BoneThrone.Combat for combat scripts.
+- Use BoneThrone.Grid, BoneThrone.Units, and BoneThrone.Turns only when necessary.
 - Do not reference Netcode.
 - Do not inherit NetworkBehaviour.
-- Keep turn logic independent from combat, skills, AI, rooms, levels, UI, and networking.
-- Do not break Phase 5 movement.
-- If integrating with Phase 5 PlayerMovementController, do it minimally and only to prevent repeated movement after a Unit has already moved.
-- Singleplayer should remain playable without NetworkManager.
-- Future multiplayer order should be represented as data/logic only, not actual network ownership.
+- Keep combat independent from skills, AI, rooms, levels, UI, and networking.
+- Use existing UnitStats fields: attackModifier, defense, baseDamage.
+- Use existing UnitRuntimeState currentHp / isDead if available.
+- Use existing Unit.MarkDeadAndReleaseTile() or equivalent death method.
+- Preserve Phase 5 movement and Phase 6 turn behavior.
+- If integrating with UnitTurnState, do it only to MarkActed after a valid attack attempt.
+- Do not implement Host authority yet, but keep D20 rolling centralized in D20Roller for future Host authority.
 
 ## Acceptance tests in Unity
 1. Unity 6.3 LTS opens the project without compile errors.
 2. Console has no red compile errors.
-3. A player turn can be started.
-4. Player Units receive/reset turn state at the start of the round.
-5. A Unit can be marked as moved.
-6. A moved Unit cannot move again in the same turn/round.
-7. A Unit can be marked as acted.
-8. TurnManager can advance through the fixed role order.
-9. EnemyTurn phase can be reached as a placeholder.
-10. No D20, combat, skills, AI behavior, rooms, UI HUD, or networking is implemented.
-11. Git status does not include Library, Temp, Obj, Logs, UserSettings, or generated IDE files.
+3. A player Unit can attack a target Unit within range.
+4. D20 roll is logged.
+5. Hit is resolved by D20 + attackModifier >= target defense.
+6. On hit, target currentHp decreases by attacker baseDamage.
+7. On miss, target currentHp does not decrease.
+8. If target HP <= 0, target is marked dead and its Tile is released.
+9. Attacker UnitTurnState is marked HasActed after a valid attack attempt.
+10. A Unit that has already acted cannot attack again if ActionPermissionService is bound.
+11. Out-of-range attack is rejected.
+12. Dead attacker or dead target cannot participate.
+13. No skills, cooldowns, enemy AI behavior, rooms, UI HUD, or networking is implemented.
+14. Git status does not include Library, Temp, Obj, Logs, UserSettings, or generated IDE files.
 
 ## Expected Codex output for this phase
 Codex should first perform a read-only scan and output:
 1. Current repository status.
-2. Proposed files, limited to 4-6 turn-related files.
+2. Proposed files, limited to 4-6 combat-related files.
 3. Responsibility of each file.
-4. How turn state relates to Unit and Phase 5 movement.
-5. How hasMoved / hasActed are tracked without implementing combat.
-6. How fixed order Fighter -> Ranger -> Mage -> Barbarian -> Enemy Turn is represented without networking.
-7. Unity scene setup instructions for manual testing.
-8. Risks and rollback method.
+4. How D20 rolling is centralized.
+5. How hit/miss is resolved using UnitStats.
+6. How damage and death reuse existing Unit runtime/death logic.
+7. How Phase 6 UnitTurnState is marked acted without implementing skills.
+8. Unity scene setup instructions for manual testing.
+9. Risks and rollback method.
 
 Codex must not write code until explicitly confirmed.
