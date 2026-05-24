@@ -174,3 +174,11 @@ Created the first small Phase 12.6 prefab-wrapping slice only. No C# scripts, sc
 - Updated `Assets/_BoneThrone/Scenes/GridTest.unity` to keep the verified prefab regression setup.
 - The scene change is intentionally kept because the new prefab wrappers were verified through the existing GridTest workflow.
 - Updated KayKit material assets used by the wrapped prefabs so their `_MainTex` / color settings correctly display the imported visual models in the current URP project setup.
+
+## Final validation notes
+- Phase 12.6 completed gameplay prefab wrapping for player units, normal enemy units, Key, and Stairs.
+- Player Ranger keeps Ranger gameplay identity but intentionally uses Adventurers Rogue visual as the final preferred visual direction.
+- Skeleton_Rogue is the normal enemy rogue prefab.
+- Skeleton_Golem is reserved for a future Boss / heavy Boss prefab and is not used as a normal enemy prefab.
+- Existing movement, D20 combat, representative skills, key interaction, stairs interaction, level transition, and upgrade flow were verified in Unity 6.3.
+- No gameplay scripts, scenes outside approved test changes, networking, UI, sound, VFX, or animator systems were introduced in this phase.
