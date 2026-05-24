@@ -1,108 +1,106 @@
 # ACTIVE_TASK.md
 
 ## Current phase
-Phase 9 - Room Progression and Semi-transparent Shadow
+Phase 10 - Keys, Stairs, Level Switching and Level Up Progression
 
 ## Goal
-Implement the minimal room progression loop for the Unity 6.3 LTS tactics demo.
+Implement the minimum single-player progression loop for keys, stairs, level transition placeholders, and automatic party level-up when entering the next floor.
 
-This phase should allow a room to start as hidden/unentered, show a semi-transparent shadow overlay before entry, trigger room entry when a player unit enters or reaches a trigger area, reveal the room by hiding the shadow, activate or spawn assigned enemies, track whether the room is cleared, and safely keep the logic independent from levels, keys, stairs, UI, and networking.
+This phase must make the following behavior testable:
+1. A key can be collected and recorded as a shared party/key state.
+2. Stairs can be interacted with.
+3. Stairs provide simple hover feedback or Outline.
+4. Clicking stairs can show a confirmation panel or temporary confirmation test.
+5. Entering the next floor checks progression conditions.
+6. The project has a minimal level-switching / next-floor placeholder flow.
+7. All player units level up when entering the next floor.
 
-## Unity version
-Unity 6000.3.10f1 / Unity 6.3 LTS series
+## Authoritative documents
+- Docs/骸骨王座_系统设计文档_Unity6.3LTS_v2.1.docx
+- Docs/骸骨王座_Codex完整即用Vibecoding开发文档_Unity6.3LTS_v1.1.docx
+- Docs/骸骨王座_Codex从零开发使用Guide_Unity6.3LTS_v1.1.docx
 
-## Allowed files
-- Assets/_BoneThrone/Scripts/Core/**
-- Assets/_BoneThrone/Scripts/Grid/**
-- Assets/_BoneThrone/Scripts/Units/**
-- Assets/_BoneThrone/Scripts/Movement/**
-- Assets/_BoneThrone/Scripts/Turns/**
-- Assets/_BoneThrone/Scripts/Combat/**
-- Assets/_BoneThrone/Scripts/AI/**
-- Assets/_BoneThrone/Scripts/Rooms/**
-- Assets/_BoneThrone/Scripts/Tests/**
-- Docs/ACTIVE_TASK.md
-- Docs/DevLogs/Phase09_RoomShadow.md
+## Current project state
+Phase 9 has been completed and merged into dev.
+
+Already completed:
+- Grid and coordinate system
+- Unit system and tile occupancy
+- Selection, BFS range, and A* movement
+- Turn system
+- D20 basic attack combat
+- Basic enemy AI
+- Room progression and semi-transparent room shadow
+
+## Recommended files to inspect
+- Assets/_BoneThrone/Scripts/Core/
+- Assets/_BoneThrone/Scripts/Grid/
+- Assets/_BoneThrone/Scripts/Units/
+- Assets/_BoneThrone/Scripts/Movement/
+- Assets/_BoneThrone/Scripts/Turns/
+- Assets/_BoneThrone/Scripts/Combat/
+- Assets/_BoneThrone/Scripts/AI/
+- Assets/_BoneThrone/Scripts/Rooms/
+- Assets/_BoneThrone/Scripts/Levels/
+- Assets/_BoneThrone/Scripts/Interactables/
+- Assets/_BoneThrone/Scripts/Tests/
+
+## Expected implementation files
+Codex should propose the exact files after scanning the repository, but the expected scope is around:
+- LevelManager.cs
+- LevelProgressionService.cs
+- InteractableStairs.cs
+- KeyItem.cs
+- ConfirmPanel.cs
+- A small Phase 10 tester if needed
+
+## Allowed changes
+- Add or modify scripts directly required for key pickup, stairs interaction, level progression, and party level-up.
+- Add small placeholder components needed to test this phase.
+- Add a simple test script only if necessary.
+- Add a DevLog after implementation and Unity validation.
 
 ## Forbidden changes
-- Do not implement keys, stairs, level switching, boss doors, full level progression, skills, cooldowns, UI HUD, LAN multiplayer, lobby, NetworkManager, or Netcode synchronization in this phase.
-- Do not implement complex fog of war.
-- Do not implement procedural dungeon generation.
-- Do not implement complex enemy spawn waves.
-- Do not implement rewards, loot, potions, or inventory.
-- Do not modify Packages, ProjectSettings, Library, Temp, Obj, Logs, UserSettings, or generated IDE files.
-- Do not add large art/audio/model assets.
-- Do not convert gameplay classes to NetworkBehaviour.
-- Do not require NetworkManager.
+- Do not implement complex inventory.
+- Do not implement equipment.
+- Do not implement a full reward system.
+- Do not implement full Boss door logic.
+- Do not implement a large LevelManager rewrite.
+- Do not implement networking.
+- Do not modify NetworkManager or LAN lobby systems.
+- Do not implement UI HUD redesign.
+- Do not implement skill trees or new skill systems.
+- Do not import all art assets in this phase.
+- Do not modify Library, Temp, Obj, Logs, UserSettings, or generated IDE files.
+- Do not make large scene changes unless explicitly approved.
 
-## Required scope
-Codex may propose and implement only a small set of room-related scripts, preferably 4-6 files.
+## Deferred decision
+Full art asset import is intentionally deferred.
 
-Expected files may include:
+Planned future branch:
+phase/12.5-art-asset-import
 
-1. RoomState.cs
-   - Defines simple room states.
-   - Example: Unentered, Entered, CombatActive, Cleared.
-   - No level switching or key logic.
+Best timing:
+After Phase 12 is completed and before Phase 13 begins.
 
-2. RoomController.cs
-   - Owns one room's state.
-   - Handles EnterRoom(), RevealRoom(), ActivateEnemies(), CheckCleared().
-   - Does not manage whole-level progression.
+Reason:
+Phase 10 should stay focused on progression logic. Full art import should be isolated into its own branch and should not be mixed with gameplay code changes.
 
-3. RoomTrigger.cs
-   - Temporary trigger component for detecting player entry.
-   - Can use Collider trigger or manual ContextMenu test.
-   - Does not implement UI.
+## Acceptance tests in Unity 6.3 LTS
+1. Project opens without compile errors.
+2. A test key object can be collected.
+3. Key state is recorded and can be queried.
+4. Stairs can detect player interaction.
+5. Stairs hover feedback or simple Outline works.
+6. Stairs interaction checks whether the required key/progression condition is satisfied.
+7. If conditions are not satisfied, the player receives a clear temporary message or log.
+8. If conditions are satisfied, the next-floor placeholder transition is triggered.
+9. When the next floor is entered, all living player units level up.
+10. Existing Phase 9 room/shadow behavior still works.
+11. Existing movement, turn, D20 combat, and enemy AI are not broken.
 
-4. RoomShadowController.cs
-   - Controls semi-transparent shadow object visibility.
-   - Can simply SetActive(true/false) or switch renderer/material alpha.
-   - No complex fog of war.
+## Codex instruction
+Codex must first scan the repository and output a plan only.
 
-5. RoomEnemyActivator.cs
-   - Activates pre-placed enemy GameObjects when room is entered.
-   - Optional simple spawn from assigned prefabs/spawn points only if minimal.
-   - No wave system or procedural spawning.
-
-6. RoomSystemTester.cs
-   - Temporary Play Mode / ContextMenu test helper.
-   - Clearly marked as temporary/test helper.
-
-## Architecture rules
-- Use namespace BoneThrone.Rooms for room scripts.
-- Use BoneThrone.Units only when necessary.
-- Keep room logic independent from keys, stairs, levels, UI, and networking.
-- Do not reference Netcode.
-- Do not inherit NetworkBehaviour.
-- Enemy activation should reuse existing Unit / AI / Combat systems indirectly by enabling assigned enemies.
-- Room cleared condition may be based on all assigned enemies being dead.
-- Singleplayer must remain playable without NetworkManager.
-- This phase must not break Phase 5 movement, Phase 6 turns, Phase 7 combat, or Phase 8 enemy AI.
-
-## Acceptance tests in Unity
-1. Unity 6.3 LTS opens the project without compile errors.
-2. Console has no red compile errors.
-3. A room starts in Unentered state.
-4. Room shadow is visible before entry.
-5. Player entry triggers EnterRoom.
-6. Room state changes to Entered or CombatActive.
-7. Room shadow is hidden or disabled after entry.
-8. Assigned enemies are activated when the room is entered.
-9. Room can detect cleared state when assigned enemies are dead.
-10. No keys, stairs, level switching, skills, UI HUD, networking, or NetworkManager is implemented.
-11. Git status does not include Library, Temp, Obj, Logs, UserSettings, or generated IDE files.
-
-## Expected Codex output for this phase
-Codex should first perform a read-only scan and output:
-1. Current repository status.
-2. Proposed files, limited to 4-6 room-related files.
-3. Responsibility of each file.
-4. How room states work.
-5. How shadow reveal works.
-6. How enemy activation works without complex spawning.
-7. How room cleared state is detected.
-8. Unity scene setup instructions for manual testing.
-9. Risks and rollback method.
-
-Codex must not write code until explicitly confirmed.
+Do not write code in the first response.
+Do not modify files before the plan is reviewed.
