@@ -13,6 +13,7 @@ namespace BoneThrone.Skills
     {
         [SerializeField] private SkillTargetingService targetingService;
         [SerializeField] private DamageResolver damageResolver;
+        [SerializeField] private SkillEffectExecutor effectExecutor;
         [SerializeField] private TurnManager turnManager;
         [SerializeField] private ActionPermissionService actionPermissionService;
 
@@ -56,7 +57,11 @@ namespace BoneThrone.Skills
             }
 
             SkillData skill = runtime.GetSkill(slotIndex);
-            bool targetDied = damageResolver.ApplyDamage(target, skill.GuaranteedDamage);
+            string effectResult = "Phase 11 fallback guaranteed damage " + skill.GuaranteedDamage + ".";
+            bool targetDied = effectExecutor != null
+                ? effectExecutor.TryExecute(caster, target, skill, damageResolver, out effectResult)
+                : damageResolver.ApplyDamage(target, skill.GuaranteedDamage);
+
             runtime.StartCooldown(slotIndex);
             MarkCasterActed(caster);
 
@@ -67,8 +72,8 @@ namespace BoneThrone.Skills
                 + skill.DisplayName
                 + " on unit "
                 + target.UnitId
-                + " for guaranteed damage "
-                + skill.GuaranteedDamage
+                + ". "
+                + effectResult
                 + ". TargetDied="
                 + targetDied
                 + " Cooldown="
