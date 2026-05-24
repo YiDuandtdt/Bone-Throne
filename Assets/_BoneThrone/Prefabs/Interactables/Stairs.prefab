@@ -52,8 +52,8 @@ MonoBehaviour:
   normalMaterial: {fileID: 0}
   hoverMaterial: {fileID: 0}
   requireSecondClickConfirmation: 1
---- !u!65 &400003
-BoxCollider:
+--- !u!64 &400003
+MeshCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -70,9 +70,10 @@ BoxCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 5543852910939878438, guid: fcb3266dbae7e274a8bcb37c68ec6c11, type: 3}
 --- !u!1001 &400009
 PrefabInstance:
   m_ObjectHideFlags: 0
