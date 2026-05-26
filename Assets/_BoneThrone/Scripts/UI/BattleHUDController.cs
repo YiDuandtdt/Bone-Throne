@@ -22,7 +22,14 @@ namespace BoneThrone.UI
         [SerializeField] private LevelProgressionService progressionService;
         [SerializeField] private InteractableStairs stairs;
         [SerializeField] private CombatLog combatLog;
+        [SerializeField] private CombatSystem combatSystem;
         [SerializeField] private Unit[] playerUnits = new Unit[4];
+
+        [Header("Action Mode References")]
+        [SerializeField] private UIActionModeController actionModeController;
+        [SerializeField] private Camera actionInputCamera;
+        [SerializeField] private LayerMask actionTargetLayerMask = ~0;
+        [SerializeField] private PlayerMovementController movementControllerToSuspend;
 
         [Header("Views")]
         [SerializeField] private TurnBannerView turnBannerView;
@@ -43,11 +50,15 @@ namespace BoneThrone.UI
             {
                 EnsureRuntimeLayout();
             }
+
+            EnsureActionModeController();
+            ConfigureActionModeController();
         }
 
         private void OnEnable()
         {
             SubscribeCombatLog();
+            SubscribeSkillBar();
         }
 
         private void Start()
@@ -64,6 +75,8 @@ namespace BoneThrone.UI
             {
                 combatLog.EntryAdded -= HandleCombatEntryAdded;
             }
+
+            UnsubscribeSkillBar();
         }
 
         private void Update()
@@ -87,6 +100,69 @@ namespace BoneThrone.UI
             {
                 promptView.Refresh(selectedUnit, progressionService, stairs);
             }
+        }
+
+        private void SubscribeSkillBar()
+        {
+            if (skillBarView == null)
+            {
+                return;
+            }
+
+            skillBarView.BasicAttackClicked -= HandleBasicAttackClicked;
+            skillBarView.BasicAttackClicked += HandleBasicAttackClicked;
+        }
+
+        private void UnsubscribeSkillBar()
+        {
+            if (skillBarView != null)
+            {
+                skillBarView.BasicAttackClicked -= HandleBasicAttackClicked;
+            }
+        }
+
+        private void HandleBasicAttackClicked()
+        {
+            if (actionModeController == null)
+            {
+                if (promptView != null)
+                {
+                    promptView.ShowOverride("Basic attack unavailable: action mode unbound.", 1.5f);
+                }
+
+                return;
+            }
+
+            actionModeController.HandleBasicAttackButtonClicked();
+        }
+
+        private void EnsureActionModeController()
+        {
+            if (actionModeController == null)
+            {
+                actionModeController = GetComponent<UIActionModeController>();
+            }
+
+            if (actionModeController == null)
+            {
+                actionModeController = gameObject.AddComponent<UIActionModeController>();
+            }
+        }
+
+        private void ConfigureActionModeController()
+        {
+            if (actionModeController == null)
+            {
+                return;
+            }
+
+            actionModeController.Configure(
+                selectionManager,
+                combatSystem,
+                promptView,
+                actionInputCamera,
+                actionTargetLayerMask,
+                movementControllerToSuspend);
         }
 
         private void SubscribeCombatLog()

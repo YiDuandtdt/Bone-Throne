@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 100001}
   - component: {fileID: 100002}
+  - component: {fileID: 100003}
   m_Layer: 5
   m_Name: BattleHUD
   m_TagString: Untagged
@@ -46,18 +47,25 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1319a57b537848e1b4082816b21eabcb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.UI.BattleHUDController
   turnManager: {fileID: 0}
   selectionManager: {fileID: 0}
   progressionService: {fileID: 0}
   stairs: {fileID: 0}
   combatLog: {fileID: 0}
+  combatSystem: {fileID: 0}
   playerUnits:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  actionModeController: {fileID: 100003}
+  actionInputCamera: {fileID: 0}
+  actionTargetLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  movementControllerToSuspend: {fileID: 0}
   turnBannerView: {fileID: 0}
   selectedUnitText: {fileID: 0}
   heroPanels:
@@ -69,3 +77,24 @@ MonoBehaviour:
   combatFeedbackView: {fileID: 0}
   promptView: {fileID: 0}
   buildRuntimeLayoutIfMissing: 1
+--- !u!114 &100003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a99bf2d25bb47c6a9b81a3e9d7f4c10, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.UI.UIActionModeController
+  selectionManager: {fileID: 0}
+  combatSystem: {fileID: 0}
+  promptView: {fileID: 0}
+  inputCamera: {fileID: 0}
+  targetLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  maxRayDistance: 500
+  movementControllerToSuspend: {fileID: 0}

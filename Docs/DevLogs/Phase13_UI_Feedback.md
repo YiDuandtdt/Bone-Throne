@@ -132,12 +132,67 @@ Implemented the first small Phase 13 battle HUD slice only. This change adds scr
 - No formal modal confirmation box was added; stairs continue to use the existing prompt/log/confirmation-pending behavior.
 - Still not added: FloatingHealthBar, world-space HP bars, formal icons, portraits, sound, VFX, Animator Controllers, networking, or gameplay formula changes.
 
+## Phase 13.3 Basic Attack targeting patch notes
+- Added `Assets/_BoneThrone/Scripts/UI/UIActionModeController.cs`.
+  - Stores the current UI action mode: `None` or `BasicAttackTargeting`.
+  - Receives the Basic Attack button click from `SkillBarView`.
+  - Reads `SelectionManager.SelectedUnit`.
+  - Uses the configured camera and Physics Raycast to find the clicked `Unit`.
+  - Calls only `CombatSystem.TryBasicAttack(attacker, target)` for execution.
+  - Does not directly change HP, cooldown, `HasActed`, D20 rolls, damage, death, AI, room, key, stairs, or level state.
+- Updated `SkillBarView`.
+  - Basic Attack is now clickable and emits a UI intent event.
+  - Skill Slot 0 remains display-only and does not trigger skill gameplay.
+  - Slot 1, Slot 2, Defend, and Potion remain disabled placeholders.
+- Updated `BattleHUDController`.
+  - Wires `SkillBarView` to `UIActionModeController`.
+  - Passes Inspector-configured `CombatSystem`, input camera, target layer mask, and `PlayerMovementController` reference into the action mode controller.
+- Updated `PromptView`.
+  - Added lightweight override prompts for targeting, invalid target, cancel, and missing binding states.
+- Updated `BattleHUD.prefab`.
+  - Added `UIActionModeController` to the root `BattleHUD` object.
+  - Kept the author-time hierarchy minimal; child HUD layout is still runtime-generated.
+- Updated `GridTest.unity`.
+  - Bound the HUD `combatSystem` reference to the existing scene `CombatSystem`.
+  - Bound the HUD `actionInputCamera` reference to the existing scene camera.
+  - Bound the HUD `movementControllerToSuspend` reference to the existing `PlayerMovementController`.
+  - Existing gameplay objects, player/enemy visuals, key, stairs, AI, room, and level objects were not moved, renamed, deleted, or visually changed.
+- Targeting input conflict handling:
+  - Entering Basic Attack targeting temporarily disables the bound `PlayerMovementController`.
+  - Success, cancel, or controller disable restores the movement controller to its prior enabled state.
+  - This prevents targeting-mode clicks on empty tiles or friendly units from triggering movement.
+- Cancel options:
+  - Right mouse button.
+  - Escape.
+  - Clicking Basic Attack again while targeting.
+- Still not added:
+  - Skill Slot 0 targeting.
+  - Defend or Potion actions.
+  - Formal modal confirmation boxes.
+  - FloatingHealthBar or world-space HP bars.
+  - Sound, VFX, Animator Controllers, formal icons, portraits, or networking.
+
+## Phase 13.3 manual Unity 6.3 test steps
+1. Open `Assets/_BoneThrone/Scenes/GridTest.unity`.
+2. Enter Play Mode and confirm there are no red Console errors.
+3. With no selected unit, click `Basic Attack`; expected Prompt: `Select a unit first.`
+4. Select a living player unit that has not acted.
+5. Click `Basic Attack`; expected Prompt: `Select an enemy target.`
+6. While targeting, click empty ground; expected Prompt: `Invalid attack target.`, no movement, no action consumption.
+7. While targeting, click a friendly unit; expected Prompt: `Invalid attack target.`, no movement, no action consumption.
+8. While targeting, click an enemy unit in range; expected `CombatSystem.TryBasicAttack` runs, CombatLog shows D20 feedback, HUD refreshes HP/action state, movement input is restored.
+9. Repeat with an out-of-range enemy; expected rejected CombatLog/prompt feedback, no action consumption, targeting remains active.
+10. Enter targeting again and cancel with right-click, Escape, and clicking `Basic Attack` again; expected no action consumption and movement input restored.
+11. After cancel or successful attack, confirm normal tile movement still works.
+12. Re-run Key/Stairs, Skill Slot 0 display-only, and Enemy AI regression checks.
+
 ## Rollback
 - Revert scripts:
   - `git checkout -- Assets/_BoneThrone/Scripts/UI/BattleHUDController.cs`
   - `git checkout -- Assets/_BoneThrone/Scripts/UI/TurnBannerView.cs`
   - `git checkout -- Assets/_BoneThrone/Scripts/UI/HeroPanelView.cs`
   - `git checkout -- Assets/_BoneThrone/Scripts/UI/SkillBarView.cs`
+  - `git checkout -- Assets/_BoneThrone/Scripts/UI/UIActionModeController.cs`
   - `git checkout -- Assets/_BoneThrone/Scripts/UI/CombatFeedbackView.cs`
   - `git checkout -- Assets/_BoneThrone/Scripts/UI/PromptView.cs`
   - `git checkout -- Assets/_BoneThrone/Scripts/Combat/CombatLog.cs`
