@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using BoneThrone.Units;
 using UnityEngine;
 
@@ -9,43 +11,94 @@ namespace BoneThrone.Combat
     /// </summary>
     public sealed class CombatLog : MonoBehaviour
     {
-        public void LogRejected(string reason, Object context)
+        public enum EntryType
         {
-            Debug.LogWarning("Basic attack rejected: " + reason, context);
+            Rejected = 0,
+            AttackAttempt = 1,
+            Hit = 2,
+            Miss = 3,
+            Death = 4
+        }
+
+        public sealed class Entry
+        {
+            public Entry(EntryType type, string message)
+            {
+                Type = type;
+                Message = message;
+            }
+
+            public EntryType Type { get; private set; }
+            public string Message { get; private set; }
+        }
+
+        private const int MaxRecentEntries = 12;
+
+        private readonly List<Entry> recentEntries = new List<Entry>();
+
+        public event Action<Entry> EntryAdded;
+
+        public IReadOnlyList<Entry> RecentEntries
+        {
+            get { return recentEntries; }
+        }
+
+        public void LogRejected(string reason, UnityEngine.Object context)
+        {
+            string message = "Basic attack rejected: " + reason;
+            AddEntry(EntryType.Rejected, message);
+            Debug.LogWarning(message, context);
         }
 
         public void LogAttackAttempt(Unit attacker, Unit target, int roll, int attackModifier, int defense)
         {
-            Debug.Log(
-                "Unit " + attacker.UnitId + " attacks Unit " + target.UnitId
+            string message = "Unit " + attacker.UnitId + " attacks Unit " + target.UnitId
                 + ". D20=" + roll
                 + " AttackModifier=" + attackModifier
                 + " Total=" + (roll + attackModifier)
-                + " TargetDefense=" + defense + ".",
-                attacker);
+                + " TargetDefense=" + defense + ".";
+            AddEntry(EntryType.AttackAttempt, message);
+            Debug.Log(message, attacker);
         }
 
         public void LogHit(Unit attacker, Unit target, int damage, int remainingHp)
         {
-            Debug.Log(
-                "Basic attack hit. Unit " + attacker.UnitId
+            string message = "Basic attack hit. Unit " + attacker.UnitId
                 + " dealt " + damage
                 + " damage to Unit " + target.UnitId
-                + ". TargetHP=" + remainingHp + ".",
-                target);
+                + ". TargetHP=" + remainingHp + ".";
+            AddEntry(EntryType.Hit, message);
+            Debug.Log(message, target);
         }
 
         public void LogMiss(Unit attacker, Unit target)
         {
-            Debug.Log(
-                "Basic attack missed. Unit " + attacker.UnitId
-                + " dealt no damage to Unit " + target.UnitId + ".",
-                attacker);
+            string message = "Basic attack missed. Unit " + attacker.UnitId
+                + " dealt no damage to Unit " + target.UnitId + ".";
+            AddEntry(EntryType.Miss, message);
+            Debug.Log(message, attacker);
         }
 
         public void LogDeath(Unit target)
         {
-            Debug.Log("Unit " + target.UnitId + " died and released its tile.", target);
+            string message = "Unit " + target.UnitId + " died and released its tile.";
+            AddEntry(EntryType.Death, message);
+            Debug.Log(message, target);
+        }
+
+        private void AddEntry(EntryType type, string message)
+        {
+            Entry entry = new Entry(type, message);
+            recentEntries.Add(entry);
+            while (recentEntries.Count > MaxRecentEntries)
+            {
+                recentEntries.RemoveAt(0);
+            }
+
+            if (EntryAdded != null)
+            {
+                EntryAdded(entry);
+            }
         }
     }
 }
