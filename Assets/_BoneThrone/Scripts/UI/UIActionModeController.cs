@@ -1,5 +1,6 @@
 using BoneThrone.Combat;
 using BoneThrone.Movement;
+using BoneThrone.Skills;
 using BoneThrone.Turns;
 using BoneThrone.Units;
 using UnityEngine;
@@ -15,11 +16,13 @@ namespace BoneThrone.UI
         private enum ActionMode
         {
             None,
-            BasicAttackTargeting
+            BasicAttackTargeting,
+            SkillTargeting
         }
 
         [SerializeField] private SelectionManager selectionManager;
         [SerializeField] private CombatSystem combatSystem;
+        [SerializeField] private SkillSystem skillSystem;
         [SerializeField] private PromptView promptView;
         [SerializeField] private Camera inputCamera;
         [SerializeField] private LayerMask targetLayerMask = ~0;
@@ -27,6 +30,7 @@ namespace BoneThrone.UI
         [SerializeField] private PlayerMovementController movementControllerToSuspend;
 
         private ActionMode currentMode = ActionMode.None;
+        private int pendingSkillSlotIndex = -1;
         private bool movementControllerWasEnabled;
         private bool movementInputSuspended;
 
@@ -38,6 +42,7 @@ namespace BoneThrone.UI
         public void Configure(
             SelectionManager selection,
             CombatSystem combat,
+            SkillSystem skills,
             PromptView prompt,
             Camera camera,
             LayerMask layerMask,
@@ -45,6 +50,7 @@ namespace BoneThrone.UI
         {
             selectionManager = selection;
             combatSystem = combat;
+            skillSystem = skills;
             promptView = prompt;
             inputCamera = camera;
             targetLayerMask = layerMask;
@@ -119,16 +125,104 @@ namespace BoneThrone.UI
             EnterBasicAttackTargeting();
         }
 
+        public void HandleSkillSlot0ButtonClicked()
+        {
+            const int slotIndex = 0;
+
+            if (currentMode == ActionMode.SkillTargeting && pendingSkillSlotIndex == slotIndex)
+            {
+                CancelTargeting();
+                return;
+            }
+
+            Unit selectedUnit = selectionManager != null ? selectionManager.SelectedUnit : null;
+            if (selectedUnit == null)
+            {
+                ShowPrompt("Select a unit first.");
+                return;
+            }
+
+            if (!selectedUnit.IsAlive)
+            {
+                ShowPrompt("Selected unit is dead.");
+                return;
+            }
+
+            UnitTurnState turnState = selectedUnit.GetComponent<UnitTurnState>();
+            if (turnState != null && turnState.HasActed)
+            {
+                ShowPrompt("Selected unit has already acted.");
+                return;
+            }
+
+            SkillRuntime runtime = selectedUnit.GetComponent<SkillRuntime>();
+            if (runtime == null)
+            {
+                ShowPrompt("No SkillRuntime on selected unit.");
+                return;
+            }
+
+            if (!runtime.HasSkill(slotIndex))
+            {
+                ShowPrompt("No skill in slot 0.");
+                return;
+            }
+
+            if (!runtime.IsUnlocked(selectedUnit, slotIndex))
+            {
+                ShowPrompt("Skill locked.");
+                return;
+            }
+
+            if (runtime.IsOnCooldown(slotIndex))
+            {
+                ShowPrompt("Skill on cooldown.");
+                return;
+            }
+
+            if (skillSystem == null)
+            {
+                ShowPrompt("Skill unavailable: SkillSystem unbound.");
+                return;
+            }
+
+            EnterSkillTargeting(slotIndex);
+        }
+
         private void EnterBasicAttackTargeting()
         {
+            ExitTargetingMode();
             currentMode = ActionMode.BasicAttackTargeting;
             SuspendMovementInput();
             ShowPrompt("Select an enemy target.");
         }
 
+        private void EnterSkillTargeting(int slotIndex)
+        {
+            ExitTargetingMode();
+            currentMode = ActionMode.SkillTargeting;
+            pendingSkillSlotIndex = slotIndex;
+            SuspendMovementInput();
+            ShowPrompt("Select a skill target.");
+        }
+
         private void HandleTargetClick()
         {
             Unit target = RaycastUnitUnderCursor();
+            if (currentMode == ActionMode.BasicAttackTargeting)
+            {
+                HandleBasicAttackTargetClick(target);
+                return;
+            }
+
+            if (currentMode == ActionMode.SkillTargeting)
+            {
+                HandleSkillTargetClick(target);
+            }
+        }
+
+        private void HandleBasicAttackTargetClick(Unit target)
+        {
             if (target == null || target.Faction != UnitFaction.Enemy)
             {
                 ShowPrompt("Invalid attack target.");
@@ -160,6 +254,39 @@ namespace BoneThrone.UI
             ShowPrompt("Invalid attack target.");
         }
 
+        private void HandleSkillTargetClick(Unit target)
+        {
+            if (target == null)
+            {
+                ShowPrompt("Invalid skill target.");
+                return;
+            }
+
+            Unit caster = selectionManager != null ? selectionManager.SelectedUnit : null;
+            if (caster == null)
+            {
+                ShowPrompt("Select a unit first.");
+                ExitTargetingMode();
+                return;
+            }
+
+            if (skillSystem == null)
+            {
+                ShowPrompt("Skill unavailable: SkillSystem unbound.");
+                return;
+            }
+
+            bool success = skillSystem.TryUseSkill(caster, target, pendingSkillSlotIndex);
+            if (success)
+            {
+                ExitTargetingMode();
+                ClearPrompt();
+                return;
+            }
+
+            ShowPrompt("Invalid skill target.");
+        }
+
         private Unit RaycastUnitUnderCursor()
         {
             Camera cameraToUse = inputCamera != null ? inputCamera : Camera.main;
@@ -181,13 +308,16 @@ namespace BoneThrone.UI
 
         private void CancelTargeting()
         {
+            ActionMode canceledMode = currentMode;
             ExitTargetingMode();
-            ShowPrompt("Basic attack canceled.", 1.5f);
+            string message = canceledMode == ActionMode.SkillTargeting ? "Skill targeting canceled." : "Basic attack canceled.";
+            ShowPrompt(message, 1.5f);
         }
 
         private void ExitTargetingMode()
         {
             currentMode = ActionMode.None;
+            pendingSkillSlotIndex = -1;
             RestoreMovementInput();
         }
 

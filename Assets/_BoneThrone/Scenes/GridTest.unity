@@ -13099,6 +13099,10 @@ PrefabInstance:
       value:
       objectReference: {fileID: 1809320146}
     - target: {fileID: 100002, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
+      propertyPath: skillSystem
+      value:
+      objectReference: {fileID: 1112835311}
+    - target: {fileID: 100002, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
       propertyPath: actionInputCamera
       value:
       objectReference: {fileID: 1553934667}

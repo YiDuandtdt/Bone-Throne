@@ -186,6 +186,68 @@ Implemented the first small Phase 13 battle HUD slice only. This change adds scr
 11. After cancel or successful attack, confirm normal tile movement still works.
 12. Re-run Key/Stairs, Skill Slot 0 display-only, and Enemy AI regression checks.
 
+## Phase 13.4 Skill Slot 0 targeting patch notes
+- Extended `Assets/_BoneThrone/Scripts/UI/UIActionModeController.cs`.
+  - Added `SkillTargeting` alongside `BasicAttackTargeting`.
+  - Added an Inspector-configurable `SkillSystem` reference.
+  - Stores `pendingSkillSlotIndex`, currently only slot `0`.
+  - Skill targeting uses the same camera, Physics Raycast, and movement-input suspend/restore path as Basic Attack targeting.
+  - `HandleTargetClick` now dispatches by mode:
+    - `BasicAttackTargeting` calls only `CombatSystem.TryBasicAttack(attacker, target)`.
+    - `SkillTargeting` calls only `SkillSystem.TryUseSkill(selectedUnit, target, 0)`.
+  - UI still does not directly change HP, cooldowns, `HasActed`, formulas, death, AI, room, key, stairs, level, or networking state.
+- Updated `Assets/_BoneThrone/Scripts/UI/SkillBarView.cs`.
+  - Skill Slot 0 is now clickable and emits a UI intent event.
+  - Basic Attack click behavior is preserved.
+  - Slot 1, Slot 2, Defend, and Potion remain disabled placeholders.
+- Updated `Assets/_BoneThrone/Scripts/UI/BattleHUDController.cs`.
+  - Added the `SkillSystem` scene reference.
+  - Subscribes to `SkillBarView.SkillSlot0Clicked`.
+  - Passes `SkillSystem` into `UIActionModeController`.
+- Updated `Assets/_BoneThrone/Prefabs/UI/BattleHUD.prefab`.
+  - Saved the new `SkillSystem` serialized fields on the HUD/action-mode components.
+- Updated `Assets/_BoneThrone/Scenes/GridTest.unity`.
+  - Bound the HUD `skillSystem` reference to the existing scene `SkillSystem`.
+  - Did not move, delete, rename, or visually change gameplay objects.
+- Supported Skill Slot 0 flow:
+  - No selected unit: `Select a unit first.`
+  - Dead selected unit: `Selected unit is dead.`
+  - Already acted selected unit: `Selected unit has already acted.`
+  - Missing `SkillRuntime`: `No SkillRuntime on selected unit.`
+  - Empty slot 0: `No skill in slot 0.`
+  - Locked skill: `Skill locked.`
+  - Cooldown: `Skill on cooldown.`
+  - Missing `SkillSystem`: `Skill unavailable: SkillSystem unbound.`
+  - Valid start: `Select a skill target.`
+  - Invalid target: `Invalid skill target.`
+- Cancel options:
+  - Right mouse button.
+  - Escape.
+  - Clicking Skill Slot 0 again while skill targeting.
+- Still not added:
+  - Tile target support.
+  - Skill Slot 1 or Slot 2 actions.
+  - Defend or Potion actions.
+  - Formal modal confirmation boxes.
+  - FloatingHealthBar or world-space HP bars.
+  - Sound, VFX, Animator Controllers, formal icons, portraits, or networking.
+- Known logging note:
+  - `SkillSystem` currently logs skill success/rejection to Console, not to `CombatLog`, so HUD CombatFeedback may not show skill-specific entries in this slice.
+
+## Phase 13.4 manual Unity 6.3 test steps
+1. Open `Assets/_BoneThrone/Scenes/GridTest.unity`.
+2. Enter Play Mode and confirm there are no red Console errors.
+3. Run Basic Attack targeting regression: enter targeting, attack, invalid target, cancel, and confirm movement input restores.
+4. With no selected unit, click `Skill Slot 0`; expected Prompt: `Select a unit first.`
+5. Select a living player unit with a ready slot 0 skill.
+6. Click `Skill Slot 0`; expected Prompt: `Select a skill target.`
+7. While skill targeting, click empty ground; expected Prompt: `Invalid skill target.`, no movement, no action consumption.
+8. While skill targeting, click an invalid Unit target; expected `SkillSystem.TryUseSkill` rejects, no direct UI state mutation, targeting remains active.
+9. While skill targeting, click a legal Unit target; expected `SkillSystem.TryUseSkill(selectedUnit, target, 0)` succeeds, HP/acted/cooldown HUD data refreshes, movement input restores.
+10. Enter skill targeting again and cancel with right-click, Escape, and clicking `Skill Slot 0` again; expected no action consumption and movement input restored.
+11. Confirm Skill Slot 1, Skill Slot 2, Defend, and Potion remain disabled placeholders.
+12. Re-run movement, Enemy AI, Key/Stairs, and Console red-error checks.
+
 ## Rollback
 - Revert scripts:
   - `git checkout -- Assets/_BoneThrone/Scripts/UI/BattleHUDController.cs`

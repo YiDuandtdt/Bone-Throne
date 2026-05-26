@@ -3,6 +3,7 @@ using BoneThrone.Combat;
 using BoneThrone.Interactables;
 using BoneThrone.Levels;
 using BoneThrone.Movement;
+using BoneThrone.Skills;
 using BoneThrone.Turns;
 using BoneThrone.Units;
 using TMPro;
@@ -23,6 +24,7 @@ namespace BoneThrone.UI
         [SerializeField] private InteractableStairs stairs;
         [SerializeField] private CombatLog combatLog;
         [SerializeField] private CombatSystem combatSystem;
+        [SerializeField] private SkillSystem skillSystem;
         [SerializeField] private Unit[] playerUnits = new Unit[4];
 
         [Header("Action Mode References")]
@@ -111,6 +113,8 @@ namespace BoneThrone.UI
 
             skillBarView.BasicAttackClicked -= HandleBasicAttackClicked;
             skillBarView.BasicAttackClicked += HandleBasicAttackClicked;
+            skillBarView.SkillSlot0Clicked -= HandleSkillSlot0Clicked;
+            skillBarView.SkillSlot0Clicked += HandleSkillSlot0Clicked;
         }
 
         private void UnsubscribeSkillBar()
@@ -118,6 +122,7 @@ namespace BoneThrone.UI
             if (skillBarView != null)
             {
                 skillBarView.BasicAttackClicked -= HandleBasicAttackClicked;
+                skillBarView.SkillSlot0Clicked -= HandleSkillSlot0Clicked;
             }
         }
 
@@ -134,6 +139,21 @@ namespace BoneThrone.UI
             }
 
             actionModeController.HandleBasicAttackButtonClicked();
+        }
+
+        private void HandleSkillSlot0Clicked()
+        {
+            if (actionModeController == null)
+            {
+                if (promptView != null)
+                {
+                    promptView.ShowOverride("Skill unavailable: action mode unbound.", 1.5f);
+                }
+
+                return;
+            }
+
+            actionModeController.HandleSkillSlot0ButtonClicked();
         }
 
         private void EnsureActionModeController()
@@ -159,6 +179,7 @@ namespace BoneThrone.UI
             actionModeController.Configure(
                 selectionManager,
                 combatSystem,
+                skillSystem,
                 promptView,
                 actionInputCamera,
                 actionTargetLayerMask,

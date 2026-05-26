@@ -7,7 +7,7 @@ using UnityEngine.UI;
 namespace BoneThrone.UI
 {
     /// <summary>
-    /// Displays the first prototype action bar. Only Basic Attack emits a UI intent event.
+    /// Displays the first prototype action bar. Basic Attack and Skill Slot 0 emit UI intent events.
     /// </summary>
     public sealed class SkillBarView : MonoBehaviour
     {
@@ -20,8 +20,10 @@ namespace BoneThrone.UI
         [SerializeField] private Button[] actionButtons;
 
         private Button basicAttackButton;
+        private Button slot0Button;
 
         public event System.Action BasicAttackClicked;
+        public event System.Action SkillSlot0Clicked;
 
         public void Bind(
             TMP_Text basicAttack,
@@ -40,7 +42,9 @@ namespace BoneThrone.UI
             potionText = potion;
             actionButtons = buttons;
             basicAttackButton = actionButtons != null && actionButtons.Length > 0 ? actionButtons[0] : null;
+            slot0Button = actionButtons != null && actionButtons.Length > 1 ? actionButtons[1] : null;
             ConfigureBasicAttackButton();
+            ConfigureSlot0Button();
             DisablePlaceholderButtons();
         }
 
@@ -48,6 +52,7 @@ namespace BoneThrone.UI
         {
             DisablePlaceholderButtons();
             SetBasicAttackInteractable(true);
+            SetSlot0Interactable(true);
 
             SetText(basicAttackText, selectedUnit != null ? "Basic Attack\nTarget" : "Basic Attack\nSelect Unit");
             RefreshSlot0(selectedUnit);
@@ -96,11 +101,31 @@ namespace BoneThrone.UI
             SetBasicAttackInteractable(true);
         }
 
+        private void ConfigureSlot0Button()
+        {
+            if (slot0Button == null)
+            {
+                return;
+            }
+
+            slot0Button.onClick.RemoveListener(HandleSkillSlot0Clicked);
+            slot0Button.onClick.AddListener(HandleSkillSlot0Clicked);
+            SetSlot0Interactable(true);
+        }
+
         private void HandleBasicAttackClicked()
         {
             if (BasicAttackClicked != null)
             {
                 BasicAttackClicked();
+            }
+        }
+
+        private void HandleSkillSlot0Clicked()
+        {
+            if (SkillSlot0Clicked != null)
+            {
+                SkillSlot0Clicked();
             }
         }
 
@@ -118,6 +143,20 @@ namespace BoneThrone.UI
             }
         }
 
+        private void SetSlot0Interactable(bool interactable)
+        {
+            if (slot0Button == null)
+            {
+                return;
+            }
+
+            slot0Button.interactable = interactable;
+            if (slot0Button.targetGraphic != null)
+            {
+                slot0Button.targetGraphic.raycastTarget = interactable;
+            }
+        }
+
         private void DisablePlaceholderButtons()
         {
             if (actionButtons == null)
@@ -129,11 +168,11 @@ namespace BoneThrone.UI
             {
                 if (actionButtons[i] != null)
                 {
-                    bool isBasicAttack = i == 0;
-                    actionButtons[i].interactable = isBasicAttack;
+                    bool isSupportedAction = i == 0 || i == 1;
+                    actionButtons[i].interactable = isSupportedAction;
                     if (actionButtons[i].targetGraphic != null)
                     {
-                        actionButtons[i].targetGraphic.raycastTarget = isBasicAttack;
+                        actionButtons[i].targetGraphic.raycastTarget = isSupportedAction;
                     }
                 }
             }

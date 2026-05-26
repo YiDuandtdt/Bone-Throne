@@ -55,6 +55,7 @@ MonoBehaviour:
   stairs: {fileID: 0}
   combatLog: {fileID: 0}
   combatSystem: {fileID: 0}
+  skillSystem: {fileID: 0}
   playerUnits:
   - {fileID: 0}
   - {fileID: 0}
@@ -91,6 +92,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.UI.UIActionModeController
   selectionManager: {fileID: 0}
   combatSystem: {fileID: 0}
+  skillSystem: {fileID: 0}
   promptView: {fileID: 0}
   inputCamera: {fileID: 0}
   targetLayerMask:
