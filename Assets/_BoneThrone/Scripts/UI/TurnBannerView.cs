@@ -6,7 +6,7 @@ using UnityEngine;
 namespace BoneThrone.UI
 {
     /// <summary>
-    /// Displays the current turn phase, role reservation, and turn index.
+    /// Displays the current turn phase with UI-only fallbacks for local single-player selection.
     /// </summary>
     public sealed class TurnBannerView : MonoBehaviour
     {
@@ -30,10 +30,27 @@ namespace BoneThrone.UI
                 return;
             }
 
-            TurnPhase phase = turnManager.CurrentPhase;
-            RoleId role = turnManager.CurrentRole;
-            int index = turnManager.CurrentTurnIndex;
-            turnText.text = "Turn: " + phase + " | Role: " + role + " | Index: " + index;
+            turnText.text = FormatTurnText(turnManager.CurrentPhase, turnManager.CurrentRole);
+        }
+
+        private static string FormatTurnText(TurnPhase phase, RoleId role)
+        {
+            if (phase == TurnPhase.EnemyTurn)
+            {
+                return "Turn: Enemy Turn";
+            }
+
+            if (phase == TurnPhase.PlayerTurn)
+            {
+                if (role == RoleId.None)
+                {
+                    return "Turn: Player Turn | Actor: Free Select";
+                }
+
+                return "Turn: Player Turn | Actor: " + role;
+            }
+
+            return "Turn: -- | Actor: --";
         }
     }
 }

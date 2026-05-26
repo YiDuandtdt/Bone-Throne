@@ -121,6 +121,17 @@ Implemented the first small Phase 13 battle HUD slice only. This change adds scr
 - Still not added: FloatingHealthBar, world-space HP bars, icons, portraits, sound, VFX, Animator Controllers, networking, or gameplay formula changes.
 - Follow-up tests still needed from Play Mode: D20 CombatLog, Key, Stairs confirmation/transition, and Enemy AI regression.
 
+## HUD polish patch notes
+- Updated `TurnBannerView` fallback display only.
+- Player turn with `TurnManager.CurrentRole=None` now shows `Turn: Player Turn | Actor: Free Select` instead of `Role: None`.
+- The banner no longer displays `Index: 0`, because the current local single-player tester flow does not expose a reliable HUD-facing turn index.
+- Enemy phase displays `Turn: Enemy Turn`.
+- Unknown or unstarted phase displays `Turn: -- | Actor: --`.
+- SkillBar remains display-only/prototype; it does not trigger attacks, skills, items, or defense.
+- Basic attack, skills, and Enemy AI are still validated through the existing tester, ContextMenu, and test-entry flows for this phase.
+- No formal modal confirmation box was added; stairs continue to use the existing prompt/log/confirmation-pending behavior.
+- Still not added: FloatingHealthBar, world-space HP bars, formal icons, portraits, sound, VFX, Animator Controllers, networking, or gameplay formula changes.
+
 ## Rollback
 - Revert scripts:
   - `git checkout -- Assets/_BoneThrone/Scripts/UI/BattleHUDController.cs`
