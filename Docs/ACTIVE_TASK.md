@@ -1,23 +1,26 @@
 ﻿# ACTIVE_TASK.md
 
 ## Current phase
-Phase 14.4 - Stabilization Plan Only
+Phase 14.5 - Inspector Binding and Regression Checklist
 
 ## Goal
-Create a stabilization plan for the current Bone Throne Unity 6.3 LTS project based on Phase 14.1 audit, v2.2 current-state system design document, and v1.2 current-state Vibecoding document.
+Create a documentation-only Inspector binding checklist and Play Mode regression checklist for the current Bone Throne Unity 6.3 LTS project.
 
-This phase must only decide what should be stabilized next. It must not implement code changes.
+This phase must help future testing and stabilization by documenting:
+- required scene object references
+- required prefab references
+- required manually assigned arrays
+- expected Play Mode test steps
+- expected results
+- failure symptoms
+- likely cause if a test fails
 
-The plan must classify issues into:
-- must fix before future feature work
-- should fix soon
-- can defer
-- do not touch unless explicitly approved
-- requires Unity Play Mode verification before changing
+This phase must not implement any fixes.
 
 ## Allowed files
-- Docs/Phase14_StabilizationPlan.md
-- Docs/DevLogs/Phase14.4_StabilizationPlan.md
+- Docs/Phase14_InspectorBindingChecklist.md
+- Docs/Phase14_RegressionChecklist.md
+- Docs/DevLogs/Phase14.5_InspectorRegressionChecklist.md
 - Docs/ACTIVE_TASK.md
 
 ## Forbidden changes
@@ -37,17 +40,50 @@ The plan must classify issues into:
 - Do not implement fixes in this phase.
 
 ## Required output
-Create a documentation-only stabilization plan that covers:
-1. Current highest-risk systems.
-2. Manual Inspector dependency risks.
-3. Combat / Skill / UI safety risks.
-4. Enemy AI and turn gate risks.
-5. Room / Key / Stairs / LevelUp risks.
-6. Fireball splash and knownUnits dependency.
-7. Enemy HP bar regression risk.
-8. GridTest.unity as the only integration scene.
-9. Recommended next phase order.
-10. Which fixes require explicit approval before implementation.
+Create documentation-only checklists covering:
+1. Inspector binding checklist.
+2. GridTest.unity scene object checklist.
+3. Player unit checklist.
+4. Enemy unit checklist.
+5. UI / HUD checklist.
+6. Combat / Skill binding checklist.
+7. Room / Key / Stairs / LevelUp binding checklist.
+8. Enemy Floating HP Bar checklist.
+9. Play Mode regression checklist.
+10. Failure symptom to likely cause mapping.
+
+Required Inspector fields include:
+- SkillEffectExecutor.knownUnits
+- BattleHUDController.enemyUnits
+- UIActionModeController.enemyUnits
+- BattleHUDController.playerUnits
+- TurnManager.playerUnits
+- LevelProgressionService.playerUnits
+- RoomEnemyActivator.assignedEnemies
+- RoomEnemyActivator.spawnTiles
+- LevelProgressionService.requiredClearedRooms
+- GridManager.initialTiles
+- KeyItem.progressionService
+- InteractableStairs.progressionService
+- InteractableStairs.selectionManager
+
+Required regression tests include:
+- Select player unit
+- Move mode
+- Basic Attack mode
+- Skill Slot 0 mode
+- Mage Fireball splash
+- CombatLog entries
+- Enemy Floating HP Bar refresh
+- Enemy death and HP bar hide
+- Room trigger
+- Room shadow hide
+- Enemy activation
+- Room clear
+- Key pickup
+- Stairs interaction
+- LevelUp
+- Enemy AI turn
 
 ## Validation
 Documentation-only phase.
@@ -56,4 +92,4 @@ Manual checks:
 1. git diff only shows Docs changes.
 2. No Assets, Packages, ProjectSettings, Library, Temp, Obj, Logs, or UserSettings changes.
 3. No code implementation is included.
-4. Plan does not ask Codex to rewrite completed systems.
+4. Checklist does not ask Codex to rewrite completed systems.
