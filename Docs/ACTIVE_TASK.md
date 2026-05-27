@@ -1,29 +1,28 @@
 ﻿# ACTIVE_TASK.md
 
 ## Current phase
-Phase 14.6 - Minimal Stabilization Implementation Proposal Only
+Phase 14.7 - Pre-Feature Regression Audit
 
 ## Goal
-Create a documentation-only proposal for minimal stabilization implementation tasks based on Phase 14.4 stabilization plan and Phase 14.5 Inspector / regression checklists.
+Perform a pre-feature regression audit for the current Bone Throne Unity 6.3 LTS project before approving any stabilization implementation or new gameplay feature work.
 
-This phase must not implement fixes.
-
-The proposal must:
-- identify the smallest safe stabilization candidates
-- rank them by risk and value
-- define exact allowed files for each future implementation candidate
-- define required Play Mode reproduction before implementation
-- define rollback strategy for each candidate
-- keep all actual code changes deferred to separately approved future phases
+This phase must:
+- use GridTest.unity as the only real integrated gameplay regression scene
+- run the Phase 14.5 regression checklist manually in Unity Play Mode
+- record pass / fail / blocked / not tested results
+- record Console warnings or errors
+- record Inspector binding issues
+- identify which future stabilization candidates are actually supported by observed failures
+- avoid implementing any fixes
 
 ## Allowed files
-- Docs/Phase14_MinimalStabilizationImplementationProposal.md
-- Docs/DevLogs/Phase14.6_MinimalStabilizationProposal.md
+- Docs/Phase14_PreFeatureRegressionAudit.md
+- Docs/DevLogs/Phase14.7_PreFeatureRegressionAudit.md
 - Docs/ACTIVE_TASK.md
 
 ## Forbidden changes
 - Do not modify gameplay code.
-- Do not modify scenes.
+- Do not modify scenes unless the user explicitly approves Inspector-only binding corrections in a later phase.
 - Do not modify prefabs.
 - Do not modify ScriptableObject assets.
 - Do not modify Packages or ProjectSettings.
@@ -38,33 +37,45 @@ The proposal must:
 - Do not change Ranger visual back to Adventurers Ranger.
 
 ## Required output
-Create a proposal document that includes:
-1. Stabilization candidates.
-2. Priority ranking.
-3. Why each candidate matters.
-4. Whether each candidate requires Play Mode reproduction first.
-5. Exact future allowed files for each candidate.
-6. Exact future forbidden files for each candidate.
-7. Expected test steps.
-8. Rollback method.
-9. Whether the candidate should be implemented, deferred, or rejected.
-10. A recommended order for future implementation phases.
+Create a regression audit report template and result document covering:
+1. Unity version and branch.
+2. Git status before testing.
+3. Scene tested.
+4. Console status before Play Mode.
+5. Inspector binding check results.
+6. Regression test results from Phase14_RegressionChecklist.md.
+7. Screenshots or notes needed.
+8. Console errors/warnings.
+9. Observed failures mapped to likely causes.
+10. Stabilization candidates supported by actual observed evidence.
+11. Stabilization candidates not yet supported by evidence.
+12. Recommended next phase.
 
-Candidate areas must include:
-- Inspector binding validation helper or documentation-only workflow.
-- Enemy AI turn gate issue.
-- Skill cooldown tick flow.
-- Fireball splash knownUnits dependency.
-- UI target list / enemyUnits dependency.
-- Enemy Floating HP Bar robustness.
-- Room activation assignedEnemies / spawnTiles validation.
-- Key / Stairs / LevelUp placeholder boundary.
+Required tests:
+- Select player unit
+- Move mode
+- Basic Attack mode
+- Skill Slot 0 mode
+- Mage Fireball splash
+- CombatLog structured entries
+- Enemy Floating HP Bar refresh
+- Enemy HP Bar death hide
+- Room trigger
+- Room shadow hide
+- Enemy activation
+- Room clear
+- Key pickup
+- Stairs hover / second click
+- LevelUp
+- Enemy AI turn
 
 ## Validation
-Documentation-only phase.
+Documentation and manual testing phase.
 
 Manual checks:
-1. git diff only shows Docs changes.
-2. No Assets, Packages, ProjectSettings, Library, Temp, Obj, Logs, or UserSettings changes.
-3. No code implementation is included.
-4. Proposal does not authorize implementation without a later explicit user approval.
+1. Unity 6.3 LTS opens the project.
+2. GridTest.unity opens.
+3. Console state is recorded before Play Mode.
+4. Play Mode results are recorded.
+5. git diff only shows Docs changes.
+6. No code implementation is included.
