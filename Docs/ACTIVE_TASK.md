@@ -1,23 +1,25 @@
 ﻿# ACTIVE_TASK.md
 
 ## Current phase
-Phase 14.10 - GridTest Camera Controls
+Phase 14.10-B - GridTest Camera Right Mouse Rotation
 
 ## Goal
-Implement lightweight camera controls for the current GridTest integration scene.
+Extend the existing GridTest camera controller with right mouse drag horizontal rotation.
 
 The camera must support:
-- holding middle mouse button to drag / pan the camera
-- using mouse wheel to zoom in and out
-- configurable speed and zoom limits in Inspector
-- no interference with left-click unit selection, tile clicking, UI buttons, attack targeting, or skill targeting
+- holding right mouse button and dragging horizontally to rotate the camera left / right
+- configurable rotation speed in Inspector
+- optional rotation around zoomPivot or a stable world pivot
+- no camera roll
+- no gameplay state changes
+- no interference with left-click selection, Move, Basic Attack, Skill Slot 0, HUD buttons, CombatLog, Enemy HP Bar, Room / Key / Stairs / LevelUp, or Enemy AI
 
-This phase is limited to GridTest camera control only.
+This phase is limited to extending GridTest camera controls.
 
 ## Allowed files
 - Assets/_BoneThrone/Scripts/Camera/GridTestCameraController.cs
-- Assets/_BoneThrone/Scenes/GridTest.unity, only if needed to attach/configure the camera controller
-- Docs/DevLogs/Phase14.10_GridTestCameraControls.md
+- Assets/_BoneThrone/Scenes/GridTest.unity, only if needed to configure new Inspector fields
+- Docs/DevLogs/Phase14.10B_GridTestCameraRotation.md
 - Docs/ACTIVE_TASK.md
 
 ## Forbidden changes
@@ -27,6 +29,8 @@ This phase is limited to GridTest camera control only.
 - Do not modify SkillEffectExecutor.
 - Do not modify CombatSystem.TryBasicAttack.
 - Do not modify SkillSystem.TryUseSkill.
+- Do not modify PlayerMovementController unless Codex first proves it is required.
+- Do not modify UIActionModeController unless Codex first proves there is an existing right-click conflict and asks for approval.
 - Do not modify unit prefabs.
 - Do not modify enemy prefabs.
 - Do not modify SkillData assets.
@@ -34,44 +38,57 @@ This phase is limited to GridTest camera control only.
 - Do not modify Skeleton_Rogue.
 - Do not use Skeleton_Golem as a normal enemy.
 - Do not change Ranger visual back to Adventurers Ranger.
-- Do not introduce Cinemachine unless the current scene already depends on it and the user explicitly approves.
+- Do not introduce Cinemachine.
 
 ## Required behavior
-1. Middle mouse drag:
-   - Hold middle mouse button.
-   - Move mouse.
-   - Camera pans across the grid.
-   - Drag must not select units or trigger tile actions.
+1. Right mouse rotation:
+   - Hold right mouse button.
+   - Drag horizontally.
+   - Camera rotates left / right around a stable pivot.
+   - Rotation should be yaw only.
+   - Camera pitch should remain stable.
+   - Camera roll must remain zero.
 
-2. Mouse wheel zoom:
-   - Scroll up/down.
-   - Camera zooms in/out.
-   - Zoom must be clamped between configurable min and max values.
+2. Inspector configuration:
+   - rotation enabled toggle
+   - rotation speed
+   - optional invert rotation toggle
+   - optional rotation pivot / zoom pivot reuse
+   - optional min/max yaw only if needed
 
-3. Inspector configuration:
-   - pan speed
-   - zoom speed
-   - min zoom
-   - max zoom
-   - optional drag inversion toggle
-   - optional enable/disable toggle
+3. Compatibility:
+   - Left-click selection still works.
+   - Move mode still works.
+   - Basic Attack targeting still works.
+   - Skill Slot 0 targeting still works.
+   - HUD buttons still work.
+   - Existing middle mouse drag still works.
+   - Existing mouse wheel zoom still works.
+   - Console has no new red errors.
 
-4. Compatibility:
-   - Must work in GridTest.unity.
-   - Must not break BattleHUD buttons.
-   - Must not affect left click selection / move / attack / skill targeting.
-   - Must not require changes to gameplay systems.
+## Required first step
+Before implementing, Codex must scan current input scripts and report whether right mouse button is already used by:
+- UIActionModeController
+- PlayerMovementController
+- SelectionManager
+- any input tester
+- any camera script
+
+If right mouse is already used, Codex must explain the conflict and propose a safe handling approach before editing code.
 
 ## Validation
 Manual Unity Play Mode tests:
 1. Open GridTest.unity.
 2. Confirm no compile errors.
 3. Enter Play Mode.
-4. Hold middle mouse and drag: camera pans.
-5. Scroll wheel: camera zooms in/out.
-6. Try selecting a player with left click: still works.
-7. Try Move mode: still works.
-8. Try Basic Attack mode: still works.
-9. Try Skill Slot 0 mode: still works.
-10. Try clicking HUD buttons: still works.
-11. Confirm Console has no new red errors.
+4. Hold right mouse and drag left / right: camera rotates horizontally.
+5. Camera pitch remains stable.
+6. Camera roll remains zero.
+7. Middle mouse drag still works.
+8. Mouse wheel zoom still works.
+9. Left-click selection still works.
+10. Move mode still works.
+11. Basic Attack still works.
+12. Skill Slot 0 still works.
+13. HUD buttons still work.
+14. Console has no new red errors.
