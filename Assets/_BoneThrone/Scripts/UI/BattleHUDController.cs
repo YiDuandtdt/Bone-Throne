@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using BoneThrone.Combat;
+using BoneThrone.Grid;
 using BoneThrone.Interactables;
 using BoneThrone.Levels;
 using BoneThrone.Movement;
@@ -23,19 +24,21 @@ namespace BoneThrone.UI
         [SerializeField] private LevelProgressionService progressionService;
         [SerializeField] private InteractableStairs stairs;
         [SerializeField] private CombatLog combatLog;
+        [SerializeField] private GridManager gridManager;
         [SerializeField] private CombatSystem combatSystem;
         [SerializeField] private SkillSystem skillSystem;
         [SerializeField] private Unit[] playerUnits = new Unit[4];
+        [SerializeField] private Unit[] enemyUnits;
 
         [Header("Action Mode References")]
         [SerializeField] private UIActionModeController actionModeController;
         [SerializeField] private Camera actionInputCamera;
         [SerializeField] private LayerMask actionTargetLayerMask = ~0;
         [SerializeField] private PlayerMovementController movementControllerToSuspend;
+        [SerializeField] private MovementDebugHighlighter movementHighlighter;
 
         [Header("Views")]
         [SerializeField] private TurnBannerView turnBannerView;
-        [SerializeField] private TMP_Text selectedUnitText;
         [SerializeField] private HeroPanelView[] heroPanels = new HeroPanelView[4];
         [SerializeField] private SkillBarView skillBarView;
         [SerializeField] private CombatFeedbackView combatFeedbackView;
@@ -87,10 +90,9 @@ namespace BoneThrone.UI
 
             if (turnBannerView != null)
             {
-                turnBannerView.Refresh(turnManager);
+                turnBannerView.Refresh(turnManager, selectedUnit);
             }
 
-            RefreshSelectedUnit(selectedUnit);
             RefreshHeroPanels();
 
             if (skillBarView != null)
@@ -111,6 +113,8 @@ namespace BoneThrone.UI
                 return;
             }
 
+            skillBarView.MoveClicked -= HandleMoveClicked;
+            skillBarView.MoveClicked += HandleMoveClicked;
             skillBarView.BasicAttackClicked -= HandleBasicAttackClicked;
             skillBarView.BasicAttackClicked += HandleBasicAttackClicked;
             skillBarView.SkillSlot0Clicked -= HandleSkillSlot0Clicked;
@@ -121,9 +125,25 @@ namespace BoneThrone.UI
         {
             if (skillBarView != null)
             {
+                skillBarView.MoveClicked -= HandleMoveClicked;
                 skillBarView.BasicAttackClicked -= HandleBasicAttackClicked;
                 skillBarView.SkillSlot0Clicked -= HandleSkillSlot0Clicked;
             }
+        }
+
+        private void HandleMoveClicked()
+        {
+            if (actionModeController == null)
+            {
+                if (promptView != null)
+                {
+                    promptView.ShowOverride("Move unavailable: action mode unbound.", 1.5f);
+                }
+
+                return;
+            }
+
+            actionModeController.HandleMoveButtonClicked();
         }
 
         private void HandleBasicAttackClicked()
@@ -178,12 +198,15 @@ namespace BoneThrone.UI
 
             actionModeController.Configure(
                 selectionManager,
+                gridManager,
                 combatSystem,
                 skillSystem,
+                enemyUnits,
                 promptView,
                 actionInputCamera,
                 actionTargetLayerMask,
-                movementControllerToSuspend);
+                movementControllerToSuspend,
+                movementHighlighter);
         }
 
         private void SubscribeCombatLog()
@@ -208,25 +231,6 @@ namespace BoneThrone.UI
             {
                 combatFeedbackView.AddEntry(entry);
             }
-        }
-
-        private void RefreshSelectedUnit(Unit selectedUnit)
-        {
-            if (selectedUnitText == null)
-            {
-                return;
-            }
-
-            if (selectedUnit == null)
-            {
-                selectedUnitText.text = "Selected Unit: None";
-                return;
-            }
-
-            string displayName = string.IsNullOrEmpty(selectedUnit.DisplayName)
-                ? selectedUnit.RoleId.ToString()
-                : selectedUnit.DisplayName;
-            selectedUnitText.text = "Selected Unit: " + displayName + " (#" + selectedUnit.UnitId + ")";
         }
 
         private void RefreshHeroPanels()
@@ -282,7 +286,6 @@ namespace BoneThrone.UI
         private void EnsureRuntimeLayout()
         {
             if (turnBannerView != null
-                && selectedUnitText != null
                 && skillBarView != null
                 && combatFeedbackView != null
                 && promptView != null
@@ -305,8 +308,6 @@ namespace BoneThrone.UI
             FontStyles headerStyle = FontStyles.Bold;
             turnBannerView = CreateView<TurnBannerView>("TurnBanner", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(920f, 52f), new Vector2(0f, -22f));
             turnBannerView.Bind(CreateText(turnBannerView.transform, "TurnText", "Turn: Unbound", 28, headerStyle));
-
-            selectedUnitText = CreateAnchoredText("SelectedUnitText", "Selected Unit: None", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(460f, 42f), new Vector2(18f, -18f), 22, FontStyles.Normal);
 
             promptView = CreateView<PromptView>("Prompt", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(920f, 42f), new Vector2(0f, 20f));
             promptView.Bind(CreateText(promptView.transform, "PromptText", "Select a player unit.", 21, FontStyles.Normal));
@@ -337,13 +338,14 @@ namespace BoneThrone.UI
             layout.childForceExpandWidth = true;
 
             List<Button> buttons = new List<Button>();
+            TMP_Text move = CreateActionButton(bar.transform, "Move", "Move", buttons);
             TMP_Text basic = CreateActionButton(bar.transform, "BasicAttack", "Basic Attack", buttons);
             TMP_Text slot0 = CreateActionButton(bar.transform, "SkillSlot0", "Skill 0", buttons);
             TMP_Text slot1 = CreateActionButton(bar.transform, "SkillSlot1", "Slot 1", buttons);
             TMP_Text slot2 = CreateActionButton(bar.transform, "SkillSlot2", "Slot 2", buttons);
             TMP_Text defend = CreateActionButton(bar.transform, "Defend", "Defend", buttons);
             TMP_Text potion = CreateActionButton(bar.transform, "Potion", "Potion", buttons);
-            bar.Bind(basic, slot0, slot1, slot2, defend, potion, buttons.ToArray());
+            bar.Bind(move, basic, slot0, slot1, slot2, defend, potion, buttons.ToArray());
             return bar;
         }
 
@@ -379,22 +381,6 @@ namespace BoneThrone.UI
             background.color = new Color(0f, 0f, 0f, 0.48f);
             background.raycastTarget = false;
             return viewObject.AddComponent<T>();
-        }
-
-        private TMP_Text CreateAnchoredText(string name, string value, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 size, Vector2 position, int fontSize, FontStyles style)
-        {
-            GameObject textObject = new GameObject(name, typeof(RectTransform));
-            textObject.transform.SetParent(transform, false);
-            RectTransform rect = textObject.GetComponent<RectTransform>();
-            rect.localScale = Vector3.one;
-            rect.anchorMin = anchorMin;
-            rect.anchorMax = anchorMax;
-            rect.pivot = pivot;
-            rect.sizeDelta = size;
-            rect.anchoredPosition = position;
-            TMP_Text text = textObject.AddComponent<TextMeshProUGUI>();
-            ConfigureText(text, value, fontSize, style);
-            return text;
         }
 
         private TMP_Text CreateText(Transform parent, string name, string value, int fontSize, FontStyles style)

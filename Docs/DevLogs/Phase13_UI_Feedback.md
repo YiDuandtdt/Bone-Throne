@@ -248,6 +248,117 @@ Implemented the first small Phase 13 battle HUD slice only. This change adds scr
 11. Confirm Skill Slot 1, Skill Slot 2, Defend, and Potion remain disabled placeholders.
 12. Re-run movement, Enemy AI, Key/Stairs, and Console red-error checks.
 
+## Phase 13.5 Move targeting and tile highlight patch notes
+- First Phase 13.5 slice only:
+  - Added a HUD `Move` button to the left of `Basic Attack`.
+  - Added `MoveTargeting` to `UIActionModeController`.
+  - Added selected-unit current tile blue highlight.
+  - Added MoveTargeting green move-range highlight.
+  - Changed player unit click behavior so selecting a player unit no longer automatically shows the green movement range.
+- Updated `SkillBarView`.
+  - Runtime action order is now `Move`, `BasicAttack`, `SkillSlot0`, `SkillSlot1`, `SkillSlot2`, `Defend`, `Potion`.
+  - `Move`, `BasicAttack`, and `SkillSlot0` emit UI intent events.
+  - Slot 1, Slot 2, Defend, and Potion remain disabled placeholders.
+- Updated `UIActionModeController`.
+  - Added `MoveTargeting`.
+  - Move button toggles MoveTargeting.
+  - MoveTargeting uses the existing `PlayerMovementController` public movement entry point.
+  - MoveTargeting shares the existing camera, Physics Raycast, and movement-input suspend/restore path.
+  - Entering Basic Attack or Skill targeting exits MoveTargeting and clears green action highlights.
+- Updated `PlayerMovementController` with minimal movement entry changes only.
+  - Player unit clicks still call `SelectionManager.TrySelect`.
+  - Unit selection no longer calls movement range refresh automatically.
+  - Direct tile clicks outside HUD MoveTargeting no longer move the unit.
+  - Added public `GetReachablePositionsForSelected`.
+  - Added public `TryMoveSelectedUnitTo(Tile tile)`, reusing the existing reachable range, pathfinding, `UnitMover.TryMove`, and `UnitTurnState.MarkMoved` logic.
+  - Movement range, pathfinding, occupancy, and moved-state formulas were not changed.
+- Updated `MovementDebugHighlighter`.
+  - Added selected blue highlight support.
+  - Added separate action-highlight clearing for move-range green.
+  - `ClearActionHighlights` removes green movement range while preserving selected blue.
+  - `ClearSelected` removes selected blue.
+- Updated `BattleHUD.prefab` and `GridTest.unity`.
+  - Bound the HUD `gridManager` reference to the existing scene `GridManager`.
+  - Bound the HUD `movementHighlighter` reference to the existing `MovementDebugHighlighter`.
+  - Existing `PlayerMovementController`, camera, CombatSystem, SkillSystem, player/enemy visuals, key, stairs, AI, room, and level objects were not moved, renamed, deleted, or visually changed.
+- Still not added:
+  - Attack red highlight.
+  - Skill yellow highlight.
+  - AttackRangeService highlight query.
+  - SkillTargetingService highlight query.
+  - Tile-target skills.
+  - Skill Slot 1 or Slot 2 actions.
+  - Defend or Potion actions.
+  - Sound, VFX, Animator Controllers, formal icons, portraits, or networking.
+
+## Phase 13.5 manual Unity 6.3 test steps
+1. Open `Assets/_BoneThrone/Scenes/GridTest.unity`.
+2. Enter Play Mode and confirm there are no red Console errors.
+3. Click a living player unit; expected only selected blue on its current tile, no green movement range.
+4. Click empty or reachable tiles before pressing `Move`; expected no movement.
+5. Click `Move`; expected Prompt `Select a move tile.` and green movement range.
+6. Click an invalid tile while MoveTargeting; expected `Invalid move target.`, no movement, no `HasMoved` change.
+7. Click a valid green tile while MoveTargeting; expected existing movement succeeds, `HasMoved` updates through existing logic, green clears, blue moves to the unit's new tile.
+8. Enter MoveTargeting and cancel with right-click and Escape; expected green clears and selected blue remains.
+9. Enter MoveTargeting, then click `Basic Attack`; expected green clears and Basic Attack targeting still works.
+10. Enter MoveTargeting, then click `Skill Slot 0`; expected green clears and Skill Slot 0 targeting still works.
+11. Confirm Slot 1, Slot 2, Defend, and Potion remain disabled placeholders.
+12. Re-run Basic Attack targeting, Skill Slot 0 targeting, Enemy AI, Key/Stairs, and Console red-error checks.
+
+## Phase 13.5 Basic Attack red highlight and selection cleanup patch notes
+- Added a read-only `CombatSystem.CanBasicAttack(Unit attacker, Unit target, out string reason)` query.
+  - It checks attacker/target presence, alive state, self-targeting, opposing factions, current tiles, turn gate, required combat services, and basic attack range.
+  - It does not roll D20, write `CombatLog`, apply damage, release tiles, change `UnitTurnState`, mark acted, touch cooldowns, or mutate gameplay state.
+  - `TryBasicAttack` behavior and logging semantics were not changed.
+- Updated `UIActionModeController`.
+  - BasicAttackTargeting now uses Inspector-bound `enemyUnits` and `CombatSystem.CanBasicAttack` to collect valid enemy current tiles.
+  - Valid basic attack target tiles are sent to the highlighter as red action highlights.
+  - Real attacks still call only `CombatSystem.TryBasicAttack(attacker, target)` after the player clicks a target.
+  - Invalid target clicks keep targeting active and preserve red highlights.
+  - Clearing selection during any action mode exits the mode, clears highlights, and restores movement input.
+- Updated `MovementDebugHighlighter`.
+  - Preserves selected blue and move green.
+  - Adds attack red as the current action highlight color.
+  - `ClearActionHighlights` clears green/red action highlights while preserving selected blue.
+  - `Clear` clears selected and action highlights together.
+- Updated selected-unit UI.
+  - The runtime HUD no longer creates or refreshes the independent top-left `SelectedUnitText`.
+  - `TurnBannerView` now receives the current selected unit.
+  - During player turn, selected unit display name takes priority in the Actor area.
+  - With no selected unit, the banner falls back to `Actor: Free Select`.
+  - Enemy turn remains `Turn: Enemy Turn`.
+- Updated selection behavior.
+  - Clicking a different living player unit still selects it.
+  - Clicking the currently selected player unit again clears selection.
+  - Clearing selection removes selected blue and any action highlights without changing HP, `HasMoved`, `HasActed`, cooldowns, formulas, AI, room, key, stairs, or level state.
+- Updated `BattleHUD.prefab` and `GridTest.unity`.
+  - Added the serialized enemy unit array used by red attack targeting.
+  - Bound the GridTest HUD/action-mode enemy array to the existing scene enemy unit instances.
+  - Did not move, delete, rename, or visually change gameplay objects or KayKit assets.
+- Still not added:
+  - Skill yellow highlight.
+  - Tile target skills.
+  - Skill Slot 1 or Slot 2 actions.
+  - Defend or Potion actions.
+  - FloatingHealthBar or world-space HP bars.
+  - Sound, VFX, Animator Controllers, formal icons, portraits, networking, or UI Toolkit.
+
+## Phase 13.5 red highlight manual Unity 6.3 test steps
+1. Open `Assets/_BoneThrone/Scenes/GridTest.unity`.
+2. Enter Play Mode and confirm there are no red Console errors.
+3. Click a living player unit; expected selected blue only, with no green or red action highlight.
+4. Confirm the old top-left independent selected-unit text is not shown.
+5. Confirm TurnBanner Actor shows the selected unit display name.
+6. Click the same selected player unit again; expected selection clears, blue clears, Prompt returns to free selection, and Actor returns to `Free Select`.
+7. Select a player unit and click `Basic Attack`; expected valid enemy target tiles turn red.
+8. Confirm out-of-range or invalid enemy targets do not turn red.
+9. Click a red enemy; expected existing D20 basic attack flow runs through `TryBasicAttack`, CombatLog updates, and red clears.
+10. While BasicAttackTargeting, click empty ground or an invalid target; expected no action consumption, Prompt `Invalid attack target`, red remains.
+11. While BasicAttackTargeting, cancel with right-click and Escape; expected red clears and selected blue remains.
+12. While BasicAttackTargeting, click `Move`; expected red clears and green move range appears.
+13. While BasicAttackTargeting, click `Skill Slot 0`; expected red clears and existing skill targeting still works.
+14. Re-run Move, Skill Slot 0, Enemy AI, Key/Stairs, and Console red-error regression checks.
+
 ## Rollback
 - Revert scripts:
   - `git checkout -- Assets/_BoneThrone/Scripts/UI/BattleHUDController.cs`
@@ -255,9 +366,12 @@ Implemented the first small Phase 13 battle HUD slice only. This change adds scr
   - `git checkout -- Assets/_BoneThrone/Scripts/UI/HeroPanelView.cs`
   - `git checkout -- Assets/_BoneThrone/Scripts/UI/SkillBarView.cs`
   - `git checkout -- Assets/_BoneThrone/Scripts/UI/UIActionModeController.cs`
+  - `git checkout -- Assets/_BoneThrone/Scripts/Movement/PlayerMovementController.cs`
+  - `git checkout -- Assets/_BoneThrone/Scripts/Movement/MovementDebugHighlighter.cs`
   - `git checkout -- Assets/_BoneThrone/Scripts/UI/CombatFeedbackView.cs`
   - `git checkout -- Assets/_BoneThrone/Scripts/UI/PromptView.cs`
   - `git checkout -- Assets/_BoneThrone/Scripts/Combat/CombatLog.cs`
+  - `git checkout -- Assets/_BoneThrone/Scripts/Combat/CombatSystem.cs`
 - Revert UI prefab:
   - `git checkout -- Assets/_BoneThrone/Prefabs/UI/BattleHUD.prefab`
 - Revert scene:

@@ -54,6 +54,7 @@ MonoBehaviour:
   progressionService: {fileID: 0}
   stairs: {fileID: 0}
   combatLog: {fileID: 0}
+  gridManager: {fileID: 0}
   combatSystem: {fileID: 0}
   skillSystem: {fileID: 0}
   playerUnits:
@@ -61,14 +62,15 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  enemyUnits: []
   actionModeController: {fileID: 100003}
   actionInputCamera: {fileID: 0}
   actionTargetLayerMask:
     serializedVersion: 2
     m_Bits: 4294967295
   movementControllerToSuspend: {fileID: 0}
+  movementHighlighter: {fileID: 0}
   turnBannerView: {fileID: 0}
-  selectedUnitText: {fileID: 0}
   heroPanels:
   - {fileID: 0}
   - {fileID: 0}
@@ -91,8 +93,10 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.UI.UIActionModeController
   selectionManager: {fileID: 0}
+  gridManager: {fileID: 0}
   combatSystem: {fileID: 0}
   skillSystem: {fileID: 0}
+  enemyUnits: []
   promptView: {fileID: 0}
   inputCamera: {fileID: 0}
   targetLayerMask:
@@ -100,3 +104,4 @@ MonoBehaviour:
     m_Bits: 4294967295
   maxRayDistance: 500
   movementControllerToSuspend: {fileID: 0}
+  highlighter: {fileID: 0}

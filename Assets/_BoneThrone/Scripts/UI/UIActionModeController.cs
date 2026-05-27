@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using BoneThrone.Combat;
+using BoneThrone.Grid;
 using BoneThrone.Movement;
 using BoneThrone.Skills;
 using BoneThrone.Turns;
@@ -16,23 +18,30 @@ namespace BoneThrone.UI
         private enum ActionMode
         {
             None,
+            MoveTargeting,
             BasicAttackTargeting,
             SkillTargeting
         }
 
         [SerializeField] private SelectionManager selectionManager;
+        [SerializeField] private GridManager gridManager;
         [SerializeField] private CombatSystem combatSystem;
         [SerializeField] private SkillSystem skillSystem;
+        [SerializeField] private Unit[] enemyUnits;
         [SerializeField] private PromptView promptView;
         [SerializeField] private Camera inputCamera;
         [SerializeField] private LayerMask targetLayerMask = ~0;
         [SerializeField] private float maxRayDistance = 500f;
         [SerializeField] private PlayerMovementController movementControllerToSuspend;
+        [SerializeField] private MovementDebugHighlighter highlighter;
 
         private ActionMode currentMode = ActionMode.None;
         private int pendingSkillSlotIndex = -1;
+        private readonly HashSet<GridPosition> currentMoveTargets = new HashSet<GridPosition>();
         private bool movementControllerWasEnabled;
         private bool movementInputSuspended;
+        private Unit lastHighlightedUnit;
+        private Tile lastHighlightedTile;
 
         public bool IsTargeting
         {
@@ -41,20 +50,26 @@ namespace BoneThrone.UI
 
         public void Configure(
             SelectionManager selection,
+            GridManager grid,
             CombatSystem combat,
             SkillSystem skills,
+            Unit[] enemies,
             PromptView prompt,
             Camera camera,
             LayerMask layerMask,
-            PlayerMovementController movementController)
+            PlayerMovementController movementController,
+            MovementDebugHighlighter tileHighlighter)
         {
             selectionManager = selection;
+            gridManager = grid;
             combatSystem = combat;
             skillSystem = skills;
+            enemyUnits = enemies;
             promptView = prompt;
             inputCamera = camera;
             targetLayerMask = layerMask;
             movementControllerToSuspend = movementController;
+            highlighter = tileHighlighter;
         }
 
         private void OnDisable()
@@ -64,6 +79,15 @@ namespace BoneThrone.UI
 
         private void Update()
         {
+            RefreshSelectedHighlight();
+
+            if (currentMode != ActionMode.None && (selectionManager == null || selectionManager.SelectedUnit == null))
+            {
+                ExitTargetingMode();
+                ShowPrompt("Select a unit first.", 1.5f);
+                return;
+            }
+
             if (currentMode == ActionMode.None)
             {
                 return;
@@ -86,6 +110,49 @@ namespace BoneThrone.UI
             }
 
             HandleTargetClick();
+        }
+
+        public void HandleMoveButtonClicked()
+        {
+            if (currentMode == ActionMode.MoveTargeting)
+            {
+                CancelTargeting();
+                return;
+            }
+
+            Unit selectedUnit = selectionManager != null ? selectionManager.SelectedUnit : null;
+            if (selectedUnit == null)
+            {
+                ShowPrompt("Select a unit first.");
+                return;
+            }
+
+            if (!selectedUnit.IsAlive)
+            {
+                ShowPrompt("Selected unit is dead.");
+                return;
+            }
+
+            UnitTurnState turnState = selectedUnit.GetComponent<UnitTurnState>();
+            if (turnState != null && turnState.HasMoved)
+            {
+                ShowPrompt("Selected unit has already moved.");
+                return;
+            }
+
+            if (movementControllerToSuspend == null)
+            {
+                ShowPrompt("Move unavailable: movement controller unbound.");
+                return;
+            }
+
+            if (gridManager == null)
+            {
+                ShowPrompt("Move unavailable: GridManager unbound.");
+                return;
+            }
+
+            EnterMoveTargeting();
         }
 
         public void HandleBasicAttackButtonClicked()
@@ -189,10 +256,32 @@ namespace BoneThrone.UI
             EnterSkillTargeting(slotIndex);
         }
 
+        private void EnterMoveTargeting()
+        {
+            ExitTargetingMode();
+            currentMode = ActionMode.MoveTargeting;
+            currentMoveTargets.Clear();
+
+            HashSet<GridPosition> positions = movementControllerToSuspend.GetReachablePositionsForSelected();
+            foreach (GridPosition position in positions)
+            {
+                currentMoveTargets.Add(position);
+            }
+
+            if (highlighter != null)
+            {
+                highlighter.ShowMoveRange(gridManager, currentMoveTargets);
+            }
+
+            SuspendMovementInput();
+            ShowPrompt("Select a move tile.");
+        }
+
         private void EnterBasicAttackTargeting()
         {
             ExitTargetingMode();
             currentMode = ActionMode.BasicAttackTargeting;
+            ShowBasicAttackTargets();
             SuspendMovementInput();
             ShowPrompt("Select an enemy target.");
         }
@@ -208,17 +297,55 @@ namespace BoneThrone.UI
 
         private void HandleTargetClick()
         {
-            Unit target = RaycastUnitUnderCursor();
+            Unit clickedUnit = RaycastUnitUnderCursor();
+            if (IsCurrentSelectedUnit(clickedUnit))
+            {
+                ClearSelectionAndExitModes();
+                return;
+            }
+
+            if (currentMode == ActionMode.MoveTargeting)
+            {
+                HandleMoveTargetClick(RaycastTileUnderCursor());
+                return;
+            }
+
             if (currentMode == ActionMode.BasicAttackTargeting)
             {
-                HandleBasicAttackTargetClick(target);
+                HandleBasicAttackTargetClick(clickedUnit);
                 return;
             }
 
             if (currentMode == ActionMode.SkillTargeting)
             {
-                HandleSkillTargetClick(target);
+                HandleSkillTargetClick(clickedUnit);
             }
+        }
+
+        private void HandleMoveTargetClick(Tile tile)
+        {
+            if (tile == null || !currentMoveTargets.Contains(tile.Position))
+            {
+                ShowPrompt("Invalid move target.");
+                return;
+            }
+
+            if (movementControllerToSuspend == null)
+            {
+                ShowPrompt("Move unavailable: movement controller unbound.");
+                return;
+            }
+
+            bool success = movementControllerToSuspend.TryMoveSelectedUnitTo(tile);
+            if (success)
+            {
+                ExitTargetingMode();
+                RefreshSelectedHighlight();
+                ClearPrompt();
+                return;
+            }
+
+            ShowPrompt("Invalid move target.");
         }
 
         private void HandleBasicAttackTargetClick(Unit target)
@@ -287,6 +414,58 @@ namespace BoneThrone.UI
             ShowPrompt("Invalid skill target.");
         }
 
+        private void ShowBasicAttackTargets()
+        {
+            if (highlighter == null)
+            {
+                return;
+            }
+
+            Unit attacker = selectionManager != null ? selectionManager.SelectedUnit : null;
+            if (attacker == null || combatSystem == null || enemyUnits == null)
+            {
+                highlighter.ClearActionHighlights();
+                return;
+            }
+
+            List<Tile> targetTiles = new List<Tile>();
+            for (int i = 0; i < enemyUnits.Length; i++)
+            {
+                Unit enemy = enemyUnits[i];
+                string reason;
+                if (enemy != null
+                    && enemy.gameObject.activeInHierarchy
+                    && enemy.CurrentTile != null
+                    && combatSystem.CanBasicAttack(attacker, enemy, out reason))
+                {
+                    targetTiles.Add(enemy.CurrentTile);
+                }
+            }
+
+            highlighter.ShowAttackTargets(targetTiles);
+        }
+
+        private bool IsCurrentSelectedUnit(Unit unit)
+        {
+            return unit != null && selectionManager != null && unit == selectionManager.SelectedUnit;
+        }
+
+        private void ClearSelectionAndExitModes()
+        {
+            if (selectionManager != null)
+            {
+                selectionManager.ClearSelection();
+            }
+
+            ExitTargetingMode();
+            if (highlighter != null)
+            {
+                highlighter.Clear();
+            }
+
+            ShowPrompt("Free Select.", 1.5f);
+        }
+
         private Unit RaycastUnitUnderCursor()
         {
             Camera cameraToUse = inputCamera != null ? inputCamera : Camera.main;
@@ -306,11 +485,32 @@ namespace BoneThrone.UI
             return hit.collider.GetComponentInParent<Unit>();
         }
 
+        private Tile RaycastTileUnderCursor()
+        {
+            Camera cameraToUse = inputCamera != null ? inputCamera : Camera.main;
+            if (cameraToUse == null)
+            {
+                ShowPrompt("Move unavailable: Camera unbound.");
+                return null;
+            }
+
+            Ray ray = cameraToUse.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
+            if (!Physics.Raycast(ray, out hit, maxRayDistance, targetLayerMask, QueryTriggerInteraction.Ignore))
+            {
+                return null;
+            }
+
+            return hit.collider.GetComponentInParent<Tile>();
+        }
+
         private void CancelTargeting()
         {
             ActionMode canceledMode = currentMode;
             ExitTargetingMode();
-            string message = canceledMode == ActionMode.SkillTargeting ? "Skill targeting canceled." : "Basic attack canceled.";
+            string message = canceledMode == ActionMode.MoveTargeting
+                ? "Move canceled."
+                : canceledMode == ActionMode.SkillTargeting ? "Skill targeting canceled." : "Basic attack canceled.";
             ShowPrompt(message, 1.5f);
         }
 
@@ -318,7 +518,39 @@ namespace BoneThrone.UI
         {
             currentMode = ActionMode.None;
             pendingSkillSlotIndex = -1;
+            currentMoveTargets.Clear();
+            if (highlighter != null)
+            {
+                highlighter.ClearActionHighlights();
+            }
+
             RestoreMovementInput();
+        }
+
+        private void RefreshSelectedHighlight()
+        {
+            Unit selectedUnit = selectionManager != null ? selectionManager.SelectedUnit : null;
+            Tile selectedTile = selectedUnit != null ? selectedUnit.CurrentTile : null;
+            if (selectedUnit == lastHighlightedUnit && selectedTile == lastHighlightedTile)
+            {
+                return;
+            }
+
+            lastHighlightedUnit = selectedUnit;
+            lastHighlightedTile = selectedTile;
+
+            if (highlighter == null)
+            {
+                return;
+            }
+
+            if (selectedTile == null)
+            {
+                highlighter.ClearSelected();
+                return;
+            }
+
+            highlighter.ShowSelected(selectedTile);
         }
 
         private void SuspendMovementInput()

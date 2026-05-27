@@ -1,5 +1,6 @@
 using BoneThrone.Core;
 using BoneThrone.Turns;
+using BoneThrone.Units;
 using TMPro;
 using UnityEngine;
 
@@ -17,7 +18,7 @@ namespace BoneThrone.UI
             turnText = text;
         }
 
-        public void Refresh(TurnManager turnManager)
+        public void Refresh(TurnManager turnManager, Unit selectedUnit)
         {
             if (turnText == null)
             {
@@ -30,10 +31,10 @@ namespace BoneThrone.UI
                 return;
             }
 
-            turnText.text = FormatTurnText(turnManager.CurrentPhase, turnManager.CurrentRole);
+            turnText.text = FormatTurnText(turnManager.CurrentPhase, turnManager.CurrentRole, selectedUnit);
         }
 
-        private static string FormatTurnText(TurnPhase phase, RoleId role)
+        private static string FormatTurnText(TurnPhase phase, RoleId role, Unit selectedUnit)
         {
             if (phase == TurnPhase.EnemyTurn)
             {
@@ -42,6 +43,14 @@ namespace BoneThrone.UI
 
             if (phase == TurnPhase.PlayerTurn)
             {
+                if (selectedUnit != null)
+                {
+                    string displayName = string.IsNullOrEmpty(selectedUnit.DisplayName)
+                        ? selectedUnit.RoleId.ToString()
+                        : selectedUnit.DisplayName;
+                    return "Turn: Player Turn | Actor: " + displayName;
+                }
+
                 if (role == RoleId.None)
                 {
                     return "Turn: Player Turn | Actor: Free Select";

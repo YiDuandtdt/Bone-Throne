@@ -13095,6 +13095,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1809320150}
     - target: {fileID: 100002, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
+      propertyPath: gridManager
+      value:
+      objectReference: {fileID: 1636105996}
+    - target: {fileID: 100002, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
       propertyPath: combatSystem
       value:
       objectReference: {fileID: 1809320146}
@@ -13103,6 +13107,46 @@ PrefabInstance:
       value:
       objectReference: {fileID: 1112835311}
     - target: {fileID: 100002, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
+      propertyPath: enemyUnits.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 100002, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
+      propertyPath: enemyUnits.Array.data[0]
+      value:
+      objectReference: {fileID: 1222606558}
+    - target: {fileID: 100002, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
+      propertyPath: enemyUnits.Array.data[1]
+      value:
+      objectReference: {fileID: 1322259595}
+    - target: {fileID: 100002, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
+      propertyPath: enemyUnits.Array.data[2]
+      value:
+      objectReference: {fileID: 1521655110}
+    - target: {fileID: 100002, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
+      propertyPath: enemyUnits.Array.data[3]
+      value:
+      objectReference: {fileID: 1758015819}
+    - target: {fileID: 100003, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
+      propertyPath: enemyUnits.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 100003, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
+      propertyPath: enemyUnits.Array.data[0]
+      value:
+      objectReference: {fileID: 1222606558}
+    - target: {fileID: 100003, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
+      propertyPath: enemyUnits.Array.data[1]
+      value:
+      objectReference: {fileID: 1322259595}
+    - target: {fileID: 100003, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
+      propertyPath: enemyUnits.Array.data[2]
+      value:
+      objectReference: {fileID: 1521655110}
+    - target: {fileID: 100003, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
+      propertyPath: enemyUnits.Array.data[3]
+      value:
+      objectReference: {fileID: 1758015819}
+    - target: {fileID: 100002, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
       propertyPath: actionInputCamera
       value:
       objectReference: {fileID: 1553934667}
@@ -13110,6 +13154,10 @@ PrefabInstance:
       propertyPath: movementControllerToSuspend
       value:
       objectReference: {fileID: 510826840}
+    - target: {fileID: 100002, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
+      propertyPath: movementHighlighter
+      value:
+      objectReference: {fileID: 510826842}
     - target: {fileID: 100002, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
       propertyPath: turnManager
       value: 
