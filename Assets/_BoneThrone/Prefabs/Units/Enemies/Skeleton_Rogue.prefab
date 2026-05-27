@@ -33,7 +33,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 230010}
+  - {fileID: 7762890709775388619}
+  - {fileID: 366627}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &230002
@@ -157,8 +158,54 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 7a3637b457e0c7c4993e13be53eb52f7, type: 3}
---- !u!4 &230010 stripped
+--- !u!4 &7762890709775388619 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7762890709775158706, guid: 7a3637b457e0c7c4993e13be53eb52f7, type: 3}
   m_PrefabInstance: {fileID: 230009}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &230050
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 230001}
+    m_Modifications:
+    - target: {fileID: 400000, guid: 7fe6f9b5471e4b7db4c0f4cce19c7a42, type: 3}
+      propertyPath: m_Name
+      value: EnemyFloatingHealthBar
+      objectReference: {fileID: 0}
+    - target: {fileID: 400001, guid: 7fe6f9b5471e4b7db4c0f4cce19c7a42, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400001, guid: 7fe6f9b5471e4b7db4c0f4cce19c7a42, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400001, guid: 7fe6f9b5471e4b7db4c0f4cce19c7a42, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400001, guid: 7fe6f9b5471e4b7db4c0f4cce19c7a42, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 400001, guid: 7fe6f9b5471e4b7db4c0f4cce19c7a42, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400003, guid: 7fe6f9b5471e4b7db4c0f4cce19c7a42, type: 3}
+      propertyPath: unit
+      value: 
+      objectReference: {fileID: 230002}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7fe6f9b5471e4b7db4c0f4cce19c7a42, type: 3}
+--- !u!224 &366627 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 400001, guid: 7fe6f9b5471e4b7db4c0f4cce19c7a42, type: 3}
+  m_PrefabInstance: {fileID: 230050}
   m_PrefabAsset: {fileID: 0}

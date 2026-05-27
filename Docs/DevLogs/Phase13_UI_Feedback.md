@@ -594,6 +594,139 @@ Implemented the first small Phase 13 battle HUD slice only. This change adds scr
 8. Use Skill Slot 0 and Mage Fireball; expected existing skill damage and splash damage rows remain unchanged.
 9. Re-run Move, Basic Attack red highlight, Skill yellow highlight, Enemy AI, Key/Stairs, and Console red-error checks.
 
+## Phase 13.7 enemy floating HP bar patch notes
+- Added `Assets/_BoneThrone/Scripts/UI/EnemyFloatingHealthBarView.cs`.
+  - Reads only `Unit.RuntimeState.CurrentHp`, `Unit.Stats.GetClampedMaxHp()`, and alive/dead state.
+  - Falls back to `GetComponentInParent<Unit>()` when the Unit reference is not manually bound.
+  - Uses lightweight polling and only refreshes the fill amount when HP, max HP, or alive state changes.
+  - Uses `LateUpdate` billboard rotation toward the configured camera, with `Camera.main` fallback.
+  - Hides when references are missing or the unit is dead.
+  - Does not modify HP, Unit state, death logic, combat, skills, AI, room, key, stairs, level, networking, sound, VFX, or animation.
+- Added `Assets/_BoneThrone/Prefabs/UI/EnemyFloatingHealthBar.prefab`.
+  - World-space Canvas.
+  - `Background` Image.
+  - `Fill` Image.
+  - No TMP number display.
+  - No GraphicRaycaster.
+  - All Image `raycastTarget` values are disabled.
+  - Uses simple dark background and green fill placeholder colors.
+- Updated ordinary enemy prefabs:
+  - `Skeleton_Minion.prefab`
+  - `Skeleton_Warrior.prefab`
+  - `Skeleton_Mage.prefab`
+  - `Skeleton_Rogue.prefab`
+- Enemy prefab changes:
+  - Added `EnemyFloatingHealthBar` as a child under each enemy root.
+  - Local position uses `{x:0,y:2.1,z:0}` for all four ordinary enemies.
+  - The HP bar `unit` reference is bound to the root `Unit` component, with runtime fallback still available.
+  - Visual child prefab instances were not modified.
+  - MeshCollider, Rigidbody, Unit stats, Unit IDs, and gameplay components were not modified.
+- Not changed:
+  - `Skeleton_Golem`.
+  - Player prefabs.
+  - Enemy visual resource choices.
+  - `CombatSystem`, `DamageResolver`, `SkillSystem`, `SkillEffectExecutor`, EnemyAI, Room, Level, Key, Stairs.
+  - Damage formulas, death logic, UnitRuntimeState data structure, sound, VFX, Animator, networking, or UI Toolkit.
+- Scene note:
+  - `GridTest.unity` was not modified in this slice; scene enemy instances should inherit the prefab child unless they have blocking prefab overrides.
+
+## Phase 13.7 manual Unity 6.3 test steps
+1. Open `Assets/_BoneThrone/Scenes/GridTest.unity`.
+2. Let Unity import the new script and prefab, then confirm there are no red compile errors.
+3. Enter Play Mode.
+4. Confirm `Skeleton_Minion` shows a floating HP bar.
+5. Confirm `Skeleton_Warrior` shows a floating HP bar.
+6. Confirm `Skeleton_Mage` shows a floating HP bar.
+7. Confirm `Skeleton_Rogue` shows a floating HP bar.
+8. Rotate or move the Game view camera if available; expected bars remain camera-facing/readable.
+9. Basic Attack an enemy; expected that enemy HP bar fill decreases.
+10. Use Skill Slot 0; expected target HP bar fill decreases.
+11. Use Mage Fireball with splash targets; expected multiple enemy HP bars update.
+12. Kill an enemy; expected its HP bar hides while existing death logic and CombatLog death row still work.
+13. Confirm HP bars do not block Tile or Unit clicks.
+14. Re-run Move, Basic Attack red highlight, Skill yellow highlight, Enemy AI, Key/Stairs, and Console red-error checks.
+
+## Phase 13.7 HP bar fix and GridTest camera patch notes
+- Fixed HP bar placement strategy.
+  - The HP bar now uses a script-controlled world position: `unit.transform.position + worldOffset`.
+  - Default `worldOffset` is `{x:0,y:2.1,z:0}`.
+  - Enemy prefab nested HP bar local position is kept at `{x:0,y:0,z:0}` so local transform offsets do not fight the script-controlled world offset.
+  - `EnemyFloatingHealthBarView` does not reset to the unit foot position; it applies the world offset every `LateUpdate`.
+- Fixed HP bar fill refresh.
+  - The fill image uses `Image.Type.Filled` with horizontal fill.
+  - Fill updates through `fillImage.fillAmount = CurrentHp / MaxHp`.
+  - Current HP is read from `Unit.RuntimeState.CurrentHp`.
+  - Max HP is read from `Unit.Stats.GetClampedMaxHp()`.
+  - The ratio is clamped to `0..1`.
+  - Damage and future healing are reflected through polling; no CombatLog or damage event dependency was added.
+  - Dead or missing-unit bars are hidden without changing death logic.
+- Fixed billboard behavior.
+  - `EnemyFloatingHealthBarView` uses the configured camera or `Camera.main`.
+  - Billboard rotation now uses the camera rotation directly.
+  - Billboard rotation only changes rotation; vertical offset is handled separately.
+- Kept raycast safety.
+  - The world-space Canvas has `m_ReceivesEvents=0`.
+  - No GraphicRaycaster is present on the HP bar prefab.
+  - Background and Fill images keep `raycastTarget=false`.
+- Updated GridTest camera for temporary tactics testing.
+  - `Main Camera` moved to `{x:-6,y:18,z:-6}`.
+  - Rotation hint is `{x:60,y:45,z:0}` for a diagonal top-down tactics view.
+  - Field of view remains `60`.
+  - No camera controller was added.
+- Enemy prefab follow-up:
+  - `Skeleton_Minion`, `Skeleton_Warrior`, `Skeleton_Mage`, and `Skeleton_Rogue` still have the HP bar under the enemy root.
+  - HP bars remain outside the `Visual` child prefab.
+  - Visuals, MeshColliders, Rigidbodies, Unit stats, Unit IDs, and gameplay components were not modified.
+- Not changed:
+  - `Skeleton_Golem`.
+  - Player prefabs.
+  - CombatSystem, DamageResolver, SkillSystem, SkillEffectExecutor, EnemyAI, Room, Level, Key, Stairs.
+  - Damage formulas, death logic, UnitRuntimeState data structure, sound, VFX, Animator, networking, or UI Toolkit.
+
+## Phase 13.7 HP bar fix manual Unity 6.3 test steps
+1. Open `Assets/_BoneThrone/Scenes/GridTest.unity`.
+2. Let Unity import script/prefab changes and confirm there are no red compile errors.
+3. Enter Play Mode.
+4. Confirm the GridTest camera shows a diagonal top-down tactics view of the combat area.
+5. Confirm each ordinary enemy HP bar appears above the model, not at the feet.
+6. Confirm each HP bar faces the camera and remains readable while testing.
+7. Basic Attack an enemy; expected its HP bar fill decreases immediately.
+8. Use Skill Slot 0; expected target HP bar fill decreases.
+9. Use Mage Fireball; expected primary and splash target HP bars update.
+10. Kill an enemy; expected its HP bar hides without changing death/CombatLog behavior.
+11. Confirm HP bars do not block Tile, Unit, attack, or skill raycasts.
+12. Re-run Move, Basic Attack red highlight, Skill yellow highlight, Enemy AI, Key/Stairs, and Console red-error checks.
+
+## Phase 13.7 HP bar fill refresh patch notes
+- Fixed the enemy HP bar fill refresh path.
+  - The bar still reads only `Unit.RuntimeState.CurrentHp` and `Unit.Stats.GetClampedMaxHp()`.
+  - The view now resolves the scene parent `Unit` on enable/update and replaces stale serialized Unit references if the parent instance differs.
+  - The view finds the child Image named `Fill` if the serialized `fillImage` reference is missing.
+  - The prefab now serializes `fillRect` explicitly.
+- Replaced `Image.fillAmount` with a single RectTransform-based fill path.
+  - `Image.fillAmount` was not visibly shrinking the current no-sprite placeholder Image reliably in Play Mode.
+  - The fill now uses `fillRect.anchorMax.x = hpRatio`.
+  - `fillImage.type` is kept as `Simple`.
+  - No parallel fillAmount path remains.
+- The existing position and billboard behavior remain unchanged.
+  - World position still uses `unit.transform.position + worldOffset`.
+  - Billboard still copies the camera rotation.
+  - HP bars still do not modify HP or gameplay state.
+- Not changed:
+  - CombatSystem, DamageResolver, SkillSystem, SkillEffectExecutor.
+  - Damage formulas, death logic, UnitRuntimeState data structure.
+  - Skeleton_Golem, player prefabs, EnemyAI, Room, Level, Key, Stairs.
+
+## Phase 13.7 HP bar fill refresh manual Unity 6.3 test steps
+1. Open `Assets/_BoneThrone/Scenes/GridTest.unity`.
+2. Enter Play Mode and confirm there are no red Console errors.
+3. Inspect an enemy HP bar and confirm its Fill child is visible at full HP.
+4. Basic Attack an enemy; expected the Fill width shrinks immediately.
+5. Use Skill Slot 0 on an enemy; expected the Fill width shrinks immediately.
+6. Use Mage Fireball with splash targets; expected multiple enemy Fill widths update.
+7. Kill an enemy; expected its HP bar hides.
+8. Confirm HP bar position, camera-facing behavior, and click-through behavior remain correct.
+
 ## Rollback
 - Revert scripts:
   - `git checkout -- Assets/_BoneThrone/Scripts/UI/BattleHUDController.cs`
@@ -613,11 +746,20 @@ Implemented the first small Phase 13 battle HUD slice only. This change adds scr
   - `git checkout -- Assets/_BoneThrone/Scripts/Skills/RangerSkillEffects.cs`
   - `git checkout -- Assets/_BoneThrone/Scripts/Skills/MageSkillEffects.cs`
   - `git checkout -- Assets/_BoneThrone/Scripts/Skills/BarbarianSkillEffects.cs`
+  - `git checkout -- Assets/_BoneThrone/Scripts/UI/EnemyFloatingHealthBarView.cs`
 - Revert UI prefab:
   - `git checkout -- Assets/_BoneThrone/Prefabs/UI/BattleHUD.prefab`
+  - `git checkout -- Assets/_BoneThrone/Prefabs/UI/EnemyFloatingHealthBar.prefab`
+- Revert ordinary enemy prefabs:
+  - `git checkout -- Assets/_BoneThrone/Prefabs/Units/Enemies/Skeleton_Minion.prefab`
+  - `git checkout -- Assets/_BoneThrone/Prefabs/Units/Enemies/Skeleton_Warrior.prefab`
+  - `git checkout -- Assets/_BoneThrone/Prefabs/Units/Enemies/Skeleton_Mage.prefab`
+  - `git checkout -- Assets/_BoneThrone/Prefabs/Units/Enemies/Skeleton_Rogue.prefab`
 - Revert scene:
   - `git checkout -- Assets/_BoneThrone/Scenes/GridTest.unity`
 - Remove this DevLog if reverting the whole phase slice:
   - `git checkout -- Docs/DevLogs/Phase13_UI_Feedback.md`
 - Remove the structured skill result files if reverting Phase 13.6-B:
   - `git rm Assets/_BoneThrone/Scripts/Skills/SkillEffectResult.cs Assets/_BoneThrone/Scripts/Skills/SkillEffectResult.cs.meta`
+- Remove the floating HP bar files if reverting Phase 13.7:
+  - `git rm Assets/_BoneThrone/Scripts/UI/EnemyFloatingHealthBarView.cs Assets/_BoneThrone/Scripts/UI/EnemyFloatingHealthBarView.cs.meta Assets/_BoneThrone/Prefabs/UI/EnemyFloatingHealthBar.prefab Assets/_BoneThrone/Prefabs/UI/EnemyFloatingHealthBar.prefab.meta`
