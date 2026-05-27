@@ -408,6 +408,100 @@ Implemented the first small Phase 13 battle HUD slice only. This change adds scr
 14. Enter SkillTargeting, then click the currently selected player unit; expected selection clears and all blue/green/red/yellow highlights clear.
 15. Re-run Move, Basic Attack, Enemy AI, Key/Stairs, and Console red-error regression checks.
 
+## Phase 13.6 Skill feedback CombatLog patch notes
+- Extended `CombatLog` with skill-specific entries:
+  - `SkillUse`
+  - `SkillEffect`
+  - `SkillRejected`
+  - `SkillCooldown`
+  - Skill death continues to reuse the existing `Death` entry.
+- Added `CombatLog` methods for skill feedback:
+  - `LogSkillRejected`
+  - `LogSkillUse`
+  - `LogSkillEffect`
+  - `LogSkillCooldown`
+- Updated `SkillSystem`.
+  - Added an Inspector-configurable `CombatLog` reference.
+  - Rejected skill use keeps the existing `Debug.LogWarning` and now also pushes the reason into CombatLog when bound.
+  - Successful skill use now logs skill name, caster, target, effect summary, target remaining HP, death, and cooldown after the existing effect/cooldown/acted logic runs.
+  - `TryUseSkill` validation order, effect execution, cooldown start, `MarkActed`, and return value semantics were not changed.
+  - If `CombatLog` is unbound, skills continue to execute with the existing Console logs.
+- Updated `GridTest.unity`.
+  - Bound the existing scene `CombatLog` to the existing scene `SkillSystem`.
+  - Did not move, delete, rename, or visually change gameplay objects.
+- UI responsibility remains unchanged.
+  - `UIActionModeController` still only calls `SkillSystem.TryUseSkill`.
+  - `CombatFeedbackView` still only displays `CombatLog.Entry.Message`.
+  - No UI script directly writes CombatLog or reads skill internals.
+- Not changed:
+  - SkillData ScriptableObjects.
+  - Skill asset names.
+  - Skill values.
+  - Skill damage formulas.
+  - Skill effect formulas.
+  - Skill cooldown rules.
+  - Skill unlock rules.
+  - `SkillEffectExecutor`.
+  - Enemy AI, Room, Level, Key, Stairs, visuals, sound, VFX, Animator, networking, or UI Toolkit.
+
+## Phase 13.6 manual Unity 6.3 test steps
+1. Open `Assets/_BoneThrone/Scenes/GridTest.unity`.
+2. Enter Play Mode and confirm there are no red Console errors.
+3. Select a player unit with a ready Skill Slot 0.
+4. Click `Skill Slot 0`; expected yellow target highlights still appear.
+5. Click a valid yellow target; expected CombatLog UI shows skill name, caster, target, effect summary, target HP, and cooldown if cooldown is greater than 0.
+6. Use a skill to kill a target; expected CombatLog UI also shows the existing death entry.
+7. Click an invalid skill target; expected CombatLog UI shows a skill rejected reason and the action is not consumed.
+8. Confirm HP, acted state, cooldown display, and yellow highlight cleanup are unchanged.
+9. Re-run Basic Attack CombatLog: expected D20, hit/miss, damage, death still appear.
+10. Re-run Move, Basic Attack red highlight, Skill yellow highlight, Enemy AI, Key/Stairs, and Console red-error checks.
+
+## Phase 13.6-A CombatLog UI polish and result-only filtering patch notes
+- Updated CombatLog UI runtime layout.
+  - Runtime `CombatFeedback` area is taller: `560 x 300`.
+  - TMP rich text is enabled for generated HUD text.
+  - `CombatFeedbackView` enables rich text and uses increased line spacing for more readable rows.
+  - CombatLog background and text remain non-interactive and keep `raycastTarget=false`.
+- Updated CombatLog UI semantics to result-only entries.
+  - Basic attack attempts / D20 details stay in Console only.
+  - Basic attack rejected entries stay in Console only.
+  - Basic attack miss entries stay in Console only for this polish slice.
+  - Skill rejected entries stay in Console only.
+  - Skill use process entries stay in Console only.
+  - Skill cooldown entries stay in Console only.
+  - CombatLog UI shows basic attack damage, skill effect/damage results, and death.
+- Updated result formatting.
+  - Basic attack damage format: `Fighter attacked Skeleton Warrior, dealt 6 damage.`
+  - Skill result format uses existing effect summary without parsing it: `Mage used Fireball on Skeleton Mage. Mage Fireball dealt guaranteed damage 8. TargetHP=2.`
+  - Death format uses TMP rich text: `<b>Skeleton Mage died.</b>`.
+  - Display names prefer `Unit.DisplayName`, then `RoleId`, then `Unit {id}`.
+- Updated `SkillSystem` logging.
+  - Skill success no longer adds a separate skill-use process entry to the HUD.
+  - Skill cooldown no longer appears in the HUD.
+  - Skill rejected no longer appears in the HUD.
+  - `TryUseSkill` validation order, effect execution, cooldown, `MarkActed`, return values, damage formulas, effect formulas, cooldown rules, and unlock rules were not changed.
+- Not changed in this slice:
+  - Group / splash structured result logging.
+  - `SkillEffectExecutor`.
+  - Fighter/Ranger/Mage/Barbarian skill effect files.
+  - `DamageResolver`.
+  - SkillData ScriptableObjects, skill assets, skill values, Enemy AI, Room, Level, Key, Stairs, visuals, sound, VFX, Animator, networking, or UI Toolkit.
+- Follow-up:
+  - Phase 13.6-B should add structured feedback for group/splash skill damage instead of parsing effect summary strings.
+
+## Phase 13.6-A manual Unity 6.3 test steps
+1. Open `Assets/_BoneThrone/Scenes/GridTest.unity`.
+2. Enter Play Mode and confirm there are no red Console errors.
+3. Confirm the CombatLog panel is taller and log rows have more comfortable spacing.
+4. Basic Attack a valid enemy; expected CombatLog UI shows only the damage result, not D20/attempt details.
+5. Cause a Basic Attack death; expected CombatLog UI shows a bold death entry.
+6. Use Skill Slot 0 on a valid enemy; expected CombatLog UI shows the skill effect/damage result.
+7. Cause a skill death; expected CombatLog UI shows a bold death entry.
+8. Try an invalid skill target; expected Prompt/Console feedback only, no CombatLog UI entry.
+9. Confirm skill cooldown does not appear in CombatLog UI.
+10. Confirm Console still contains debugging information for rejected/process entries.
+11. Re-run Move, Basic Attack red highlight, Skill yellow highlight, Enemy AI, Key/Stairs, and Console red-error checks.
+
 ## Rollback
 - Revert scripts:
   - `git checkout -- Assets/_BoneThrone/Scripts/UI/BattleHUDController.cs`

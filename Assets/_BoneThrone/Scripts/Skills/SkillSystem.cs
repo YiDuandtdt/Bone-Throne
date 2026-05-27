@@ -16,6 +16,7 @@ namespace BoneThrone.Skills
         [SerializeField] private SkillEffectExecutor effectExecutor;
         [SerializeField] private TurnManager turnManager;
         [SerializeField] private ActionPermissionService actionPermissionService;
+        [SerializeField] private CombatLog combatLog;
 
         public bool CanUseSkillOnTarget(Unit caster, Unit target, int slotIndex, out string reason)
         {
@@ -112,6 +113,22 @@ namespace BoneThrone.Skills
             runtime.StartCooldown(slotIndex);
             MarkCasterActed(caster);
 
+            int remainingHp = target.RuntimeState != null ? target.RuntimeState.CurrentHp : 0;
+            int cooldown = runtime.GetCooldown(slotIndex);
+            if (combatLog != null)
+            {
+                combatLog.LogSkillEffect(caster, target, skill, effectResult, remainingHp);
+                if (targetDied)
+                {
+                    combatLog.LogDeath(target);
+                }
+
+                if (cooldown > 0)
+                {
+                    combatLog.LogSkillCooldown(caster, skill, cooldown);
+                }
+            }
+
             Debug.Log(
                 "SkillSystem: unit "
                 + caster.UnitId
@@ -124,7 +141,7 @@ namespace BoneThrone.Skills
                 + ". TargetDied="
                 + targetDied
                 + " Cooldown="
-                + runtime.GetCooldown(slotIndex)
+                + cooldown
                 + ".",
                 this);
 
@@ -252,6 +269,12 @@ namespace BoneThrone.Skills
 
         private void LogRejected(string reason, Object context)
         {
+            if (combatLog != null)
+            {
+                combatLog.LogSkillRejected(reason, context);
+                return;
+            }
+
             Debug.LogWarning("Skill rejected: " + reason, context);
         }
     }

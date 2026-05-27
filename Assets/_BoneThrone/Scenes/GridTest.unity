@@ -27329,6 +27329,7 @@ MonoBehaviour:
   effectExecutor: {fileID: 1112835313}
   turnManager: {fileID: 916906059}
   actionPermissionService: {fileID: 916906060}
+  combatLog: {fileID: 1809320150}
 --- !u!4 &1112835312
 Transform:
   m_ObjectHideFlags: 0

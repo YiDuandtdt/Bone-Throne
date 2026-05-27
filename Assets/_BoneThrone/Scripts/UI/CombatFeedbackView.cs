@@ -12,12 +12,14 @@ namespace BoneThrone.UI
     {
         [SerializeField] private TMP_Text logText;
         [SerializeField] private int maxVisibleEntries = 5;
+        [SerializeField] private float lineSpacing = 8f;
 
         private readonly List<string> visibleEntries = new List<string>();
 
         public void Bind(TMP_Text text)
         {
             logText = text;
+            ConfigureText();
             Render();
         }
 
@@ -85,7 +87,20 @@ namespace BoneThrone.UI
                 return;
             }
 
+            ConfigureText();
             logText.text = string.Join("\n", visibleEntries);
+        }
+
+        private void ConfigureText()
+        {
+            if (logText == null)
+            {
+                return;
+            }
+
+            logText.richText = true;
+            logText.lineSpacing = lineSpacing;
+            logText.raycastTarget = false;
         }
     }
 }
