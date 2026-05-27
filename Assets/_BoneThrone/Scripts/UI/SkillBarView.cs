@@ -7,10 +7,11 @@ using UnityEngine.UI;
 namespace BoneThrone.UI
 {
     /// <summary>
-    /// Displays the first prototype action bar. Basic Attack and Skill Slot 0 emit UI intent events.
+    /// Displays the first prototype action bar. Move, Basic Attack, and Skill Slot 0 emit UI intent events.
     /// </summary>
     public sealed class SkillBarView : MonoBehaviour
     {
+        [SerializeField] private TMP_Text moveText;
         [SerializeField] private TMP_Text basicAttackText;
         [SerializeField] private TMP_Text slot0Text;
         [SerializeField] private TMP_Text slot1Text;
@@ -19,13 +20,16 @@ namespace BoneThrone.UI
         [SerializeField] private TMP_Text potionText;
         [SerializeField] private Button[] actionButtons;
 
+        private Button moveButton;
         private Button basicAttackButton;
         private Button slot0Button;
 
+        public event System.Action MoveClicked;
         public event System.Action BasicAttackClicked;
         public event System.Action SkillSlot0Clicked;
 
         public void Bind(
+            TMP_Text move,
             TMP_Text basicAttack,
             TMP_Text slot0,
             TMP_Text slot1,
@@ -34,6 +38,7 @@ namespace BoneThrone.UI
             TMP_Text potion,
             Button[] buttons)
         {
+            moveText = move;
             basicAttackText = basicAttack;
             slot0Text = slot0;
             slot1Text = slot1;
@@ -41,8 +46,10 @@ namespace BoneThrone.UI
             defendText = defend;
             potionText = potion;
             actionButtons = buttons;
-            basicAttackButton = actionButtons != null && actionButtons.Length > 0 ? actionButtons[0] : null;
-            slot0Button = actionButtons != null && actionButtons.Length > 1 ? actionButtons[1] : null;
+            moveButton = actionButtons != null && actionButtons.Length > 0 ? actionButtons[0] : null;
+            basicAttackButton = actionButtons != null && actionButtons.Length > 1 ? actionButtons[1] : null;
+            slot0Button = actionButtons != null && actionButtons.Length > 2 ? actionButtons[2] : null;
+            ConfigureMoveButton();
             ConfigureBasicAttackButton();
             ConfigureSlot0Button();
             DisablePlaceholderButtons();
@@ -51,9 +58,11 @@ namespace BoneThrone.UI
         public void Refresh(Unit selectedUnit)
         {
             DisablePlaceholderButtons();
+            SetMoveInteractable(true);
             SetBasicAttackInteractable(true);
             SetSlot0Interactable(true);
 
+            SetText(moveText, selectedUnit != null ? "Move\nTarget" : "Move\nSelect Unit");
             SetText(basicAttackText, selectedUnit != null ? "Basic Attack\nTarget" : "Basic Attack\nSelect Unit");
             RefreshSlot0(selectedUnit);
             SetText(slot1Text, "Slot 1\nPlaceholder");
@@ -89,6 +98,18 @@ namespace BoneThrone.UI
             slot0Text.text = skill.DisplayName + "\n" + state;
         }
 
+        private void ConfigureMoveButton()
+        {
+            if (moveButton == null)
+            {
+                return;
+            }
+
+            moveButton.onClick.RemoveListener(HandleMoveClicked);
+            moveButton.onClick.AddListener(HandleMoveClicked);
+            SetMoveInteractable(true);
+        }
+
         private void ConfigureBasicAttackButton()
         {
             if (basicAttackButton == null)
@@ -113,6 +134,14 @@ namespace BoneThrone.UI
             SetSlot0Interactable(true);
         }
 
+        private void HandleMoveClicked()
+        {
+            if (MoveClicked != null)
+            {
+                MoveClicked();
+            }
+        }
+
         private void HandleBasicAttackClicked()
         {
             if (BasicAttackClicked != null)
@@ -126,6 +155,20 @@ namespace BoneThrone.UI
             if (SkillSlot0Clicked != null)
             {
                 SkillSlot0Clicked();
+            }
+        }
+
+        private void SetMoveInteractable(bool interactable)
+        {
+            if (moveButton == null)
+            {
+                return;
+            }
+
+            moveButton.interactable = interactable;
+            if (moveButton.targetGraphic != null)
+            {
+                moveButton.targetGraphic.raycastTarget = interactable;
             }
         }
 
@@ -168,7 +211,7 @@ namespace BoneThrone.UI
             {
                 if (actionButtons[i] != null)
                 {
-                    bool isSupportedAction = i == 0 || i == 1;
+                    bool isSupportedAction = i == 0 || i == 1 || i == 2;
                     actionButtons[i].interactable = isSupportedAction;
                     if (actionButtons[i].targetGraphic != null)
                     {
