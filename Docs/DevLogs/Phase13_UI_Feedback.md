@@ -558,6 +558,42 @@ Implemented the first small Phase 13 battle HUD slice only. This change adds scr
 10. Confirm cooldown, acted state, HP refresh, selected blue, move green, attack red, and skill yellow behavior are unchanged.
 11. Re-run Basic Attack result-only CombatLog, Enemy AI, Key/Stairs, and Console red-error checks.
 
+## Phase 13.6-C CombatLog final readability patch notes
+- Increased the runtime CombatLog panel again.
+  - Runtime `CombatFeedback` area is now `580 x 380`.
+  - `CombatFeedbackView` default visible entry count is now `10`.
+  - Existing TMP rich text, line spacing, and non-interactive `raycastTarget=false` behavior are preserved.
+- Added concise Basic Attack D20 UI feedback.
+  - The long attack attempt remains Console-only.
+  - CombatLog UI now gets a compact roll row: `Fighter rolled D20: 15 + 5 = 20.`
+  - This uses the already-computed roll and attack modifier from `CombatSystem`; no formula or roll calculation changed.
+- Updated Basic Attack damage result format.
+  - Damage rows now include remaining HP: `Fighter attacked Skeleton Warrior, dealt 6 damage. TargetHP=8.`
+  - Death remains a separate rich-text bold row.
+- Existing filtering remains.
+  - Rejected, skill rejected, cooldown, and miss entries stay out of the CombatLog UI.
+  - Skill damage and splash damage result-only rows are unchanged.
+- Not changed in this slice:
+  - Basic attack hit formula.
+  - D20 roll calculation.
+  - Damage formula.
+  - Death logic.
+  - Skill formulas.
+  - `DamageResolver`.
+  - `SkillEffectExecutor`.
+  - SkillData ScriptableObjects, Enemy AI, Room, Level, Key, Stairs, visuals, Floating HP Bar, networking, or UI Toolkit.
+
+## Phase 13.6-C manual Unity 6.3 test steps
+1. Open `Assets/_BoneThrone/Scenes/GridTest.unity`.
+2. Enter Play Mode and confirm there are no red Console errors.
+3. Confirm the CombatLog panel is taller and can show more entries.
+4. Basic Attack a valid enemy; expected one concise D20 row and one damage row with `TargetHP=`.
+5. Confirm the old long attack attempt text remains Console-only and does not appear in the UI.
+6. Cause a Basic Attack death; expected the damage row plus a separate bold death row.
+7. Confirm rejected, skill rejected, cooldown, and miss entries do not appear in the UI.
+8. Use Skill Slot 0 and Mage Fireball; expected existing skill damage and splash damage rows remain unchanged.
+9. Re-run Move, Basic Attack red highlight, Skill yellow highlight, Enemy AI, Key/Stairs, and Console red-error checks.
+
 ## Rollback
 - Revert scripts:
   - `git checkout -- Assets/_BoneThrone/Scripts/UI/BattleHUDController.cs`

@@ -84,6 +84,7 @@ namespace BoneThrone.Combat
             if (combatLog != null)
             {
                 combatLog.LogAttackAttempt(attacker, target, roll, attackModifier, defense);
+                combatLog.LogBasicAttackRoll(attacker, roll, attackModifier);
             }
 
             bool hit = attackTotal >= defense;

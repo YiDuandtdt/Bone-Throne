@@ -11,7 +11,7 @@ namespace BoneThrone.UI
     public sealed class CombatFeedbackView : MonoBehaviour
     {
         [SerializeField] private TMP_Text logText;
-        [SerializeField] private int maxVisibleEntries = 5;
+        [SerializeField] private int maxVisibleEntries = 10;
         [SerializeField] private float lineSpacing = 8f;
 
         private readonly List<string> visibleEntries = new List<string>();

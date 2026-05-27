@@ -322,7 +322,7 @@ namespace BoneThrone.UI
 
             skillBarView = CreateSkillBar();
 
-            combatFeedbackView = CreateView<CombatFeedbackView>("CombatFeedback", new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(560f, 300f), new Vector2(-18f, 0f));
+            combatFeedbackView = CreateView<CombatFeedbackView>("CombatFeedback", new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(580f, 380f), new Vector2(-18f, 0f));
             combatFeedbackView.Bind(CreateText(combatFeedbackView.transform, "CombatLogText", "Combat Log: No combat yet", 18, FontStyles.Normal));
         }
 

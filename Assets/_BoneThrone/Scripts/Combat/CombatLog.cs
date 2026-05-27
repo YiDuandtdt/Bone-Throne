@@ -64,6 +64,20 @@ namespace BoneThrone.Combat
             Debug.Log(message, attacker);
         }
 
+        public void LogBasicAttackRoll(Unit attacker, int roll, int attackModifier)
+        {
+            string message = GetDisplayName(attacker)
+                + " rolled D20: "
+                + roll
+                + " + "
+                + attackModifier
+                + " = "
+                + (roll + attackModifier)
+                + ".";
+            AddEntry(EntryType.AttackAttempt, message);
+            Debug.Log(message, attacker);
+        }
+
         public void LogHit(Unit attacker, Unit target, int damage, int remainingHp)
         {
             string message = GetDisplayName(attacker)
@@ -71,7 +85,9 @@ namespace BoneThrone.Combat
                 + GetDisplayName(target)
                 + ", dealt "
                 + Mathf.Max(0, damage)
-                + " damage.";
+                + " damage. TargetHP="
+                + Mathf.Max(0, remainingHp)
+                + ".";
             AddEntry(EntryType.Hit, message);
             Debug.Log(message, target);
         }
