@@ -2,9 +2,21 @@
 
 Date: 2026-05-28
 
+## Phase 14.9 scope correction notice
+
+Phase 14.9 supersedes the overly broad closure wording in this DevLog.
+
+Corrected interpretation:
+
+- Phase 14 documentation/stabilization preparation completed.
+- Phase 14 functional backlog remains open.
+- Phase 14 is not fully complete yet.
+- The project must continue with Phase 14 functional implementation before Phase 15.
+- Do not start Phase 15 yet.
+
 ## Scope
 
-Phase 14.8 created the final Phase 14 handover and closure document for the current Bone Throne / 骸骨王座 Unity 6.3 LTS project.
+Phase 14.8 created a handover and closure document for the documentation / stabilization preparation subcycle of the current Bone Throne / 骸骨王座 Unity 6.3 LTS project.
 
 This phase was documentation-only.
 
@@ -28,15 +40,35 @@ This phase was documentation-only.
 - `Docs/Phase14_PreFeatureRegressionAudit.md`
 - `Docs/DevLogs/`
 
-## Final conclusion recorded
+## Final conclusion recorded, corrected by Phase 14.9
 
 The handover document records:
 
-- Phase 14 documentation / stabilization cycle completed.
+- Phase 14 documentation / stabilization preparation completed.
+- Phase 14 functional backlog remains open.
+- Phase 14 is not fully complete yet.
 - Phase 14.7 all required regression tests passed.
 - No observed failure evidence currently supports immediate stabilization code fixes.
 - Phase 14.6 candidates remain future candidates only.
-- The next phase must be selected separately by the user.
+- The project must continue with Phase 14 functional implementation before Phase 15.
+- Do not start Phase 15 yet.
+
+## Remaining Phase 14 functional backlog
+
+These items remain open after Phase 14.8:
+
+1. GridTest camera controls:
+   - Middle mouse drag.
+   - Mouse wheel zoom.
+2. Active enemy provider / scene and UI auto enemy collection:
+   - Reduce manual `enemyUnits` / `knownUnits` dependency.
+   - Do not break UI safety rules.
+   - Do not call `TryBasicAttack` or `TryUseSkill` for highlight.
+3. Skill SO cleanup:
+   - Verify Slot 0 `SkillData` assets.
+   - Do not change formulas unless separately approved.
+4. Final regression after functional changes.
+5. Real Phase 14 final handover after those functional items pass.
 
 ## Regression result recorded
 
@@ -96,16 +128,15 @@ git diff -- Docs
 
 ## Recommended next step
 
-Phase 14 is closed. Recommended next action is for the user to choose one Phase 15 direction:
+Phase 14 is not fully closed. Recommended next action is to continue the Phase 14 functional backlog before Phase 15:
 
-- Phase 15A - Feature Priority Decision / Planning Only
-- Phase 15B - Data Assetization Design
-- Phase 15C - Formal Three-Level Scene Plan
-- Phase 15D - Boss Phase Plan
-- Phase 15E - LAN Architecture Planning
-- Phase 15F - Return to Phase 14.6 candidate only if new regression failure appears
+1. Phase 14.10 - GridTest Camera Controls.
+2. Phase 14.11 - Active Enemy Provider / Scene and UI Auto Enemy Collection.
+3. Phase 14.12 - Skill SO Cleanup.
+4. Phase 14.13 - Final Regression After Functional Changes.
+5. Phase 14.14 - Real Phase 14 Final Handover and Closure.
 
-No Phase 15 option should begin implementation without explicit user selection and scope approval.
+Do not start Phase 15 until these Phase 14 functional items are completed, revalidated, and closed.
 
 ## Rollback
 

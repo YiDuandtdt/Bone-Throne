@@ -1,10 +1,12 @@
-# Phase 14 Final Handover and Closure
+# Phase 14 Documentation / Stabilization Preparation Handover and Scope Correction
 
 ## 1. Purpose and scope
 
-This document is the final handover and closure record for Phase 14 of the Bone Throne / 骸骨王座 Unity 6.3 LTS project.
+This document is the handover record for the Phase 14 documentation / stabilization preparation subcycle of the Bone Throne / 骸骨王座 Unity 6.3 LTS project.
 
-Phase 14.8 only summarizes the documentation / stabilization cycle. It does not implement fixes, write gameplay code, modify scenes, modify prefabs, modify ScriptableObject assets, modify KayKit original resources, or change `Assets`, `Packages`, or `ProjectSettings`.
+Phase 14.8 was originally written with overly broad closure language. Phase 14.9 corrects that scope: Phase 14 documentation / stabilization preparation is complete, but Phase 14 functional implementation remains open.
+
+This document does not implement fixes, write gameplay code, modify scenes, modify prefabs, modify ScriptableObject assets, modify KayKit original resources, or change `Assets`, `Packages`, or `ProjectSettings`.
 
 ## 2. Source of truth
 
@@ -22,13 +24,17 @@ Use these references for any next phase:
 - `Docs/Phase14_PreFeatureRegressionAudit.md`
 - `Docs/DevLogs/`
 
-## 3. Phase 14 final conclusion
+## 3. Phase 14 corrected conclusion
 
-- Phase 14 documentation / stabilization cycle completed.
+- Phase 14 documentation/stabilization preparation completed.
+- Phase 14 functional backlog remains open.
+- Phase 14 is not fully complete yet.
+- The project must continue with Phase 14 functional implementation before Phase 15.
+- Do not start Phase 15 yet.
 - Phase 14.7 regression audit recorded all required regression tests as passed.
 - There is currently no observed failure evidence supporting immediate stabilization code fixes.
 - Phase 14.6 candidates remain future candidates only.
-- The next phase must be selected separately by the user.
+- The next step should remain inside Phase 14 until the functional backlog below is completed and revalidated.
 
 ## 4. Current project state
 
@@ -42,7 +48,24 @@ Use these references for any next phase:
 - The four player roles currently only implement Slot 0 representative skills.
 - `ActionCommand`, `IGameSession`, and `GameStateSnapshot` remain architecture skeletons. They do not yet drive the actual gameplay flow.
 
-## 5. Phase 14.1-14.7 summary
+## 5. Remaining Phase 14 functional backlog
+
+These items were not completed by the Phase 14.1-14.8 documentation / stabilization preparation subcycle. They remain required before a real Phase 14 final closure:
+
+1. GridTest camera controls:
+   - Middle mouse drag.
+   - Mouse wheel zoom.
+2. Active enemy provider / scene and UI auto enemy collection:
+   - Reduce manual `enemyUnits` / `knownUnits` dependency.
+   - Do not break UI safety rules.
+   - Do not call `TryBasicAttack` or `TryUseSkill` for highlight.
+3. Skill SO cleanup:
+   - Verify Slot 0 `SkillData` assets.
+   - Do not change formulas unless separately approved.
+4. Final regression after functional changes.
+5. Real Phase 14 final handover after those functional items pass.
+
+## 6. Phase 14.1-14.8 preparation summary
 
 ### Phase 14.1 - Current Project State Audit
 
@@ -72,7 +95,15 @@ Created a proposal-only document for future stabilization candidates. No candida
 
 Recorded the user-reported `GridTest.unity` regression audit result: all required tests passed, no blocking Console issue was reported, and no stabilization candidate is currently supported by observed failure evidence.
 
-## 6. Documents created / updated in Phase 14
+### Phase 14.8 - Final Handover and Closure
+
+Created a handover document, but its original wording incorrectly implied that all of Phase 14 was complete. Phase 14.9 supersedes that interpretation and reopens the functional backlog listed above.
+
+### Phase 14.9 - Scope Correction and Functional Backlog Reopen
+
+Corrects the Phase 14.8 closure scope. The documentation / stabilization preparation subcycle is complete, but Phase 14 functional work remains open and must continue before Phase 15.
+
+## 7. Documents created / updated in Phase 14
 
 Phase 14 documentation outputs:
 
@@ -95,10 +126,11 @@ Phase 14 DevLogs:
 - `Docs/DevLogs/Phase14.6_MinimalStabilizationProposal.md`
 - `Docs/DevLogs/Phase14.7_PreFeatureRegressionAudit.md`
 - `Docs/DevLogs/Phase14.8_FinalHandoverAndClosure.md`
+- `Docs/DevLogs/Phase14.9_ScopeCorrection.md`
 
 Phase 14 also updated `Docs/ACTIVE_TASK.md` across the documentation phases.
 
-## 7. Phase 14.7 regression audit result
+## 8. Phase 14.7 regression audit result
 
 Test scene:
 
@@ -130,7 +162,7 @@ Additional audit result:
 - Fix attempted: No.
 - Supported by observed evidence: None.
 
-## 8. Current safe baseline
+## 9. Current safe baseline
 
 The current safe baseline is:
 
@@ -142,7 +174,7 @@ The current safe baseline is:
 - Existing ordinary enemy set keeps `Skeleton_Rogue` as the normal enemy.
 - Existing Player Ranger visual remains Adventurers Rogue.
 
-## 9. Why immediate stabilization code fixes are not needed
+## 10. Why immediate stabilization code fixes are not needed
 
 Phase 14.6 candidates require observed failure evidence before they move toward implementation.
 
@@ -160,7 +192,7 @@ Therefore:
 
 If a future regression failure appears, return to the relevant Phase 14.6 candidate and open a separate proposal / implementation split with explicit user approval.
 
-## 10. Deferred Phase 14.6 future candidates
+## 11. Deferred Phase 14.6 future candidates
 
 These remain future candidates only. Each is not currently supported by observed failure evidence after the Phase 14.7 pass.
 
@@ -173,7 +205,7 @@ These remain future candidates only. Each is not currently supported by observed
 - Candidate G: Room activation validation. Status: Not currently supported by observed failure evidence after Phase 14.7 pass.
 - Candidate H: Key / Stairs / LevelUp placeholder boundary. Status: Not currently supported by observed failure evidence after Phase 14.7 pass.
 
-## 11. Current scene / prefab / SO / data state
+## 12. Current scene / prefab / SO / data state
 
 - `GridTest.unity` is the current only real integrated validation scene.
 - `MainMenu.unity` remains a placeholder.
@@ -184,7 +216,7 @@ These remain future candidates only. Each is not currently supported by observed
 - Manual Inspector bindings remain part of the current project shape, but Phase 14.7 did not report binding failures.
 - Do not describe current content as formal three-floor completion.
 
-## 12. Current UI / combat / skill / room / level state
+## 13. Current UI / combat / skill / room / level state
 
 Current UI state:
 
@@ -212,7 +244,7 @@ Current room / level state:
 - Room trigger, room shadow, enemy activation, room clear, Key pickup, Stairs interaction, and LevelUp placeholder progression exist and passed Phase 14.7 regression.
 - Stairs / Level progression remains placeholder progression, not formal scene loading.
 
-## 13. Deferred future features
+## 14. Deferred future features
 
 Deferred future work:
 
@@ -225,7 +257,7 @@ Deferred future work:
 - Defend / Potion.
 - Formal stairs modal / real scene loading.
 
-## 14. Do-not-touch rules
+## 15. Do-not-touch rules
 
 Do not touch these unless a future phase explicitly approves the exact scope:
 
@@ -244,27 +276,28 @@ Do not touch these unless a future phase explicitly approves the exact scope:
 - Do not casually modify `SkillEffectExecutor` skill formulas.
 - `GridTest.unity` is the current only real integrated validation scene. Scene changes must be separately approved.
 
-## 15. Recommended next phase options
+## 16. Recommended next Phase 14 continuation
 
-These are optional directions only. None is the default next task.
+Do not start Phase 15 yet. The recommended continuation stays inside Phase 14:
 
-- Phase 15A - Feature Priority Decision / Planning Only.
-- Phase 15B - Data Assetization Design.
-- Phase 15C - Formal Three-Level Scene Plan.
-- Phase 15D - Boss Phase Plan.
-- Phase 15E - LAN Architecture Planning.
-- Phase 15F - Return to Phase 14.6 candidate only if new regression failure appears.
+1. Phase 14.10 - GridTest Camera Controls.
+2. Phase 14.11 - Active Enemy Provider / Scene and UI Auto Enemy Collection.
+3. Phase 14.12 - Skill SO Cleanup.
+4. Phase 14.13 - Final Regression After Functional Changes.
+5. Phase 14.14 - Real Phase 14 Final Handover and Closure.
 
-Do not directly enter Boss, LAN, or formal three-floor implementation unless the user explicitly chooses that phase and authorizes the relevant file types.
+Phase 15 planning can be considered only after these Phase 14 functional items are completed, revalidated, and closed by a real final handover.
 
-## 16. New conversation handover prompt
+## 17. New conversation handover prompt
 
 Copy this into a new conversation when continuing the project:
 
 ```text
 You are continuing the Unity 6.3 LTS project Bone Throne / 骸骨王座.
 
-Phase 14 is complete.
+Phase 14 documentation/stabilization preparation is complete, but Phase 14 functional backlog remains open.
+Phase 14 is not fully complete yet.
+Do not start Phase 15 yet.
 
 Before planning, read:
 1. AGENTS.md
@@ -279,7 +312,14 @@ Phase 14.7 regression audit reported all required GridTest.unity tests as passed
 
 Do not regenerate existing Phase 0-13 systems.
 Do not treat Phase 14.6 candidates as current fix tasks.
-The next phase must be explicitly chosen by the user.
+Continue with Phase 14 functional implementation before Phase 15.
+
+Remaining Phase 14 functional backlog:
+1. GridTest camera controls: middle mouse drag and mouse wheel zoom.
+2. Active enemy provider / scene and UI auto enemy collection, reducing manual enemyUnits / knownUnits dependency without breaking UI safety rules.
+3. Skill SO cleanup: verify Slot 0 SkillData assets without formula changes unless separately approved.
+4. Final regression after functional changes.
+5. Real Phase 14 final handover after those functional items pass.
 
 Preserve these rules:
 - GridTest.unity is the current only real integrated validation scene.
@@ -294,9 +334,9 @@ Preserve these rules:
 - CombatLog is structured event output and must not be implemented by parsing strings.
 ```
 
-## 17. Git / branch closing checks
+## 18. Git / branch checks
 
-Recommended closing checks:
+Recommended checks:
 
 ```powershell
 git status --short
@@ -315,18 +355,20 @@ Expected:
 - No `.prefab`.
 - No ScriptableObject `.asset`.
 
-Suggested branch closure steps:
+Suggested branch handling:
 
 1. Review `git diff -- Docs`.
-2. Commit Phase 14.8 documentation.
-3. Confirm working tree is clean.
-4. Decide later whether to merge the Phase 14 documentation / stabilization branch.
+2. Commit Phase 14.9 scope correction documentation when reviewed.
+3. Continue Phase 14 functional backlog on the appropriate branch.
+4. Do not close or merge the branch as full Phase 14 completion until the functional backlog passes final regression.
 
-## 18. Rollback
+## 19. Rollback
 
-To roll back Phase 14.8 documentation only, remove:
+To roll back the Phase 14.9 scope correction only:
 
-- `Docs/Phase14_FinalHandoverAndClosure.md`
-- `Docs/DevLogs/Phase14.8_FinalHandoverAndClosure.md`
+- Restore the previous text in `Docs/Phase14_FinalHandoverAndClosure.md`.
+- Restore the previous text in `Docs/DevLogs/Phase14.8_FinalHandoverAndClosure.md`.
+- Restore the previous Phase 14.9 edits in `Docs/ACTIVE_TASK.md`, if needed.
+- Delete `Docs/DevLogs/Phase14.9_ScopeCorrection.md`.
 
-If `Docs/ACTIVE_TASK.md` is modified in a future documentation update, manually restore only the Phase 14.8-related text. Do not use broad reset commands if other Phase 14 documentation work is still in progress.
+Do not use broad reset commands if other Phase 14 documentation work is still in progress.
