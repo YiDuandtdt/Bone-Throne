@@ -1,102 +1,82 @@
 # ACTIVE_TASK.md
 
 ## Current phase
-Phase 13 - UI and Feedback
-
-## Branch
-phase/13-ui-feedback
+Phase 14.1 - Current Project State Audit
 
 ## Goal
-Implement the first battle UI and gameplay feedback layer for the existing single-player gameplay loop.
+Scan the current Unity 6.3 LTS Bone Throne project and produce an accurate project state audit before updating design documents or implementing stabilization features.
 
-This phase should make the current playable systems easier to understand:
-- current turn / current actor
-- selected unit
-- player HP / level / action state
-- skill buttons and cooldown/readiness display
-- D20 combat log / floating feedback
-- basic key / stairs / condition prompt
-- lightweight world-space health bars if feasible
+This phase must identify:
+- completed systems
+- current scenes
+- current prefabs
+- current ScriptableObject data assets
+- current UI / combat / skill / movement / room / level systems
+- placeholder or test-only systems
+- differences between the real project and the original design documents
+- rules that must be reflected in updated Phase 14 documentation
 
-This phase must not rewrite movement, combat, skills, AI, rooms, levels, prefab wrapping, or networking.
+## Allowed work
+Read-only scan and documentation planning only.
 
-## Background
-Phase 0 - Phase 12.6 have been completed and merged into dev.
+Codex may inspect:
+- AGENTS.md
+- Docs/
+- Assets/_BoneThrone/Scripts/
+- Assets/_BoneThrone/Scenes/
+- Assets/_BoneThrone/Prefabs/
+- Assets/_BoneThrone/Data/
+- Packages/manifest.json
+- ProjectSettings when relevant
 
-The project already has:
-- Grid and tile system
-- Unit placement and occupancy
-- Movement and pathfinding
-- Turn system
-- D20 basic combat
-- Enemy AI
-- Room progression and shadows
-- Key, stairs, level transition, and upgrade flow
-- Skill framework and representative skills
-- Gameplay prefabs for players, enemies, key, and stairs
+## Allowed file changes
+None for the first Codex pass.
 
-Important Phase 12.6 notes:
-- Player Ranger keeps Ranger gameplay but intentionally uses Adventurers / Rogue visual.
-- Skeleton_Rogue is the normal skeleton rogue enemy prefab.
-- Skeleton_Golem is reserved for a future Boss / heavy Boss prefab and must not be used as a normal enemy prefab.
-
-## Required outcomes
-1. Add a first battle HUD layer using uGUI + TextMeshPro.
-2. Show current turn / current actor / selected unit clearly.
-3. Show four player status panels if the current data is available:
-   - name
-   - HP
-   - level
-   - moved / acted state
-4. Add a skill/action bar prototype:
-   - basic attack
-   - representative skill slot 0
-   - defend / potion placeholders only if already supported
-   - disabled or placeholder state if not currently supported
-5. Add or connect combat feedback:
-   - D20 roll
-   - hit / miss
-   - damage
-   - death
-6. Add simple condition prompts:
-   - key missing
-   - stairs confirmation / transition hint
-   - invalid action / not your turn if current systems expose it
-7. Keep all UI references Inspector-configurable.
-8. Missing icons, portraits, final art, sound, and VFX can remain placeholders.
-
-## Allowed files
-Codex must first scan the repository and propose the exact file list before editing.
-
-Likely allowed areas:
-- Assets/_BoneThrone/Scripts/UI/
-- Assets/_BoneThrone/Prefabs/UI/
-- Assets/_BoneThrone/Scenes/GridTest.unity only if explicitly approved after the plan
-- Assets/_BoneThrone/Data/OnlyTest/ only if a tiny UI test data asset is absolutely necessary
-- Docs/DevLogs/Phase13_UI_Feedback.md
+After the audit plan is reviewed and approved, documentation-only files may be added or updated, such as:
+- Docs/Phase14_ProjectStateAudit.md
+- Docs/DevLogs/Phase14.1_ProjectStateAudit.md
 
 ## Forbidden changes
-- Do not rewrite Unit, TurnManager, CombatSystem, SkillSystem, Enemy AI, Room system, or LevelManager.
-- Do not modify gameplay formulas.
-- Do not add networking.
-- Do not add formal sound, VFX, animation state machines, or final portraits.
-- Do not use UI Toolkit for battle HUD in this phase.
-- Do not hard-code scene object paths.
+- Do not write gameplay code.
+- Do not modify prefabs.
+- Do not modify Unity scenes.
+- Do not modify ScriptableObject assets.
+- Do not modify combat formulas.
+- Do not modify DamageResolver.
+- Do not modify SkillEffectExecutor.
+- Do not modify TurnManager.
+- Do not modify Room / Level systems.
+- Do not modify Networking.
+- Do not rename Skeleton_Golem.
+- Do not use Skeleton_Golem as a normal enemy.
+- Do not rename Skeleton_Rogue back to Skeleton_Golem.
+- Do not change Player Ranger visual back to Adventurers Ranger.
 - Do not modify KayKit original assets.
-- Do not modify Skeleton_Golem as a normal enemy.
-- Do not change Ranger away from Adventurers Rogue visual.
-- Do not modify Library, Temp, Obj, Logs, UserSettings, or generated IDE files.
 
-## Acceptance tests in Unity
-1. Unity 6.3 LTS opens without compile errors.
-2. Battle HUD appears in GridTest or approved test scene.
-3. Current turn / selected unit display updates.
-4. Player status panels show available HP / state data.
-5. Skill/action bar shows available skill/action state without breaking existing input.
-6. D20 combat feedback appears when a basic attack is performed.
-7. Invalid or blocked interactions show a readable prompt if existing systems provide the event.
-8. Existing movement regression still works.
-9. Existing D20 basic attack regression still works.
-10. Existing representative skill regression still works.
-11. Existing key / stairs / level transition / upgrade regression still works.
-12. Console has no red compile errors.
+## Required output
+Codex must output an audit report with:
+1. Current branch and repository structure summary.
+2. Current completed systems.
+3. Current scenes and their apparent purpose.
+4. Current prefabs and their apparent purpose.
+5. Current data assets / ScriptableObjects.
+6. Current UI systems.
+7. Current combat systems.
+8. Current skill systems.
+9. Current movement / grid systems.
+10. Current room / level / stairs / key systems.
+11. Current enemy and player prefab rules.
+12. Current known placeholder / deferred systems.
+13. Differences from the original Unity 6.3 design documents.
+14. What must be updated in the new system design document.
+15. What must be updated in the new vibecoding development document.
+16. Recommended next Phase 14.2 / 14.3 documentation update plan.
+17. Risks and things that must not be changed.
+
+## Unity validation
+No Play Mode validation is required in this read-only audit phase.
+
+Manual validation:
+1. Unity 6.3 LTS project still opens.
+2. Console has no new compile errors.
+3. Git diff only contains ACTIVE_TASK.md after manual update.
