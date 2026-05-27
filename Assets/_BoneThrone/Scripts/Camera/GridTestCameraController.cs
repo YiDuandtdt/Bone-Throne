@@ -5,7 +5,7 @@ namespace BoneThrone.CameraControls
 {
     /// <summary>
     /// Lightweight camera controls for the GridTest scene only.
-    /// Handles middle-mouse panning and mouse-wheel zoom without touching gameplay systems.
+    /// Handles middle-mouse panning, right-mouse rotation, and mouse-wheel zoom without touching gameplay systems.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Camera))]
@@ -25,10 +25,27 @@ namespace BoneThrone.CameraControls
         [SerializeField] private bool invertDrag;
         [SerializeField] private bool useForwardDollyForPerspective = true;
         [SerializeField] private Transform zoomPivot;
+        [SerializeField] private bool rotationEnabled = true;
+        [SerializeField] private float rotationSpeed = 0.2f;
+        [SerializeField] private bool invertRotation;
+        [SerializeField] private float rotationStartThresholdPixels = 3f;
+        [SerializeField] private Transform rotationPivot;
+        [SerializeField] private bool reuseZoomPivotForRotation = true;
+        [SerializeField] private float fallbackPivotDistance = 18f;
+        [SerializeField] private bool verticalRotationEnabled = true;
+        [SerializeField] private float verticalRotationSpeed = 0.15f;
+        [SerializeField] private bool invertVerticalRotation;
+        [SerializeField] private float minPitch = 35f;
+        [SerializeField] private float maxPitch = 75f;
 
         private Camera targetCamera;
         private Vector3 lastMousePosition;
+        private Vector3 rightDragStartMousePosition;
+        private Vector3 lastRightMousePosition;
         private bool isDragging;
+        private bool isRightMouseHeld;
+        private bool isRotating;
+        private float currentPitch;
 
         private void Awake()
         {
@@ -36,6 +53,12 @@ namespace BoneThrone.CameraControls
             if (targetCamera == null)
             {
                 targetCamera = Camera.main;
+            }
+
+            if (targetCamera != null)
+            {
+                currentPitch = ClampPitch(targetCamera.transform.eulerAngles.x);
+                ApplyPitchYaw(targetCamera.transform.eulerAngles.y);
             }
         }
 
@@ -49,10 +72,12 @@ namespace BoneThrone.CameraControls
             if (ShouldBlockForUI())
             {
                 isDragging = false;
+                ResetRightMouseRotation();
                 return;
             }
 
             HandleMiddleMousePan();
+            HandleRightMouseRotation();
             HandleMouseWheelZoom();
         }
 
@@ -101,6 +126,63 @@ namespace BoneThrone.CameraControls
             cameraTransform.position = newPosition;
         }
 
+        private void HandleRightMouseRotation()
+        {
+            if (!rotationEnabled)
+            {
+                ResetRightMouseRotation();
+                return;
+            }
+
+            if (Input.GetMouseButtonDown(1))
+            {
+                isRightMouseHeld = true;
+                isRotating = false;
+                rightDragStartMousePosition = Input.mousePosition;
+                lastRightMousePosition = rightDragStartMousePosition;
+                return;
+            }
+
+            if (Input.GetMouseButtonUp(1))
+            {
+                ResetRightMouseRotation();
+                return;
+            }
+
+            if (!isRightMouseHeld || !Input.GetMouseButton(1))
+            {
+                return;
+            }
+
+            Vector3 currentMousePosition = Input.mousePosition;
+            Vector3 totalDelta = currentMousePosition - rightDragStartMousePosition;
+            if (!isRotating && Mathf.Abs(totalDelta.x) < rotationStartThresholdPixels)
+            {
+                lastRightMousePosition = currentMousePosition;
+                return;
+            }
+
+            isRotating = true;
+
+            Vector3 frameDelta = currentMousePosition - lastRightMousePosition;
+            lastRightMousePosition = currentMousePosition;
+            if (Mathf.Approximately(frameDelta.x, 0f) && (!verticalRotationEnabled || Mathf.Approximately(frameDelta.y, 0f)))
+            {
+                return;
+            }
+
+            float direction = invertRotation ? -1f : 1f;
+            float yawDelta = frameDelta.x * rotationSpeed * direction;
+
+            if (verticalRotationEnabled)
+            {
+                float verticalDirection = invertVerticalRotation ? -1f : 1f;
+                currentPitch = ClampPitch(currentPitch - frameDelta.y * verticalRotationSpeed * verticalDirection);
+            }
+
+            RotateAroundPivot(yawDelta);
+        }
+
         private void HandleMouseWheelZoom()
         {
             float scroll = Input.mouseScrollDelta.y;
@@ -139,6 +221,61 @@ namespace BoneThrone.CameraControls
             }
 
             cameraTransform.position = candidatePosition;
+        }
+
+        private void RotateAroundPivot(float yawDelta)
+        {
+            Transform cameraTransform = targetCamera.transform;
+            Vector3 pivotPosition = ResolveRotationPivot();
+
+            cameraTransform.RotateAround(pivotPosition, Vector3.up, yawDelta);
+
+            Vector3 eulerAngles = cameraTransform.eulerAngles;
+            ApplyPitchYaw(eulerAngles.y);
+        }
+
+        private Vector3 ResolveRotationPivot()
+        {
+            if (rotationPivot != null)
+            {
+                return rotationPivot.position;
+            }
+
+            if (reuseZoomPivotForRotation && zoomPivot != null)
+            {
+                return zoomPivot.position;
+            }
+
+            Transform cameraTransform = targetCamera.transform;
+            Vector3 pivotPosition = cameraTransform.position + cameraTransform.forward * fallbackPivotDistance;
+            pivotPosition.y = 0f;
+            return pivotPosition;
+        }
+
+        private void ResetRightMouseRotation()
+        {
+            isRightMouseHeld = false;
+            isRotating = false;
+        }
+
+        private float ClampPitch(float pitch)
+        {
+            return Mathf.Clamp(NormalizePitch(pitch), minPitch, maxPitch);
+        }
+
+        private static float NormalizePitch(float pitch)
+        {
+            if (pitch > 180f)
+            {
+                return pitch - 360f;
+            }
+
+            return pitch;
+        }
+
+        private void ApplyPitchYaw(float yaw)
+        {
+            targetCamera.transform.rotation = Quaternion.Euler(currentPitch, yaw, 0f);
         }
 
         private bool ShouldBlockForUI()
