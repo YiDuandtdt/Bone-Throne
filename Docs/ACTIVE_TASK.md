@@ -1,28 +1,34 @@
 ﻿# ACTIVE_TASK.md
 
 ## Current phase
-Phase 14.7 - Pre-Feature Regression Audit
+Phase 14.8 - Phase 14 Final Handover and Closure
 
 ## Goal
-Perform a pre-feature regression audit for the current Bone Throne Unity 6.3 LTS project before approving any stabilization implementation or new gameplay feature work.
+Create a final Phase 14 handover and closure document for the current Bone Throne Unity 6.3 LTS project.
 
-This phase must:
-- use GridTest.unity as the only real integrated gameplay regression scene
-- run the Phase 14.5 regression checklist manually in Unity Play Mode
-- record pass / fail / blocked / not tested results
-- record Console warnings or errors
-- record Inspector binding issues
-- identify which future stabilization candidates are actually supported by observed failures
-- avoid implementing any fixes
+This phase must summarize:
+- Phase 14.1 project audit
+- Phase 14.2 current-state system design update
+- Phase 14.3 current-state Vibecoding document update
+- Phase 14.4 stabilization plan
+- Phase 14.5 Inspector and regression checklists
+- Phase 14.6 minimal stabilization implementation proposal
+- Phase 14.7 pre-feature regression audit results
+
+This phase must confirm:
+- all required Phase 14.7 regression tests passed
+- no immediate stabilization implementation is currently required
+- future implementation candidates remain deferred unless new evidence appears
+- the project is ready to leave documentation/stabilization phase and choose the next feature phase separately
 
 ## Allowed files
-- Docs/Phase14_PreFeatureRegressionAudit.md
-- Docs/DevLogs/Phase14.7_PreFeatureRegressionAudit.md
+- Docs/Phase14_FinalHandoverAndClosure.md
+- Docs/DevLogs/Phase14.8_FinalHandoverAndClosure.md
 - Docs/ACTIVE_TASK.md
 
 ## Forbidden changes
 - Do not modify gameplay code.
-- Do not modify scenes unless the user explicitly approves Inspector-only binding corrections in a later phase.
+- Do not modify scenes.
 - Do not modify prefabs.
 - Do not modify ScriptableObject assets.
 - Do not modify Packages or ProjectSettings.
@@ -37,45 +43,22 @@ This phase must:
 - Do not change Ranger visual back to Adventurers Ranger.
 
 ## Required output
-Create a regression audit report template and result document covering:
-1. Unity version and branch.
-2. Git status before testing.
-3. Scene tested.
-4. Console status before Play Mode.
-5. Inspector binding check results.
-6. Regression test results from Phase14_RegressionChecklist.md.
-7. Screenshots or notes needed.
-8. Console errors/warnings.
-9. Observed failures mapped to likely causes.
-10. Stabilization candidates supported by actual observed evidence.
-11. Stabilization candidates not yet supported by evidence.
-12. Recommended next phase.
-
-Required tests:
-- Select player unit
-- Move mode
-- Basic Attack mode
-- Skill Slot 0 mode
-- Mage Fireball splash
-- CombatLog structured entries
-- Enemy Floating HP Bar refresh
-- Enemy HP Bar death hide
-- Room trigger
-- Room shadow hide
-- Enemy activation
-- Room clear
-- Key pickup
-- Stairs hover / second click
-- LevelUp
-- Enemy AI turn
+Create a final Phase 14 handover document covering:
+1. Current project state.
+2. Phase 14.1-14.7 summary.
+3. Documents created in Phase 14.
+4. Regression audit result.
+5. Current safe baseline.
+6. Deferred stabilization candidates.
+7. Do-not-touch rules.
+8. Recommended next feature phase options.
+9. Git / branch closing steps.
+10. Instructions for opening a new conversation.
 
 ## Validation
-Documentation and manual testing phase.
+Documentation-only phase.
 
 Manual checks:
-1. Unity 6.3 LTS opens the project.
-2. GridTest.unity opens.
-3. Console state is recorded before Play Mode.
-4. Play Mode results are recorded.
-5. git diff only shows Docs changes.
-6. No code implementation is included.
+1. git diff only shows Docs changes.
+2. No Assets, Packages, ProjectSettings, Library, Temp, Obj, Logs, or UserSettings changes.
+3. No code implementation is included.
