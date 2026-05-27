@@ -12,6 +12,7 @@ namespace BoneThrone.Movement
         [SerializeField] private Color selectedColor = new Color(0.2f, 0.45f, 1f, 1f);
         [SerializeField] private Color reachableColor = new Color(0.25f, 0.85f, 0.35f, 1f);
         [SerializeField] private Color attackColor = new Color(0.95f, 0.18f, 0.16f, 1f);
+        [SerializeField] private Color skillColor = new Color(1f, 0.86f, 0.12f, 1f);
 
         private readonly Dictionary<Renderer, Color> originalColors = new Dictionary<Renderer, Color>();
         private readonly HashSet<Renderer> actionRenderers = new HashSet<Renderer>();
@@ -88,6 +89,32 @@ namespace BoneThrone.Movement
         {
             actionRenderers.Clear();
             actionColor = attackColor;
+            Repaint();
+
+            if (tiles == null)
+            {
+                return;
+            }
+
+            foreach (Tile tile in tiles)
+            {
+                Renderer renderer = GetTileRenderer(tile);
+                if (renderer == null || renderer.material == null)
+                {
+                    continue;
+                }
+
+                RememberOriginalColor(renderer);
+                actionRenderers.Add(renderer);
+            }
+
+            Repaint();
+        }
+
+        public void ShowSkillTargets(IEnumerable<Tile> tiles)
+        {
+            actionRenderers.Clear();
+            actionColor = skillColor;
             Repaint();
 
             if (tiles == null)

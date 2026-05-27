@@ -17,6 +17,53 @@ namespace BoneThrone.Skills
         [SerializeField] private TurnManager turnManager;
         [SerializeField] private ActionPermissionService actionPermissionService;
 
+        public bool CanUseSkillOnTarget(Unit caster, Unit target, int slotIndex, out string reason)
+        {
+            if (caster == null)
+            {
+                reason = "Caster is missing.";
+                return false;
+            }
+
+            if (target == null)
+            {
+                reason = "Target is missing.";
+                return false;
+            }
+
+            if (!caster.IsAlive)
+            {
+                reason = "Caster is dead.";
+                return false;
+            }
+
+            SkillRuntime runtime = caster.GetComponent<SkillRuntime>();
+            if (runtime == null)
+            {
+                reason = "Caster has no SkillRuntime component.";
+                return false;
+            }
+
+            if (!CanPassTurnGate(caster, out reason))
+            {
+                return false;
+            }
+
+            if (targetingService == null)
+            {
+                reason = "SkillTargetingService is missing.";
+                return false;
+            }
+
+            if (damageResolver == null)
+            {
+                reason = "DamageResolver is missing.";
+                return false;
+            }
+
+            return targetingService.CanUseSkill(caster, target, runtime, slotIndex, out reason);
+        }
+
         public bool TryUseSkill(Unit caster, Unit target, int slotIndex)
         {
             if (caster == null)
@@ -121,6 +168,58 @@ namespace BoneThrone.Skills
 
                 TickCooldownsForUnit(unit);
             }
+        }
+
+        private bool CanPassTurnGate(Unit caster, out string reason)
+        {
+            bool hasTurnManager = turnManager != null;
+            bool hasActionPermissionService = actionPermissionService != null;
+
+            if (hasTurnManager != hasActionPermissionService)
+            {
+                reason = "Turn gating is partially configured. Bind both TurnManager and ActionPermissionService, or leave both empty for test mode.";
+                return false;
+            }
+
+            if (!hasTurnManager)
+            {
+                reason = "Turn gating is not configured.";
+                return true;
+            }
+
+            UnitTurnState turnState = caster != null ? caster.GetComponent<UnitTurnState>() : null;
+            if (turnState == null)
+            {
+                reason = "Caster has no UnitTurnState.";
+                return false;
+            }
+
+            if (turnManager.CurrentPhase != TurnPhase.PlayerTurn)
+            {
+                reason = "Current phase is " + turnManager.CurrentPhase + ".";
+                return false;
+            }
+
+            if (caster.Faction != UnitFaction.Player)
+            {
+                reason = "Only player units can act during PlayerTurn.";
+                return false;
+            }
+
+            if (turnState.HasActed)
+            {
+                reason = "Caster has already acted.";
+                return false;
+            }
+
+            if (actionPermissionService.RequireCurrentRole && caster.RoleId != turnManager.CurrentRole)
+            {
+                reason = "Caster role " + caster.RoleId + " does not match current role " + turnManager.CurrentRole + ".";
+                return false;
+            }
+
+            reason = "Turn gate passed.";
+            return true;
         }
 
         private bool ValidateTurnGate(Unit caster)

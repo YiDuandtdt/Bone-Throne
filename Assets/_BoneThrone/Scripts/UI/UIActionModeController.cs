@@ -291,6 +291,7 @@ namespace BoneThrone.UI
             ExitTargetingMode();
             currentMode = ActionMode.SkillTargeting;
             pendingSkillSlotIndex = slotIndex;
+            ShowSkillTargets(slotIndex);
             SuspendMovementInput();
             ShowPrompt("Select a skill target.");
         }
@@ -443,6 +444,38 @@ namespace BoneThrone.UI
             }
 
             highlighter.ShowAttackTargets(targetTiles);
+        }
+
+        private void ShowSkillTargets(int slotIndex)
+        {
+            if (highlighter == null)
+            {
+                return;
+            }
+
+            Unit caster = selectionManager != null ? selectionManager.SelectedUnit : null;
+            if (caster == null || skillSystem == null || enemyUnits == null)
+            {
+                highlighter.ClearActionHighlights();
+                return;
+            }
+
+            List<Tile> targetTiles = new List<Tile>();
+            for (int i = 0; i < enemyUnits.Length; i++)
+            {
+                Unit enemy = enemyUnits[i];
+                string reason;
+                if (enemy != null
+                    && enemy.gameObject.activeInHierarchy
+                    && enemy.IsAlive
+                    && enemy.CurrentTile != null
+                    && skillSystem.CanUseSkillOnTarget(caster, enemy, slotIndex, out reason))
+                {
+                    targetTiles.Add(enemy.CurrentTile);
+                }
+            }
+
+            highlighter.ShowSkillTargets(targetTiles);
         }
 
         private bool IsCurrentSelectedUnit(Unit unit)

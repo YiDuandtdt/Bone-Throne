@@ -359,6 +359,55 @@ Implemented the first small Phase 13 battle HUD slice only. This change adds scr
 13. While BasicAttackTargeting, click `Skill Slot 0`; expected red clears and existing skill targeting still works.
 14. Re-run Move, Skill Slot 0, Enemy AI, Key/Stairs, and Console red-error regression checks.
 
+## Phase 13.5 Skill Slot 0 yellow highlight patch notes
+- Added `SkillSystem.CanUseSkillOnTarget(Unit caster, Unit target, int slotIndex, out string reason)`.
+  - It is a read-only query for UI feedback.
+  - It checks caster/target presence, caster alive state, `SkillRuntime`, turn gate, `SkillTargetingService`, `DamageResolver`, and then reuses `SkillTargetingService.CanUseSkill`.
+  - It does not execute skill effects, write `CombatLog`, apply damage, change cooldowns, change `UnitTurnState`, mark acted, or mutate gameplay state.
+  - `SkillSystem.TryUseSkill` behavior and logging semantics were not changed.
+- Updated `UIActionModeController`.
+  - Entering SkillTargeting for slot 0 now traverses the Inspector-bound `enemyUnits`.
+  - Null, inactive, dead, and untiled enemies are skipped.
+  - Each candidate is checked through `SkillSystem.CanUseSkillOnTarget`.
+  - Valid enemy current tiles are highlighted yellow.
+  - Real skill execution still calls only `SkillSystem.TryUseSkill(selectedUnit, target, 0)` after the player clicks a Unit target.
+  - Invalid target clicks keep targeting active and preserve yellow highlights.
+- Updated `MovementDebugHighlighter`.
+  - Added skill yellow action highlight support.
+  - Green move range, red basic attack targets, and yellow skill targets share the same action highlight layer.
+  - `ClearActionHighlights` clears green/red/yellow while preserving selected blue.
+  - `ClearSelected` clears only selected blue.
+  - `Clear` clears selected blue and all action highlights.
+- Existing cleanup behavior remains:
+  - Successful skill use clears yellow and restores movement input.
+  - Right-click, Escape, or clicking Skill Slot 0 again cancels and clears yellow.
+  - Switching Skill -> Move clears yellow and shows green.
+  - Switching Skill -> Basic Attack clears yellow and shows red.
+  - Clearing selection removes selected blue and all action highlights.
+- Still not added:
+  - Tile target skills.
+  - Skill Slot 1 or Slot 2 actions.
+  - Defend or Potion actions.
+  - FloatingHealthBar or world-space HP bars.
+  - Sound, VFX, Animator Controllers, networking, UI Toolkit, or gameplay visual-rule changes.
+
+## Phase 13.5 yellow highlight manual Unity 6.3 test steps
+1. Open `Assets/_BoneThrone/Scenes/GridTest.unity`.
+2. Enter Play Mode and confirm there are no red Console errors.
+3. Click a living player unit; expected selected blue only.
+4. Click `Move`; expected green move range still appears.
+5. Cancel, then click `Basic Attack`; expected red attack targets still appear.
+6. Cancel, then click `Skill Slot 0`; expected valid skill target enemies show yellow.
+7. Confirm enemies outside slot 0 range, invalid by target type, dead, inactive, or missing current tile do not show yellow.
+8. Click a yellow enemy; expected existing `SkillSystem.TryUseSkill(selectedUnit, target, 0)` succeeds, yellow clears, HP/action/cooldown HUD state refreshes.
+9. Click an invalid enemy while SkillTargeting; expected no action consumption, no direct UI mutation, Prompt `Invalid skill target`, yellow remains.
+10. Click empty ground while SkillTargeting; expected no movement, no action consumption, yellow remains.
+11. Cancel SkillTargeting with right-click and Escape; expected yellow clears and selected blue remains.
+12. Enter SkillTargeting, then click `Move`; expected yellow clears and green appears.
+13. Enter SkillTargeting, then click `Basic Attack`; expected yellow clears and red appears.
+14. Enter SkillTargeting, then click the currently selected player unit; expected selection clears and all blue/green/red/yellow highlights clear.
+15. Re-run Move, Basic Attack, Enemy AI, Key/Stairs, and Console red-error regression checks.
+
 ## Rollback
 - Revert scripts:
   - `git checkout -- Assets/_BoneThrone/Scripts/UI/BattleHUDController.cs`
@@ -372,6 +421,7 @@ Implemented the first small Phase 13 battle HUD slice only. This change adds scr
   - `git checkout -- Assets/_BoneThrone/Scripts/UI/PromptView.cs`
   - `git checkout -- Assets/_BoneThrone/Scripts/Combat/CombatLog.cs`
   - `git checkout -- Assets/_BoneThrone/Scripts/Combat/CombatSystem.cs`
+  - `git checkout -- Assets/_BoneThrone/Scripts/Skills/SkillSystem.cs`
 - Revert UI prefab:
   - `git checkout -- Assets/_BoneThrone/Prefabs/UI/BattleHUD.prefab`
 - Revert scene:
