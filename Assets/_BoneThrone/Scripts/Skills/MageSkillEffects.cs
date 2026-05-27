@@ -16,24 +16,24 @@ namespace BoneThrone.Skills
             DamageResolver damageResolver,
             Unit[] knownUnits,
             Object logContext,
-            out bool targetDied,
-            out string resultLog)
+            SkillEffectResult result)
         {
-            targetDied = false;
-            resultLog = "No Mage Phase 12 skill matched.";
+            result.Summary = "No Mage Phase 12 skill matched.";
 
             if (!SkillEffectExecutor.SkillNameMatchesAny(skill, "mage_fireball", "Fireball"))
             {
                 return false;
             }
 
-            targetDied = damageResolver.ApplyDamage(target, skill.GuaranteedDamage);
-            int splashHits = ApplySplashDamage(caster, target, damageResolver, knownUnits, logContext);
-            resultLog = "Mage Fireball dealt guaranteed damage " + skill.GuaranteedDamage + " and splash hits " + splashHits + ".";
+            bool targetDied = damageResolver.ApplyDamage(target, skill.GuaranteedDamage);
+            int remainingHp = target.RuntimeState != null ? target.RuntimeState.CurrentHp : 0;
+            result.AddDamage(target, skill.GuaranteedDamage, remainingHp, targetDied, true);
+            int splashHits = ApplySplashDamage(caster, target, damageResolver, knownUnits, logContext, result);
+            result.Summary = "Mage Fireball dealt guaranteed damage " + skill.GuaranteedDamage + " and splash hits " + splashHits + ".";
             return true;
         }
 
-        private static int ApplySplashDamage(Unit caster, Unit target, DamageResolver damageResolver, Unit[] knownUnits, Object logContext)
+        private static int ApplySplashDamage(Unit caster, Unit target, DamageResolver damageResolver, Unit[] knownUnits, Object logContext, SkillEffectResult result)
         {
             if (knownUnits == null || knownUnits.Length == 0)
             {
@@ -58,7 +58,9 @@ namespace BoneThrone.Skills
 
                 if (distanceToMainTarget == 1)
                 {
-                    damageResolver.ApplyDamage(candidate, 1);
+                    bool targetDied = damageResolver.ApplyDamage(candidate, 1);
+                    int remainingHp = candidate.RuntimeState != null ? candidate.RuntimeState.CurrentHp : 0;
+                    result.AddDamage(candidate, 1, remainingHp, targetDied, false);
                     splashHits++;
                 }
             }

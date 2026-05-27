@@ -8,10 +8,9 @@ namespace BoneThrone.Skills
     /// </summary>
     internal static class BarbarianSkillEffects
     {
-        public static bool TryExecute(Unit caster, Unit target, SkillData skill, DamageResolver damageResolver, out bool targetDied, out string resultLog)
+        public static bool TryExecute(Unit caster, Unit target, SkillData skill, DamageResolver damageResolver, SkillEffectResult result)
         {
-            targetDied = false;
-            resultLog = "No Barbarian Phase 12 skill matched.";
+            result.Summary = "No Barbarian Phase 12 skill matched.";
 
             if (!SkillEffectExecutor.SkillNameMatchesAny(skill, "barbarian_heavy_cleave", "Heavy Cleave"))
             {
@@ -24,8 +23,10 @@ namespace BoneThrone.Skills
                 damage++;
             }
 
-            targetDied = damageResolver.ApplyDamage(target, damage);
-            resultLog = "Barbarian Heavy Cleave dealt guaranteed damage " + damage + ".";
+            bool targetDied = damageResolver.ApplyDamage(target, damage);
+            int remainingHp = target.RuntimeState != null ? target.RuntimeState.CurrentHp : 0;
+            result.AddDamage(target, damage, remainingHp, targetDied, true);
+            result.Summary = "Barbarian Heavy Cleave dealt guaranteed damage " + damage + ".";
             return true;
         }
 

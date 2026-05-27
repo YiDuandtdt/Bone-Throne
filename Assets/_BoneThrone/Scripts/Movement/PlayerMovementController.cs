@@ -59,51 +59,85 @@ namespace BoneThrone.Movement
                 return;
             }
 
+            if (unit != null && selectionManager.SelectedUnit == unit)
+            {
+                selectionManager.ClearSelection();
+                reachablePositions.Clear();
+                if (debugHighlighter != null)
+                {
+                    debugHighlighter.Clear();
+                }
+
+                return;
+            }
+
             if (!selectionManager.TrySelect(unit))
             {
                 return;
             }
 
-            RefreshReachablePositions();
+            reachablePositions.Clear();
+            if (debugHighlighter != null)
+            {
+                debugHighlighter.ClearActionHighlights();
+                debugHighlighter.ShowSelected(unit.CurrentTile);
+            }
         }
 
         private void HandleTileClick(Tile tile)
         {
+            Debug.LogWarning("Tile movement is controlled by the HUD Move action. Click Move before choosing a tile.", tile);
+        }
+
+        public HashSet<GridPosition> GetReachablePositionsForSelected()
+        {
+            RefreshReachablePositions(false);
+            return new HashSet<GridPosition>(reachablePositions);
+        }
+
+        public bool TryMoveSelectedUnitTo(Tile tile)
+        {
             if (!HasRequiredReferences())
             {
-                return;
+                return false;
+            }
+
+            if (tile == null)
+            {
+                Debug.LogWarning("Movement ignored because target tile is missing.", this);
+                return false;
             }
 
             if (!selectionManager.HasSelection)
             {
                 Debug.LogWarning("Tile click ignored because no player unit is selected.", tile);
-                return;
+                return false;
             }
 
             GridPosition targetPosition = tile.Position;
             if (!reachablePositions.Contains(targetPosition))
             {
                 Debug.LogWarning("Tile click ignored because " + targetPosition + " is not in the selected unit's reachable range.", tile);
-                return;
+                return false;
             }
 
             Unit selectedUnit = selectionManager.SelectedUnit;
             if (selectedUnit == null || selectedUnit.CurrentTile == null)
             {
                 Debug.LogWarning("Movement ignored because the selected unit has no current tile.", this);
-                return;
+                return false;
             }
 
             if (!CanSelectedUnitMove(selectedUnit))
             {
-                return;
+                return false;
             }
 
             List<GridPosition> path;
             if (!pathfinder.TryFindPath(gridManager, selectedUnit.CurrentTile.Position, targetPosition, out path))
             {
                 Debug.LogWarning("Movement ignored because no valid A* path was found.", tile);
-                return;
+                return false;
             }
 
             if (unitMover.TryMove(selectedUnit, gridManager, path))
@@ -113,11 +147,20 @@ namespace BoneThrone.Movement
                     MarkSelectedUnitMoved(selectedUnit);
                 }
 
-                RefreshReachablePositions();
+                reachablePositions.Clear();
+                if (debugHighlighter != null)
+                {
+                    debugHighlighter.ClearActionHighlights();
+                    debugHighlighter.ShowSelected(selectedUnit.CurrentTile);
+                }
+
+                return true;
             }
+
+            return false;
         }
 
-        private void RefreshReachablePositions()
+        private void RefreshReachablePositions(bool showHighlights)
         {
             reachablePositions.Clear();
 
@@ -126,7 +169,7 @@ namespace BoneThrone.Movement
             {
                 if (debugHighlighter != null)
                 {
-                    debugHighlighter.Clear();
+                    debugHighlighter.ClearActionHighlights();
                 }
 
                 return;
@@ -136,7 +179,7 @@ namespace BoneThrone.Movement
             {
                 if (debugHighlighter != null)
                 {
-                    debugHighlighter.Clear();
+                    debugHighlighter.ClearActionHighlights();
                 }
 
                 return;
@@ -153,9 +196,9 @@ namespace BoneThrone.Movement
                 reachablePositions.Add(position);
             }
 
-            if (debugHighlighter != null)
+            if (showHighlights && debugHighlighter != null)
             {
-                debugHighlighter.ShowReachable(gridManager, reachablePositions);
+                debugHighlighter.ShowMoveRange(gridManager, reachablePositions);
             }
 
             Debug.Log("Reachable tile count for unit " + selectedUnit.UnitId + ": " + reachablePositions.Count + ".", selectedUnit);

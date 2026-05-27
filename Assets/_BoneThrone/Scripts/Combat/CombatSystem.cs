@@ -17,6 +17,38 @@ namespace BoneThrone.Combat
         [SerializeField] private TurnManager turnManager;
         [SerializeField] private ActionPermissionService actionPermissionService;
 
+        public bool CanBasicAttack(Unit attacker, Unit target, out string reason)
+        {
+            if (!CanBasicParticipantsAttack(attacker, target, out reason))
+            {
+                return false;
+            }
+
+            if (!CanPassTurnGate(attacker, out reason))
+            {
+                return false;
+            }
+
+            if (!CanUseCombatServices(out reason))
+            {
+                return false;
+            }
+
+            int distance = attackRangeService.GetManhattanDistance(attacker, target);
+            if (!attackRangeService.IsInBasicAttackRange(attacker, target))
+            {
+                reason = "Target is out of basic attack range. Distance="
+                    + distance
+                    + " Range="
+                    + attackRangeService.BasicAttackRange
+                    + ".";
+                return false;
+            }
+
+            reason = "Basic attack target is valid.";
+            return true;
+        }
+
         public bool TryBasicAttack(Unit attacker, Unit target)
         {
             if (!ValidateBasicParticipants(attacker, target))
@@ -52,6 +84,7 @@ namespace BoneThrone.Combat
             if (combatLog != null)
             {
                 combatLog.LogAttackAttempt(attacker, target, roll, attackModifier, defense);
+                combatLog.LogBasicAttackRoll(attacker, roll, attackModifier);
             }
 
             bool hit = attackTotal >= defense;
@@ -76,6 +109,142 @@ namespace BoneThrone.Combat
             }
 
             MarkAttackerActed(attacker);
+            return true;
+        }
+
+        private bool CanBasicParticipantsAttack(Unit attacker, Unit target, out string reason)
+        {
+            if (attacker == null)
+            {
+                reason = "Attacker is missing.";
+                return false;
+            }
+
+            if (target == null)
+            {
+                reason = "Target is missing.";
+                return false;
+            }
+
+            if (attacker == target)
+            {
+                reason = "Attacker cannot target itself.";
+                return false;
+            }
+
+            if (!attacker.IsAlive)
+            {
+                reason = "Attacker is dead.";
+                return false;
+            }
+
+            if (!target.IsAlive)
+            {
+                reason = "Target is dead.";
+                return false;
+            }
+
+            if (attacker.Faction == UnitFaction.None || target.Faction == UnitFaction.None)
+            {
+                reason = "Attacker or target faction is missing.";
+                return false;
+            }
+
+            if (attacker.Faction == target.Faction)
+            {
+                reason = "Basic attack target must be an opposing faction.";
+                return false;
+            }
+
+            if (attacker.CurrentTile == null)
+            {
+                reason = "Attacker has no current tile.";
+                return false;
+            }
+
+            if (target.CurrentTile == null)
+            {
+                reason = "Target has no current tile.";
+                return false;
+            }
+
+            reason = "Basic attack participants are valid.";
+            return true;
+        }
+
+        private bool CanPassTurnGate(Unit attacker, out string reason)
+        {
+            bool hasTurnManager = turnManager != null;
+            bool hasActionPermissionService = actionPermissionService != null;
+
+            if (hasTurnManager != hasActionPermissionService)
+            {
+                reason = "Turn gating is partially configured. Bind both TurnManager and ActionPermissionService, or leave both empty.";
+                return false;
+            }
+
+            if (!hasTurnManager)
+            {
+                reason = "Turn gating is not configured.";
+                return true;
+            }
+
+            UnitTurnState turnState = attacker != null ? attacker.GetComponent<UnitTurnState>() : null;
+            if (turnState == null)
+            {
+                reason = "Attacker has no UnitTurnState.";
+                return false;
+            }
+
+            if (turnManager.CurrentPhase != TurnPhase.PlayerTurn)
+            {
+                reason = "Current phase is " + turnManager.CurrentPhase + ".";
+                return false;
+            }
+
+            if (attacker.Faction != UnitFaction.Player)
+            {
+                reason = "Only player units can act during PlayerTurn.";
+                return false;
+            }
+
+            if (turnState.HasActed)
+            {
+                reason = "Attacker has already acted.";
+                return false;
+            }
+
+            if (actionPermissionService.RequireCurrentRole && attacker.RoleId != turnManager.CurrentRole)
+            {
+                reason = "Attacker role " + attacker.RoleId + " does not match current role " + turnManager.CurrentRole + ".";
+                return false;
+            }
+
+            reason = "Turn gate passed.";
+            return true;
+        }
+
+        private bool CanUseCombatServices(out string reason)
+        {
+            if (d20Roller == null)
+            {
+                reason = "D20Roller is missing.";
+                return false;
+            }
+
+            if (attackRangeService == null)
+            {
+                reason = "AttackRangeService is missing.";
+                return false;
+            }
+
+            if (damageResolver == null)
+            {
+                reason = "DamageResolver is missing.";
+                return false;
+            }
+
+            reason = "Combat services are bound.";
             return true;
         }
 

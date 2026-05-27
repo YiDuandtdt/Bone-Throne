@@ -8,10 +8,9 @@ namespace BoneThrone.Skills
     /// </summary>
     internal static class FighterSkillEffects
     {
-        public static bool TryExecute(Unit caster, Unit target, SkillData skill, DamageResolver damageResolver, out bool targetDied, out string resultLog)
+        public static bool TryExecute(Unit caster, Unit target, SkillData skill, DamageResolver damageResolver, SkillEffectResult result)
         {
-            targetDied = false;
-            resultLog = "No Fighter Phase 12 skill matched.";
+            result.Summary = "No Fighter Phase 12 skill matched.";
 
             if (!SkillEffectExecutor.SkillNameMatchesAny(skill, "fighter_shield_bash", "Shield Bash"))
             {
@@ -19,8 +18,10 @@ namespace BoneThrone.Skills
             }
 
             int damage = skill.GuaranteedDamage + 1;
-            targetDied = damageResolver.ApplyDamage(target, damage);
-            resultLog = "Fighter Shield Bash dealt guaranteed damage " + damage + ".";
+            bool targetDied = damageResolver.ApplyDamage(target, damage);
+            int remainingHp = target.RuntimeState != null ? target.RuntimeState.CurrentHp : 0;
+            result.AddDamage(target, damage, remainingHp, targetDied, true);
+            result.Summary = "Fighter Shield Bash dealt guaranteed damage " + damage + ".";
             return true;
         }
     }
