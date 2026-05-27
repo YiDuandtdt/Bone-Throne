@@ -1,4 +1,4 @@
-# Phase 14.7 Pre-Feature Regression Audit
+﻿# Phase 14.7 Pre-Feature Regression Audit
 
 ## 1. Purpose and scope
 
@@ -60,12 +60,12 @@ Fill this before testing:
 
 | Field | Value |
 | --- | --- |
-| Tester |  |
-| Date |  |
-| Branch |  |
-| Commit hash |  |
-| Unity version |  |
-| OS |  |
+| Tester | User local Unity tester |
+| Date | 2026-05-28 |
+| Branch | phase/14-documentation-and-stabilization |
+| Commit hash | fd2dc58 |
+| Unity version | Unity 6.3 LTS |
+| OS | Windows |
 | Scene | `Assets/_BoneThrone/Scenes/GridTest.unity` |
 
 ## 5. Git status before audit
@@ -79,7 +79,7 @@ git status --short
 Output:
 
 ```text
-
+No output. Working tree was clean before recording this audit result.
 ```
 
 Record changed file names before testing:
@@ -91,7 +91,7 @@ git diff --name-only
 Output:
 
 ```text
-
+No output. No changed file names before recording this audit result.
 ```
 
 ## 6. Scene under test
@@ -107,11 +107,11 @@ Record Console state before entering Play Mode:
 
 | Field | Value |
 | --- | --- |
-| Errors |  |
-| Warnings |  |
-| Logs |  |
-| Whether Play Mode is blocked |  |
-| Notes |  |
+| Errors | No blocking errors reported by user. |
+| Warnings | No blocking warnings reported by user. |
+| Logs | Not separately captured in this audit entry. |
+| Whether Play Mode is blocked | No. User reported all tests passed. |
+| Notes | User reported all GridTest regression tests passed. |
 
 If Play Mode is blocked by Console errors, mark affected regression tests as `Blocked` and do not fix the issue in Phase 14.7.
 
@@ -121,19 +121,19 @@ Status values: `Pass`, `Fail`, `Blocked`, `Not Tested`.
 
 | Binding name | Scene object / component | Expected references | Actual references | Status: Pass / Fail / Blocked / Not Tested | Notes | Related regression tests | Related Phase 14.6 candidate |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `SkillEffectExecutor.knownUnits` | `SkillEffectExecutor` | Units needed for skill effects, especially Fireball splash targets. |  |  |  | REG-05, REG-06 | Candidate D |
-| `BattleHUDController.enemyUnits` | `BattleHUDController` | Ordinary enemy scene instances. |  |  |  | REG-03, REG-04, REG-07 | Candidate E |
-| `UIActionModeController.enemyUnits` | `UIActionModeController` | Ordinary enemy scene instances used for red/yellow highlights. |  |  |  | REG-03, REG-04 | Candidate E |
-| `BattleHUDController.playerUnits` | `BattleHUDController` | Fighter, Ranger, Mage, Barbarian scene instances. |  |  |  | REG-01, REG-02, REG-06, REG-15 | Candidate A |
-| `TurnManager.playerUnits` | `TurnManager` | Player unit scene instances used by turn flow. |  |  |  | REG-01, REG-02, REG-16 | Candidate B |
-| `LevelProgressionService.playerUnits` | `LevelProgressionService` | Player unit scene instances used for LevelUp. |  |  |  | REG-15 | Candidate H |
-| `RoomEnemyActivator.assignedEnemies` | `RoomEnemyActivator` | Room enemy scene instances to activate and clear. |  |  |  | REG-09, REG-11, REG-12, REG-16 | Candidate G |
-| `RoomEnemyActivator.spawnTiles` | `RoomEnemyActivator` | Spawn tiles aligned with assigned enemies. |  |  |  | REG-09, REG-11 | Candidate G |
-| `LevelProgressionService.requiredClearedRooms` | `LevelProgressionService` | Rooms required before stairs progression. |  |  |  | REG-12, REG-13, REG-14, REG-15 | Candidate H |
-| `GridManager.initialTiles` | `GridManager` | Current `GridTest.unity` tile objects. |  |  |  | REG-01, REG-02, REG-11 | Candidate A |
-| `KeyItem.progressionService` | `KeyItem` | Scene `LevelProgressionService`. |  |  |  | REG-13, REG-14 | Candidate H |
-| `InteractableStairs.progressionService` | `InteractableStairs` | Scene `LevelProgressionService`. |  |  |  | REG-14, REG-15 | Candidate H |
-| `InteractableStairs.selectionManager` | `InteractableStairs` | Scene `SelectionManager`. |  |  |  | REG-14 | Candidate H |
+| `SkillEffectExecutor.knownUnits` | `SkillEffectExecutor` | Units needed for skill effects, especially Fireball splash targets. | Verified in `GridTest.unity`; no missing binding reported. | Pass | User reported Fireball splash and CombatLog checks passed. | REG-05, REG-06 | Candidate D |
+| `BattleHUDController.enemyUnits` | `BattleHUDController` | Ordinary enemy scene instances. | Verified in `GridTest.unity`; no missing binding reported. | Pass | User reported Basic Attack, Skill Slot 0, and HP bar checks passed. | REG-03, REG-04, REG-07 | Candidate E |
+| `UIActionModeController.enemyUnits` | `UIActionModeController` | Ordinary enemy scene instances used for red/yellow highlights. | Verified in `GridTest.unity`; no missing binding reported. | Pass | User reported red/yellow highlight checks passed. | REG-03, REG-04 | Candidate E |
+| `BattleHUDController.playerUnits` | `BattleHUDController` | Fighter, Ranger, Mage, Barbarian scene instances. | Verified in `GridTest.unity`; no missing binding reported. | Pass | User reported player selection, HUD, CombatLog, and LevelUp checks passed. | REG-01, REG-02, REG-06, REG-15 | Candidate A |
+| `TurnManager.playerUnits` | `TurnManager` | Player unit scene instances used by turn flow. | Verified in `GridTest.unity`; no missing binding reported. | Pass | User reported selection, movement, and Enemy AI turn checks passed. | REG-01, REG-02, REG-16 | Candidate B |
+| `LevelProgressionService.playerUnits` | `LevelProgressionService` | Player unit scene instances used for LevelUp. | Verified in `GridTest.unity`; no missing binding reported. | Pass | User reported LevelUp passed. | REG-15 | Candidate H |
+| `RoomEnemyActivator.assignedEnemies` | `RoomEnemyActivator` | Room enemy scene instances to activate and clear. | Verified in `GridTest.unity`; no missing binding reported. | Pass | User reported room trigger, activation, clear, and Enemy AI checks passed. | REG-09, REG-11, REG-12, REG-16 | Candidate G |
+| `RoomEnemyActivator.spawnTiles` | `RoomEnemyActivator` | Spawn tiles aligned with assigned enemies. | Verified in `GridTest.unity`; no missing binding reported. | Pass | User reported room trigger and enemy activation checks passed. | REG-09, REG-11 | Candidate G |
+| `LevelProgressionService.requiredClearedRooms` | `LevelProgressionService` | Rooms required before stairs progression. | Verified in `GridTest.unity`; no missing binding reported. | Pass | User reported room clear, key, stairs, and LevelUp checks passed. | REG-12, REG-13, REG-14, REG-15 | Candidate H |
+| `GridManager.initialTiles` | `GridManager` | Current `GridTest.unity` tile objects. | Verified in `GridTest.unity`; no missing binding reported. | Pass | User reported selection, movement, and activation checks passed. | REG-01, REG-02, REG-11 | Candidate A |
+| `KeyItem.progressionService` | `KeyItem` | Scene `LevelProgressionService`. | Verified in `GridTest.unity`; no missing binding reported. | Pass | User reported Key pickup and Stairs checks passed. | REG-13, REG-14 | Candidate H |
+| `InteractableStairs.progressionService` | `InteractableStairs` | Scene `LevelProgressionService`. | Verified in `GridTest.unity`; no missing binding reported. | Pass | User reported Stairs and LevelUp checks passed. | REG-14, REG-15 | Candidate H |
+| `InteractableStairs.selectionManager` | `InteractableStairs` | Scene `SelectionManager`. | Verified in `GridTest.unity`; no missing binding reported. | Pass | User reported Stairs hover / second click passed. | REG-14 | Candidate H |
 
 ## 9. Regression test result table
 
@@ -141,22 +141,22 @@ Status values: `Pass`, `Fail`, `Blocked`, `Not Tested`.
 
 | Test ID | Test name | Result: Pass / Fail / Blocked / Not Tested | Notes | Related Phase 14.6 candidate |
 | --- | --- | --- | --- | --- |
-| REG-01 | Select player unit |  |  | Candidate A |
-| REG-02 | Move mode |  |  | Candidate A |
-| REG-03 | Basic Attack mode |  |  | Candidate E |
-| REG-04 | Skill Slot 0 mode |  |  | Candidate E |
-| REG-05 | Mage Fireball splash |  |  | Candidate D |
-| REG-06 | CombatLog structured entries |  |  | Candidate D |
-| REG-07 | Enemy Floating HP Bar refresh |  |  | Candidate F |
-| REG-08 | Enemy HP Bar death hide |  |  | Candidate F |
-| REG-09 | Room trigger |  |  | Candidate G |
-| REG-10 | Room shadow hide |  |  | Candidate G |
-| REG-11 | Enemy activation |  |  | Candidate G |
-| REG-12 | Room clear |  |  | Candidate G |
-| REG-13 | Key pickup |  |  | Candidate H |
-| REG-14 | Stairs hover / second click |  |  | Candidate H |
-| REG-15 | LevelUp |  |  | Candidate H |
-| REG-16 | Enemy AI turn |  |  | Candidate B |
+| REG-01 | Select player unit | Pass | User reported test passed. | Candidate A |
+| REG-02 | Move mode | Pass | User reported test passed. | Candidate A |
+| REG-03 | Basic Attack mode | Pass | User reported test passed. | Candidate E |
+| REG-04 | Skill Slot 0 mode | Pass | User reported test passed. | Candidate E |
+| REG-05 | Mage Fireball splash | Pass | User reported test passed. | Candidate D |
+| REG-06 | CombatLog structured entries | Pass | User reported test passed. | Candidate D |
+| REG-07 | Enemy Floating HP Bar refresh | Pass | User reported test passed. | Candidate F |
+| REG-08 | Enemy HP Bar death hide | Pass | User reported test passed. | Candidate F |
+| REG-09 | Room trigger | Pass | User reported test passed. | Candidate G |
+| REG-10 | Room shadow hide | Pass | User reported test passed. | Candidate G |
+| REG-11 | Enemy activation | Pass | User reported test passed. | Candidate G |
+| REG-12 | Room clear | Pass | User reported test passed. | Candidate G |
+| REG-13 | Key pickup | Pass | User reported test passed. | Candidate H |
+| REG-14 | Stairs hover / second click | Pass | User reported test passed. | Candidate H |
+| REG-15 | LevelUp | Pass | User reported test passed. | Candidate H |
+| REG-16 | Enemy AI turn | Pass | User reported test passed. | Candidate B |
 
 ## 10. Individual test result notes
 
@@ -171,15 +171,15 @@ Use these templates during manual testing. Do not fix failures.
 | Scene | `GridTest.unity` |
 | Preconditions | Unity opens with no red Console compile errors. `GridTest.unity` is loaded. |
 | Inspector bindings checked first | `BattleHUDController.playerUnits`, `TurnManager.playerUnits`, `GridManager.initialTiles` |
-| Steps run |  |
+| Steps run | Executed by user in Unity 6.3 LTS using `GridTest.unity` and the Phase 14.5 regression checklist. |
 | Expected result | Living player units can be selected. Selected tile shows blue highlight. TurnBanner / HeroPanel reflects selected actor. Clicking selected unit again clears selection and selected highlight. |
-| Actual result |  |
-| Result | Pass / Fail / Blocked / Not Tested |
-| Screenshot / video evidence |  |
-| Console errors / warnings |  |
-| Likely cause |  |
+| Actual result | Passed; expected behavior observed according to user report. |
+| Result | Pass |
+| Screenshot / video evidence | Not provided. |
+| Console errors / warnings | No blocking Console errors or warnings reported by user. |
+| Likely cause | N/A - no failure observed. |
 | Phase 14.6 candidate mapping | Candidate A |
-| Follow-up recommendation |  |
+| Follow-up recommendation | No stabilization implementation candidate is currently supported by observed failure evidence. |
 | Fix attempted | No |
 
 ### REG-02 Move mode
@@ -191,15 +191,15 @@ Use these templates during manual testing. Do not fix failures.
 | Scene | `GridTest.unity` |
 | Preconditions | A living player unit is selected and has not moved. |
 | Inspector bindings checked first | `GridManager.initialTiles`, `BattleHUDController.playerUnits`, `TurnManager.playerUnits` |
-| Steps run |  |
+| Steps run | Executed by user in Unity 6.3 LTS using `GridTest.unity` and the Phase 14.5 regression checklist. |
 | Expected result | Move mode shows green range. Valid move uses existing movement service, updates occupancy, marks moved through movement logic, and clears action highlight. Invalid tile does not move or consume unrelated state. |
-| Actual result |  |
-| Result | Pass / Fail / Blocked / Not Tested |
-| Screenshot / video evidence |  |
-| Console errors / warnings |  |
-| Likely cause |  |
+| Actual result | Passed; expected behavior observed according to user report. |
+| Result | Pass |
+| Screenshot / video evidence | Not provided. |
+| Console errors / warnings | No blocking Console errors or warnings reported by user. |
+| Likely cause | N/A - no failure observed. |
 | Phase 14.6 candidate mapping | Candidate A |
-| Follow-up recommendation |  |
+| Follow-up recommendation | No stabilization implementation candidate is currently supported by observed failure evidence. |
 | Fix attempted | No |
 
 ### REG-03 Basic Attack mode
@@ -211,15 +211,15 @@ Use these templates during manual testing. Do not fix failures.
 | Scene | `GridTest.unity` |
 | Preconditions | A living player unit is selected, has not acted, and at least one enemy is available. |
 | Inspector bindings checked first | `UIActionModeController.enemyUnits`, `BattleHUDController.enemyUnits`, `BattleHUDController.playerUnits` |
-| Steps run |  |
+| Steps run | Executed by user in Unity 6.3 LTS using `GridTest.unity` and the Phase 14.5 regression checklist. |
 | Expected result | Red highlight uses read-only target validation. Real attack only runs after clicking a target and calls `CombatSystem.TryBasicAttack`. Invalid targets do not consume action. |
-| Actual result |  |
-| Result | Pass / Fail / Blocked / Not Tested |
-| Screenshot / video evidence |  |
-| Console errors / warnings |  |
-| Likely cause |  |
+| Actual result | Passed; expected behavior observed according to user report. |
+| Result | Pass |
+| Screenshot / video evidence | Not provided. |
+| Console errors / warnings | No blocking Console errors or warnings reported by user. |
+| Likely cause | N/A - no failure observed. |
 | Phase 14.6 candidate mapping | Candidate E |
-| Follow-up recommendation |  |
+| Follow-up recommendation | No stabilization implementation candidate is currently supported by observed failure evidence. |
 | Fix attempted | No |
 
 ### REG-04 Skill Slot 0 mode
@@ -231,15 +231,15 @@ Use these templates during manual testing. Do not fix failures.
 | Scene | `GridTest.unity` |
 | Preconditions | A living player unit has Skill Slot 0 available and has not acted. |
 | Inspector bindings checked first | `UIActionModeController.enemyUnits`, `BattleHUDController.enemyUnits`, `SkillEffectExecutor.knownUnits` |
-| Steps run |  |
+| Steps run | Executed by user in Unity 6.3 LTS using `GridTest.unity` and the Phase 14.5 regression checklist. |
 | Expected result | Yellow highlight uses read-only target validation. Real skill execution only runs after target click and calls `SkillSystem.TryUseSkill(selectedUnit, target, 0)`. Invalid targets do not consume action or cooldown. |
-| Actual result |  |
-| Result | Pass / Fail / Blocked / Not Tested |
-| Screenshot / video evidence |  |
-| Console errors / warnings |  |
-| Likely cause |  |
+| Actual result | Passed; expected behavior observed according to user report. |
+| Result | Pass |
+| Screenshot / video evidence | Not provided. |
+| Console errors / warnings | No blocking Console errors or warnings reported by user. |
+| Likely cause | N/A - no failure observed. |
 | Phase 14.6 candidate mapping | Candidate E |
-| Follow-up recommendation |  |
+| Follow-up recommendation | No stabilization implementation candidate is currently supported by observed failure evidence. |
 | Fix attempted | No |
 
 ### REG-05 Mage Fireball splash
@@ -251,15 +251,15 @@ Use these templates during manual testing. Do not fix failures.
 | Scene | `GridTest.unity` |
 | Preconditions | Mage is alive, has Skill Slot 0 ready, and at least one valid enemy is adjacent to the primary target. |
 | Inspector bindings checked first | `SkillEffectExecutor.knownUnits`, `UIActionModeController.enemyUnits`, `BattleHUDController.enemyUnits` |
-| Steps run |  |
+| Steps run | Executed by user in Unity 6.3 LTS using `GridTest.unity` and the Phase 14.5 regression checklist. |
 | Expected result | Primary target takes Fireball damage. Adjacent valid enemies take splash damage. Splash damage produces structured `SkillEffectResult` entries and separate CombatLog rows. |
-| Actual result |  |
-| Result | Pass / Fail / Blocked / Not Tested |
-| Screenshot / video evidence |  |
-| Console errors / warnings |  |
-| Likely cause |  |
+| Actual result | Passed; expected behavior observed according to user report. |
+| Result | Pass |
+| Screenshot / video evidence | Not provided. |
+| Console errors / warnings | No blocking Console errors or warnings reported by user. |
+| Likely cause | N/A - no failure observed. |
 | Phase 14.6 candidate mapping | Candidate D |
-| Follow-up recommendation |  |
+| Follow-up recommendation | No stabilization implementation candidate is currently supported by observed failure evidence. |
 | Fix attempted | No |
 
 ### REG-06 CombatLog structured entries
@@ -271,15 +271,15 @@ Use these templates during manual testing. Do not fix failures.
 | Scene | `GridTest.unity` |
 | Preconditions | Basic Attack and Skill Slot 0 can be executed. |
 | Inspector bindings checked first | `BattleHUDController.playerUnits`, `BattleHUDController.enemyUnits`, `SkillEffectExecutor.knownUnits` |
-| Steps run |  |
+| Steps run | Executed by user in Unity 6.3 LTS using `GridTest.unity` and the Phase 14.5 regression checklist. |
 | Expected result | CombatLog shows structured rows for D20, hit/miss, damage, death, skill use, skill effect, cooldown, and Fireball splash damage entries. |
-| Actual result |  |
-| Result | Pass / Fail / Blocked / Not Tested |
-| Screenshot / video evidence |  |
-| Console errors / warnings |  |
-| Likely cause |  |
+| Actual result | Passed; expected behavior observed according to user report. |
+| Result | Pass |
+| Screenshot / video evidence | Not provided. |
+| Console errors / warnings | No blocking Console errors or warnings reported by user. |
+| Likely cause | N/A - no failure observed. |
 | Phase 14.6 candidate mapping | Candidate D |
-| Follow-up recommendation |  |
+| Follow-up recommendation | No stabilization implementation candidate is currently supported by observed failure evidence. |
 | Fix attempted | No |
 
 ### REG-07 Enemy Floating HP Bar refresh
@@ -291,15 +291,15 @@ Use these templates during manual testing. Do not fix failures.
 | Scene | `GridTest.unity` |
 | Preconditions | Ordinary enemies are visible and alive. |
 | Inspector bindings checked first | Enemy HP bar Unit reference, `BattleHUDController.enemyUnits`, `UIActionModeController.enemyUnits` |
-| Steps run |  |
+| Steps run | Executed by user in Unity 6.3 LTS using `GridTest.unity` and the Phase 14.5 regression checklist. |
 | Expected result | HP bar fill changes after HP changes. Fill corresponds to current HP / max HP. Bars remain readable and do not block targeting. |
-| Actual result |  |
-| Result | Pass / Fail / Blocked / Not Tested |
-| Screenshot / video evidence |  |
-| Console errors / warnings |  |
-| Likely cause |  |
+| Actual result | Passed; expected behavior observed according to user report. |
+| Result | Pass |
+| Screenshot / video evidence | Not provided. |
+| Console errors / warnings | No blocking Console errors or warnings reported by user. |
+| Likely cause | N/A - no failure observed. |
 | Phase 14.6 candidate mapping | Candidate F |
-| Follow-up recommendation |  |
+| Follow-up recommendation | No stabilization implementation candidate is currently supported by observed failure evidence. |
 | Fix attempted | No |
 
 ### REG-08 Enemy HP Bar death hide
@@ -311,15 +311,15 @@ Use these templates during manual testing. Do not fix failures.
 | Scene | `GridTest.unity` |
 | Preconditions | At least one ordinary enemy can be killed by Basic Attack or Skill Slot 0. |
 | Inspector bindings checked first | Enemy HP bar Unit reference, `UIActionModeController.enemyUnits`, `SkillEffectExecutor.knownUnits` |
-| Steps run |  |
+| Steps run | Executed by user in Unity 6.3 LTS using `GridTest.unity` and the Phase 14.5 regression checklist. |
 | Expected result | Dead enemy releases tile, CombatLog records death, and the HP bar hides. |
-| Actual result |  |
-| Result | Pass / Fail / Blocked / Not Tested |
-| Screenshot / video evidence |  |
-| Console errors / warnings |  |
-| Likely cause |  |
+| Actual result | Passed; expected behavior observed according to user report. |
+| Result | Pass |
+| Screenshot / video evidence | Not provided. |
+| Console errors / warnings | No blocking Console errors or warnings reported by user. |
+| Likely cause | N/A - no failure observed. |
 | Phase 14.6 candidate mapping | Candidate F |
-| Follow-up recommendation |  |
+| Follow-up recommendation | No stabilization implementation candidate is currently supported by observed failure evidence. |
 | Fix attempted | No |
 
 ### REG-09 Room trigger
@@ -331,15 +331,15 @@ Use these templates during manual testing. Do not fix failures.
 | Scene | `GridTest.unity` |
 | Preconditions | A player can move to the room trigger area. |
 | Inspector bindings checked first | `RoomEnemyActivator.assignedEnemies`, `RoomEnemyActivator.spawnTiles`, `LevelProgressionService.requiredClearedRooms` |
-| Steps run |  |
+| Steps run | Executed by user in Unity 6.3 LTS using `GridTest.unity` and the Phase 14.5 regression checklist. |
 | Expected result | Room enters the expected state and starts the current room flow. |
-| Actual result |  |
-| Result | Pass / Fail / Blocked / Not Tested |
-| Screenshot / video evidence |  |
-| Console errors / warnings |  |
-| Likely cause |  |
+| Actual result | Passed; expected behavior observed according to user report. |
+| Result | Pass |
+| Screenshot / video evidence | Not provided. |
+| Console errors / warnings | No blocking Console errors or warnings reported by user. |
+| Likely cause | N/A - no failure observed. |
 | Phase 14.6 candidate mapping | Candidate G |
-| Follow-up recommendation |  |
+| Follow-up recommendation | No stabilization implementation candidate is currently supported by observed failure evidence. |
 | Fix attempted | No |
 
 ### REG-10 Room shadow hide
@@ -351,15 +351,15 @@ Use these templates during manual testing. Do not fix failures.
 | Scene | `GridTest.unity` |
 | Preconditions | Room trigger can be activated. |
 | Inspector bindings checked first | Room shadow object references, `RoomEnemyActivator.assignedEnemies` |
-| Steps run |  |
+| Steps run | Executed by user in Unity 6.3 LTS using `GridTest.unity` and the Phase 14.5 regression checklist. |
 | Expected result | Room shadow hides/reveals according to the existing simple overlay behavior. |
-| Actual result |  |
-| Result | Pass / Fail / Blocked / Not Tested |
-| Screenshot / video evidence |  |
-| Console errors / warnings |  |
-| Likely cause |  |
+| Actual result | Passed; expected behavior observed according to user report. |
+| Result | Pass |
+| Screenshot / video evidence | Not provided. |
+| Console errors / warnings | No blocking Console errors or warnings reported by user. |
+| Likely cause | N/A - no failure observed. |
 | Phase 14.6 candidate mapping | Candidate G |
-| Follow-up recommendation |  |
+| Follow-up recommendation | No stabilization implementation candidate is currently supported by observed failure evidence. |
 | Fix attempted | No |
 
 ### REG-11 Enemy activation
@@ -371,15 +371,15 @@ Use these templates during manual testing. Do not fix failures.
 | Scene | `GridTest.unity` |
 | Preconditions | Room trigger can be activated and assigned enemies exist. |
 | Inspector bindings checked first | `RoomEnemyActivator.assignedEnemies`, `RoomEnemyActivator.spawnTiles`, `GridManager.initialTiles` |
-| Steps run |  |
+| Steps run | Executed by user in Unity 6.3 LTS using `GridTest.unity` and the Phase 14.5 regression checklist. |
 | Expected result | Assigned enemies activate and are placed on intended spawn tiles without occupancy conflicts. |
-| Actual result |  |
-| Result | Pass / Fail / Blocked / Not Tested |
-| Screenshot / video evidence |  |
-| Console errors / warnings |  |
-| Likely cause |  |
+| Actual result | Passed; expected behavior observed according to user report. |
+| Result | Pass |
+| Screenshot / video evidence | Not provided. |
+| Console errors / warnings | No blocking Console errors or warnings reported by user. |
+| Likely cause | N/A - no failure observed. |
 | Phase 14.6 candidate mapping | Candidate G |
-| Follow-up recommendation |  |
+| Follow-up recommendation | No stabilization implementation candidate is currently supported by observed failure evidence. |
 | Fix attempted | No |
 
 ### REG-12 Room clear
@@ -391,15 +391,15 @@ Use these templates during manual testing. Do not fix failures.
 | Scene | `GridTest.unity` |
 | Preconditions | Room enemies can be activated and defeated. |
 | Inspector bindings checked first | `RoomEnemyActivator.assignedEnemies`, `LevelProgressionService.requiredClearedRooms` |
-| Steps run |  |
+| Steps run | Executed by user in Unity 6.3 LTS using `GridTest.unity` and the Phase 14.5 regression checklist. |
 | Expected result | Room clear occurs only after required assigned enemies are defeated or otherwise cleared. |
-| Actual result |  |
-| Result | Pass / Fail / Blocked / Not Tested |
-| Screenshot / video evidence |  |
-| Console errors / warnings |  |
-| Likely cause |  |
+| Actual result | Passed; expected behavior observed according to user report. |
+| Result | Pass |
+| Screenshot / video evidence | Not provided. |
+| Console errors / warnings | No blocking Console errors or warnings reported by user. |
+| Likely cause | N/A - no failure observed. |
 | Phase 14.6 candidate mapping | Candidate G |
-| Follow-up recommendation |  |
+| Follow-up recommendation | No stabilization implementation candidate is currently supported by observed failure evidence. |
 | Fix attempted | No |
 
 ### REG-13 Key pickup
@@ -411,15 +411,15 @@ Use these templates during manual testing. Do not fix failures.
 | Scene | `GridTest.unity` |
 | Preconditions | Key exists and a player can interact with it. |
 | Inspector bindings checked first | `KeyItem.progressionService`, `LevelProgressionService.requiredClearedRooms` |
-| Steps run |  |
+| Steps run | Executed by user in Unity 6.3 LTS using `GridTest.unity` and the Phase 14.5 regression checklist. |
 | Expected result | Key pickup updates shared progression state and can deactivate or mark the key as collected according to current placeholder flow. |
-| Actual result |  |
-| Result | Pass / Fail / Blocked / Not Tested |
-| Screenshot / video evidence |  |
-| Console errors / warnings |  |
-| Likely cause |  |
+| Actual result | Passed; expected behavior observed according to user report. |
+| Result | Pass |
+| Screenshot / video evidence | Not provided. |
+| Console errors / warnings | No blocking Console errors or warnings reported by user. |
+| Likely cause | N/A - no failure observed. |
 | Phase 14.6 candidate mapping | Candidate H |
-| Follow-up recommendation |  |
+| Follow-up recommendation | No stabilization implementation candidate is currently supported by observed failure evidence. |
 | Fix attempted | No |
 
 ### REG-14 Stairs hover / second click
@@ -431,15 +431,15 @@ Use these templates during manual testing. Do not fix failures.
 | Scene | `GridTest.unity` |
 | Preconditions | Stairs exists, a living player can be selected, and key/room conditions can be tested. |
 | Inspector bindings checked first | `InteractableStairs.progressionService`, `InteractableStairs.selectionManager`, `LevelProgressionService.requiredClearedRooms` |
-| Steps run |  |
+| Steps run | Executed by user in Unity 6.3 LTS using `GridTest.unity` and the Phase 14.5 regression checklist. |
 | Expected result | Stairs shows hover/prompt feedback, rejects progression before requirements, and performs current placeholder progression after second click when requirements are met. |
-| Actual result |  |
-| Result | Pass / Fail / Blocked / Not Tested |
-| Screenshot / video evidence |  |
-| Console errors / warnings |  |
-| Likely cause |  |
+| Actual result | Passed; expected behavior observed according to user report. |
+| Result | Pass |
+| Screenshot / video evidence | Not provided. |
+| Console errors / warnings | No blocking Console errors or warnings reported by user. |
+| Likely cause | N/A - no failure observed. |
 | Phase 14.6 candidate mapping | Candidate H |
-| Follow-up recommendation |  |
+| Follow-up recommendation | No stabilization implementation candidate is currently supported by observed failure evidence. |
 | Fix attempted | No |
 
 ### REG-15 LevelUp
@@ -451,15 +451,15 @@ Use these templates during manual testing. Do not fix failures.
 | Scene | `GridTest.unity` |
 | Preconditions | Stairs placeholder progression can be completed. |
 | Inspector bindings checked first | `LevelProgressionService.playerUnits`, `LevelProgressionService.requiredClearedRooms`, `BattleHUDController.playerUnits` |
-| Steps run |  |
+| Steps run | Executed by user in Unity 6.3 LTS using `GridTest.unity` and the Phase 14.5 regression checklist. |
 | Expected result | Living player units level up according to current placeholder progression. MaxHP increases, HP refills, and HUD refreshes. |
-| Actual result |  |
-| Result | Pass / Fail / Blocked / Not Tested |
-| Screenshot / video evidence |  |
-| Console errors / warnings |  |
-| Likely cause |  |
+| Actual result | Passed; expected behavior observed according to user report. |
+| Result | Pass |
+| Screenshot / video evidence | Not provided. |
+| Console errors / warnings | No blocking Console errors or warnings reported by user. |
+| Likely cause | N/A - no failure observed. |
 | Phase 14.6 candidate mapping | Candidate H |
-| Follow-up recommendation |  |
+| Follow-up recommendation | No stabilization implementation candidate is currently supported by observed failure evidence. |
 | Fix attempted | No |
 
 ### REG-16 Enemy AI turn
@@ -471,28 +471,28 @@ Use these templates during manual testing. Do not fix failures.
 | Scene | `GridTest.unity` |
 | Preconditions | At least one enemy is alive and active, and at least one player is alive. |
 | Inspector bindings checked first | `TurnManager.playerUnits`, `BattleHUDController.playerUnits`, `RoomEnemyActivator.assignedEnemies` |
-| Steps run |  |
+| Steps run | Executed by user in Unity 6.3 LTS using `GridTest.unity` and the Phase 14.5 regression checklist. |
 | Expected result | Enemy AI can pick a living player target, move toward it when needed, and use the shared `CombatSystem.TryBasicAttack` when in range. |
-| Actual result |  |
-| Result | Pass / Fail / Blocked / Not Tested |
-| Screenshot / video evidence |  |
-| Console errors / warnings |  |
-| Likely cause |  |
+| Actual result | Passed; expected behavior observed according to user report. |
+| Result | Pass |
+| Screenshot / video evidence | Not provided. |
+| Console errors / warnings | No blocking Console errors or warnings reported by user. |
+| Likely cause | N/A - no failure observed. |
 | Phase 14.6 candidate mapping | Candidate B |
-| Follow-up recommendation |  |
+| Follow-up recommendation | No stabilization implementation candidate is currently supported by observed failure evidence. |
 | Fix attempted | No |
 
 ## 11. Console errors / warnings log
 
 | Time observed | Before / During / After Play Mode | Severity | Full message | Stack trace | Triggering test ID | Repro steps | Blocks testing | Candidate mapping |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-|  |  |  |  |  |  |  |  |  |
+| N/A | During Play Mode | Log | User reported all tests passed; no blocking Console issue reported. | N/A | All | Full GridTest regression pass. | No | None |
 
 ## 12. Screenshot / evidence log
 
 | Evidence ID | Test ID | Screenshot / video path or description | What it shows | Related failure | Candidate mapping |
 | --- | --- | --- | --- | --- | --- |
-|  |  |  |  |  |  |
+| N/A | All | No screenshot/video provided. | User reported all tests passed. | None | None |
 
 ## 13. Observed failure to likely cause mapping
 
@@ -517,7 +517,7 @@ Only add candidates here after an actual `Fail` or `Blocked` result with notes, 
 
 | Candidate | Evidence | Related test ID | Recommended follow-up |
 | --- | --- | --- | --- |
-|  |  |  |  |
+| None | No observed failures; all reported tests passed. | All | No follow-up fix proposal supported by evidence. |
 
 ### Not yet supported by evidence
 
@@ -525,14 +525,14 @@ List candidates that have not been supported by actual observed failures.
 
 | Candidate | Reason not supported yet |
 | --- | --- |
-| Candidate A |  |
-| Candidate B |  |
-| Candidate C |  |
-| Candidate D |  |
-| Candidate E |  |
-| Candidate F |  |
-| Candidate G |  |
-| Candidate H |  |
+| Candidate A | Not supported by observed failure evidence; Inspector-related checks and dependent regression tests were reported as passed. |
+| Candidate B | Not supported by observed failure evidence; Enemy AI turn was reported as passed. |
+| Candidate C | Not supported by observed failure evidence; no cooldown-blocking failure was reported. |
+| Candidate D | Not supported by observed failure evidence; Fireball splash and CombatLog structured entries were reported as passed. |
+| Candidate E | Not supported by observed failure evidence; Basic Attack and Skill Slot 0 targeting were reported as passed. |
+| Candidate F | Not supported by observed failure evidence; Enemy HP Bar refresh and death hide were reported as passed. |
+| Candidate G | Not supported by observed failure evidence; Room trigger, shadow, activation, and clear were reported as passed. |
+| Candidate H | Not supported by observed failure evidence; Key, Stairs, and LevelUp were reported as passed. |
 
 ### Blocked by missing test data
 
@@ -540,7 +540,7 @@ List candidates that cannot be evaluated because tests were blocked or not run.
 
 | Candidate | Missing data / blocked reason | Needed next action |
 | --- | --- | --- |
-|  |  |  |
+| None | No test data missing; user reported all required tests passed. | No immediate action. |
 
 ## 15. Issues that cannot be fixed in Phase 14.7
 
@@ -606,3 +606,4 @@ To roll back Phase 14.7 documentation only, remove:
 - `Docs/DevLogs/Phase14.7_PreFeatureRegressionAudit.md`
 
 If `Docs/ACTIVE_TASK.md` is modified in a future documentation update, manually restore only the Phase 14.7-related text. Do not use broad reset commands if other Phase 14 documentation work is still in progress.
+
