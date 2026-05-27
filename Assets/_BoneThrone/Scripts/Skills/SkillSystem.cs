@@ -105,22 +105,34 @@ namespace BoneThrone.Skills
             }
 
             SkillData skill = runtime.GetSkill(slotIndex);
-            string effectResult = "Phase 11 fallback guaranteed damage " + skill.GuaranteedDamage + ".";
-            bool targetDied = effectExecutor != null
-                ? effectExecutor.TryExecute(caster, target, skill, damageResolver, out effectResult)
-                : damageResolver.ApplyDamage(target, skill.GuaranteedDamage);
+            SkillEffectResult effectResult;
+            bool targetDied;
+            if (effectExecutor != null)
+            {
+                targetDied = effectExecutor.TryExecute(caster, target, skill, damageResolver, out effectResult);
+            }
+            else
+            {
+                effectResult = new SkillEffectResult { Summary = "Phase 11 fallback guaranteed damage " + skill.GuaranteedDamage + "." };
+                targetDied = damageResolver.ApplyDamage(target, skill.GuaranteedDamage);
+                int fallbackRemainingHp = target.RuntimeState != null ? target.RuntimeState.CurrentHp : 0;
+                effectResult.AddDamage(target, skill.GuaranteedDamage, fallbackRemainingHp, targetDied, true);
+            }
 
             runtime.StartCooldown(slotIndex);
             MarkCasterActed(caster);
 
-            int remainingHp = target.RuntimeState != null ? target.RuntimeState.CurrentHp : 0;
             int cooldown = runtime.GetCooldown(slotIndex);
             if (combatLog != null)
             {
-                combatLog.LogSkillEffect(caster, target, skill, effectResult, remainingHp);
-                if (targetDied)
+                for (int i = 0; i < effectResult.DamageEntries.Count; i++)
                 {
-                    combatLog.LogDeath(target);
+                    SkillDamageLogEntry damageEntry = effectResult.DamageEntries[i];
+                    combatLog.LogSkillDamage(caster, damageEntry.Target, skill, damageEntry.Damage, damageEntry.RemainingHp, damageEntry.IsPrimaryTarget);
+                    if (damageEntry.TargetDied)
+                    {
+                        combatLog.LogDeath(damageEntry.Target);
+                    }
                 }
 
                 if (cooldown > 0)
@@ -137,7 +149,7 @@ namespace BoneThrone.Skills
                 + " on unit "
                 + target.UnitId
                 + ". "
-                + effectResult
+                + effectResult.Summary
                 + ". TargetDied="
                 + targetDied
                 + " Cooldown="

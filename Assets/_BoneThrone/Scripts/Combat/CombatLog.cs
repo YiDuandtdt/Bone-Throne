@@ -122,6 +122,22 @@ namespace BoneThrone.Combat
             Debug.Log(message, target);
         }
 
+        public void LogSkillDamage(Unit caster, Unit target, SkillData skill, int damage, int remainingHp, bool isPrimaryTarget)
+        {
+            string skillName = skill != null ? skill.DisplayName : "Unknown Skill";
+            string damageLabel = isPrimaryTarget ? " damage." : " splash damage.";
+            string message = GetDisplayName(caster)
+                + " used "
+                + skillName
+                + " on "
+                + GetDisplayName(target)
+                + ", dealt "
+                + Mathf.Max(0, damage)
+                + damageLabel;
+            AddEntry(EntryType.SkillEffect, message);
+            Debug.Log(message + " TargetHP=" + Mathf.Max(0, remainingHp) + ".", target);
+        }
+
         public void LogSkillCooldown(Unit caster, SkillData skill, int cooldown)
         {
             string skillName = skill != null ? skill.DisplayName : "Unknown Skill";

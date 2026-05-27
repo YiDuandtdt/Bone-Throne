@@ -502,6 +502,62 @@ Implemented the first small Phase 13 battle HUD slice only. This change adds scr
 10. Confirm Console still contains debugging information for rejected/process entries.
 11. Re-run Move, Basic Attack red highlight, Skill yellow highlight, Enemy AI, Key/Stairs, and Console red-error checks.
 
+## Phase 13.6-B structured skill damage log patch notes
+- Added `Assets/_BoneThrone/Scripts/Skills/SkillEffectResult.cs`.
+  - `SkillEffectResult` stores a feedback-only `Summary`, structured `DamageEntries`, `AnyTargetDied`, and `PrimaryTargetDied`.
+  - `SkillDamageLogEntry` stores target unit, damage, remaining HP, death state, and whether the hit was the primary target.
+  - These structures do not read scene objects directly and do not mutate gameplay state.
+- Updated `SkillEffectExecutor`.
+  - Added a structured `TryExecute(..., out SkillEffectResult result)` entry point.
+  - Kept the old `TryExecute(..., out string resultLog)` entry point for compatibility; it delegates to the structured result and returns `result.Summary`.
+  - Existing skill selection by caster role and skill name is preserved.
+  - Existing fallback damage still uses `skill.GuaranteedDamage`.
+- Updated existing damage skill effect files.
+  - Fighter Shield Bash records one primary damage entry after its existing `ApplyDamage` call.
+  - Ranger Precision Shot records one primary damage entry after its existing `ApplyDamage` call.
+  - Barbarian Heavy Cleave records one primary damage entry after its existing `ApplyDamage` call.
+  - Mage Fireball records the primary damage entry and one splash entry per adjacent valid enemy.
+  - In each case, remaining HP and death state are read immediately after `DamageResolver.ApplyDamage`.
+- Updated Mage Fireball feedback.
+  - Primary target damage remains `skill.GuaranteedDamage`.
+  - Splash target damage remains `1`.
+  - Splash target filtering, knownUnits dependency, and traversal order are unchanged.
+  - Each splash-damaged target can now appear as its own CombatLog UI row.
+- Updated `SkillSystem`.
+  - Skill execution now consumes the structured result.
+  - CombatLog writes one skill damage row per `SkillDamageLogEntry`.
+  - Death still reuses the existing rich-text bold `CombatLog.LogDeath`.
+  - If no damage entries exist, only Console summary remains; no forced UI damage row is created.
+  - Cooldown start, `MarkActed`, validation, return value semantics, and rejection behavior are unchanged.
+- Updated `CombatLog`.
+  - Added `LogSkillDamage(Unit caster, Unit target, SkillData skill, int damage, int remainingHp, bool isPrimaryTarget)`.
+  - Primary format: `Mage used Fireball on Skeleton Mage, dealt 6 damage.`
+  - Splash format: `Mage used Fireball on Skeleton Warrior, dealt 1 splash damage.`
+  - Rejected, cooldown, miss, and D20 attempt entries remain filtered out of the CombatLog UI.
+- Not changed in this slice:
+  - `DamageResolver` damage calculation.
+  - SkillData ScriptableObjects.
+  - Skill asset names.
+  - Skill values.
+  - Skill damage/effect formulas.
+  - Skill cooldown rules.
+  - Skill unlock rules.
+  - Unit, UnitStats, UnitRuntimeState data structures.
+  - Enemy AI, Room, Level, Key, Stairs, visuals, sound, VFX, Animator, networking, or UI Toolkit.
+
+## Phase 13.6-B manual Unity 6.3 test steps
+1. Open `Assets/_BoneThrone/Scenes/GridTest.unity`.
+2. Let Unity regenerate project files after importing `SkillEffectResult.cs`, then confirm there are no red compile errors.
+3. Enter Play Mode.
+4. Use Fighter Shield Bash; expected one skill damage row and bold death if it kills.
+5. Use Ranger Precision Shot; expected one skill damage row and bold death if it kills.
+6. Use Barbarian Heavy Cleave; expected one skill damage row and bold death if it kills.
+7. Use Mage Fireball on a target with adjacent enemies; expected one primary Fireball damage row plus one splash damage row for each valid adjacent enemy.
+8. Kill a splash target with Fireball; expected that target also gets a bold death row.
+9. Use Fireball with no adjacent valid enemies; expected only the primary target damage row and no red Console errors.
+10. Confirm cooldown, acted state, HP refresh, selected blue, move green, attack red, and skill yellow behavior are unchanged.
+11. Re-run Basic Attack result-only CombatLog, Enemy AI, Key/Stairs, and Console red-error checks.
+
 ## Rollback
 - Revert scripts:
   - `git checkout -- Assets/_BoneThrone/Scripts/UI/BattleHUDController.cs`
@@ -516,9 +572,16 @@ Implemented the first small Phase 13 battle HUD slice only. This change adds scr
   - `git checkout -- Assets/_BoneThrone/Scripts/Combat/CombatLog.cs`
   - `git checkout -- Assets/_BoneThrone/Scripts/Combat/CombatSystem.cs`
   - `git checkout -- Assets/_BoneThrone/Scripts/Skills/SkillSystem.cs`
+  - `git checkout -- Assets/_BoneThrone/Scripts/Skills/SkillEffectExecutor.cs`
+  - `git checkout -- Assets/_BoneThrone/Scripts/Skills/FighterSkillEffects.cs`
+  - `git checkout -- Assets/_BoneThrone/Scripts/Skills/RangerSkillEffects.cs`
+  - `git checkout -- Assets/_BoneThrone/Scripts/Skills/MageSkillEffects.cs`
+  - `git checkout -- Assets/_BoneThrone/Scripts/Skills/BarbarianSkillEffects.cs`
 - Revert UI prefab:
   - `git checkout -- Assets/_BoneThrone/Prefabs/UI/BattleHUD.prefab`
 - Revert scene:
   - `git checkout -- Assets/_BoneThrone/Scenes/GridTest.unity`
 - Remove this DevLog if reverting the whole phase slice:
   - `git checkout -- Docs/DevLogs/Phase13_UI_Feedback.md`
+- Remove the structured skill result files if reverting Phase 13.6-B:
+  - `git rm Assets/_BoneThrone/Scripts/Skills/SkillEffectResult.cs Assets/_BoneThrone/Scripts/Skills/SkillEffectResult.cs.meta`

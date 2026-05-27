@@ -14,54 +14,61 @@ namespace BoneThrone.Skills
 
         public bool TryExecute(Unit caster, Unit target, SkillData skill, DamageResolver damageResolver, out string resultLog)
         {
-            resultLog = "Skill effect did not run.";
+            SkillEffectResult result;
+            bool targetDied = TryExecute(caster, target, skill, damageResolver, out result);
+            resultLog = result != null ? result.Summary : "Skill effect did not run.";
+            return targetDied;
+        }
+
+        public bool TryExecute(Unit caster, Unit target, SkillData skill, DamageResolver damageResolver, out SkillEffectResult result)
+        {
+            result = new SkillEffectResult { Summary = "Skill effect did not run." };
 
             if (caster == null || target == null || skill == null || damageResolver == null)
             {
-                resultLog = "SkillEffectExecutor missing caster, target, SkillData, or DamageResolver.";
-                Debug.LogWarning(resultLog, this);
+                result.Summary = "SkillEffectExecutor missing caster, target, SkillData, or DamageResolver.";
+                Debug.LogWarning(result.Summary, this);
                 return false;
             }
 
-            bool targetDied;
             switch (caster.RoleId)
             {
                 case RoleId.Fighter:
-                    if (FighterSkillEffects.TryExecute(caster, target, skill, damageResolver, out targetDied, out resultLog))
+                    if (FighterSkillEffects.TryExecute(caster, target, skill, damageResolver, result))
                     {
-                        return targetDied;
+                        return result.PrimaryTargetDied;
                     }
 
                     break;
 
                 case RoleId.Ranger:
-                    if (RangerSkillEffects.TryExecute(caster, target, skill, damageResolver, out targetDied, out resultLog))
+                    if (RangerSkillEffects.TryExecute(caster, target, skill, damageResolver, result))
                     {
-                        return targetDied;
+                        return result.PrimaryTargetDied;
                     }
 
                     break;
 
                 case RoleId.Mage:
-                    if (MageSkillEffects.TryExecute(caster, target, skill, damageResolver, knownUnits, this, out targetDied, out resultLog))
+                    if (MageSkillEffects.TryExecute(caster, target, skill, damageResolver, knownUnits, this, result))
                     {
-                        return targetDied;
+                        return result.PrimaryTargetDied;
                     }
 
                     break;
 
                 case RoleId.Barbarian:
-                    if (BarbarianSkillEffects.TryExecute(caster, target, skill, damageResolver, out targetDied, out resultLog))
+                    if (BarbarianSkillEffects.TryExecute(caster, target, skill, damageResolver, result))
                     {
-                        return targetDied;
+                        return result.PrimaryTargetDied;
                     }
 
                     break;
             }
 
-            targetDied = ApplyFallbackDamage(target, skill, damageResolver);
-            resultLog = "Phase 11 fallback guaranteed damage " + skill.GuaranteedDamage + ".";
-            return targetDied;
+            ApplyFallbackDamage(target, skill, damageResolver, result);
+            result.Summary = "Phase 11 fallback guaranteed damage " + skill.GuaranteedDamage + ".";
+            return result.PrimaryTargetDied;
         }
 
         internal static bool SkillNameMatches(SkillData skill, string expectedName)
@@ -91,9 +98,11 @@ namespace BoneThrone.Skills
             return dx + dy;
         }
 
-        private static bool ApplyFallbackDamage(Unit target, SkillData skill, DamageResolver damageResolver)
+        private static void ApplyFallbackDamage(Unit target, SkillData skill, DamageResolver damageResolver, SkillEffectResult result)
         {
-            return damageResolver.ApplyDamage(target, skill.GuaranteedDamage);
+            bool targetDied = damageResolver.ApplyDamage(target, skill.GuaranteedDamage);
+            int remainingHp = target.RuntimeState != null ? target.RuntimeState.CurrentHp : 0;
+            result.AddDamage(target, skill.GuaranteedDamage, remainingHp, targetDied, true);
         }
 
         private static string NormalizeSkillName(string value)
