@@ -1,14 +1,15 @@
 # ACTIVE_TASK.md
 
 ## Current phase
-Phase 14.20 - Full Combat Regression
+Phase 14.21 - Final Handover and Closure
 
 ## Goal
-Create the full combat regression testing document for manual Unity Play Mode validation. This phase is documentation-only and does not modify gameplay code, assets, prefabs, or scenes.
+Record final Phase 14 handover and closure after Phase 14.20 Full Combat Regression passed. Phase 14 is closed after this final handover. No code changes are allowed in this phase.
 
 ## Allowed files
 - `Docs/Phase14_FullCombatRegression.md`
-- `Docs/DevLogs/Phase14.20_FullCombatRegression.md`
+- `Docs/Phase14_FinalHandoverAndClosure.md`
+- `Docs/DevLogs/Phase14.21_FinalHandoverAndClosure.md`
 - `Docs/ACTIVE_TASK.md`
 
 ## Forbidden changes
@@ -24,14 +25,12 @@ Create the full combat regression testing document for manual Unity Play Mode va
 - Do not fix issues during this phase.
 
 ## Validation
-Documentation-only regression planning phase.
+Documentation-only final closure phase.
 
 Manual checks:
 
 1. Confirm only docs changed.
-2. Open `Docs/Phase14_FullCombatRegression.md`.
-3. Run the listed git status commands before testing.
-4. Open `Assets/_BoneThrone/Scenes/GridTest.unity`.
-5. Execute the checklist in Unity Play Mode and record results.
-6. If all pass, proceed to Phase 14.21 Final Handover.
-7. If any fail, proceed to Phase 14.20-A Minimal Regression Fix.
+2. Confirm `Docs/Phase14_FullCombatRegression.md` records final Pass result.
+3. Confirm `Docs/Phase14_FinalHandoverAndClosure.md` states Phase 14 is functionally complete.
+4. Confirm no gameplay code, assets, prefabs, or scenes changed.
+5. Run the listed git closing checks.

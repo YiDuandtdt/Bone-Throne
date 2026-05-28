@@ -263,14 +263,16 @@ Use one row per execution. Add extra rows for blocked variants.
 ## 23. Final Result Summary
 | Field | Value |
 |---|---|
-| Total tests |  |
-| Passed |  |
-| Failed |  |
-| Blocked |  |
-| Not tested |  |
-| Console red errors |  |
-| Can proceed to Phase 14.21? |  |
-| Notes |  |
+| Overall status | Pass |
+| Total tests | All required Phase 14.20 regression items |
+| Passed | All required items passed |
+| Failed | 0 reported |
+| Blocked | 0 reported |
+| Not tested | 0 required items reported untested |
+| Console red errors | None reported |
+| Fix attempted in Phase 14.20 | No |
+| Can proceed to Phase 14.21? | Yes |
+| Notes | User manually ran Unity Play Mode regression in `GridTest.unity` and reported all required regression items passed. |
 
 ## 24. Rollback / Follow-Up Rule
 Do not roll back or fix during Phase 14.20. Record every failure. If all tests pass, proceed to Phase 14.21 Final Handover. If any test fails or blocks the run, open Phase 14.20-A Minimal Regression Fix with the smallest possible scoped repair plan.
