@@ -163,6 +163,7 @@ namespace BoneThrone.Movement
                 reachablePositions.Clear();
                 if (debugHighlighter != null)
                 {
+                    debugHighlighter.RefreshPlayerFootTiles();
                     debugHighlighter.ClearActionHighlights();
                     debugHighlighter.ShowSelected(selectedUnit.CurrentTile);
                 }
