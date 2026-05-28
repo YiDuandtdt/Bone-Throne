@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using BoneThrone.Grid;
 using BoneThrone.Skills;
 using BoneThrone.Units;
 using UnityEngine;
@@ -27,7 +28,15 @@ namespace BoneThrone.Combat
             DamageReduced = 10,
             Potion = 11,
             Heal = 12,
-            PotionRejected = 13
+            PotionRejected = 13,
+            StunApplied = 14,
+            StunConsumed = 15,
+            BleedApplied = 16,
+            BleedTick = 17,
+            DamageAmplifyApplied = 18,
+            DamageAmplified = 19,
+            Knockback = 20,
+            KnockbackBlocked = 21
         }
 
         public sealed class Entry
@@ -221,6 +230,82 @@ namespace BoneThrone.Combat
             string message = "Potion rejected: " + reason;
             AddEntry(EntryType.PotionRejected, message);
             Debug.LogWarning(message, context);
+        }
+
+        public void LogStunApplied(Unit target)
+        {
+            string message = GetDisplayName(target) + " is stunned and will skip its next move and action.";
+            AddEntry(EntryType.StunApplied, message);
+            Debug.Log(message, target);
+        }
+
+        public void LogStunConsumed(Unit target)
+        {
+            string message = GetDisplayName(target) + " is stunned and skips this move and action.";
+            AddEntry(EntryType.StunConsumed, message);
+            Debug.Log(message, target);
+        }
+
+        public void LogBleedApplied(Unit target, int stacks)
+        {
+            string message = GetDisplayName(target)
+                + " is bleeding with "
+                + Mathf.Max(0, stacks)
+                + " stack(s).";
+            AddEntry(EntryType.BleedApplied, message);
+            Debug.Log(message, target);
+        }
+
+        public void LogBleedTick(Unit target, int damage, int remainingHp, int remainingStacks)
+        {
+            string message = GetDisplayName(target)
+                + " suffers "
+                + Mathf.Max(0, damage)
+                + " bleed damage. HP="
+                + Mathf.Max(0, remainingHp)
+                + ". BleedStacks="
+                + Mathf.Max(0, remainingStacks)
+                + ".";
+            AddEntry(EntryType.BleedTick, message);
+            Debug.Log(message, target);
+        }
+
+        public void LogDamageAmplifyApplied(Unit target, int bonus)
+        {
+            string message = GetDisplayName(target)
+                + " is vulnerable. Next damage +"
+                + Mathf.Max(0, bonus)
+                + ".";
+            AddEntry(EntryType.DamageAmplifyApplied, message);
+            Debug.Log(message, target);
+        }
+
+        public void LogDamageAmplified(Unit target, int baseDamage, int bonusDamage, int amplifiedDamage)
+        {
+            string message = GetDisplayName(target)
+                + " takes amplified damage "
+                + Mathf.Max(0, baseDamage)
+                + " + "
+                + Mathf.Max(0, bonusDamage)
+                + " = "
+                + Mathf.Max(0, amplifiedDamage)
+                + ".";
+            AddEntry(EntryType.DamageAmplified, message);
+            Debug.Log(message, target);
+        }
+
+        public void LogKnockback(Unit target, GridPosition destination)
+        {
+            string message = GetDisplayName(target) + " was knocked back to " + destination + ".";
+            AddEntry(EntryType.Knockback, message);
+            Debug.Log(message, target);
+        }
+
+        public void LogKnockbackBlocked(Unit target, string reason)
+        {
+            string message = "Knockback blocked for " + GetDisplayName(target) + ": " + reason;
+            AddEntry(EntryType.KnockbackBlocked, message);
+            Debug.Log(message, target);
         }
 
         private void AddEntry(EntryType type, string message)

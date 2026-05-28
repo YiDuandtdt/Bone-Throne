@@ -26,17 +26,33 @@ namespace BoneThrone.Combat
             }
 
             int clampedDamage = Mathf.Max(0, damage);
-            int finalDamage = clampedDamage;
+            int amplifiedDamage = clampedDamage;
+            UnitDamageAmplifyState amplifyState = target.GetComponent<UnitDamageAmplifyState>();
+            if (amplifyState != null && amplifyState.HasAmplify)
+            {
+                int bonusDamage;
+                if (amplifyState.TryConsumeAmplify(out bonusDamage))
+                {
+                    amplifiedDamage = Mathf.Max(0, clampedDamage + bonusDamage);
+                    ResolveCombatLog();
+                    if (combatLog != null)
+                    {
+                        combatLog.LogDamageAmplified(target, clampedDamage, bonusDamage, amplifiedDamage);
+                    }
+                }
+            }
+
+            int finalDamage = amplifiedDamage;
             UnitDefenseState defenseState = target.GetComponent<UnitDefenseState>();
             if (defenseState != null && defenseState.IsDefending)
             {
                 int reducedAmount;
-                if (defenseState.TryConsumeReduction(clampedDamage, out finalDamage, out reducedAmount))
+                if (defenseState.TryConsumeReduction(amplifiedDamage, out finalDamage, out reducedAmount))
                 {
                     ResolveCombatLog();
                     if (combatLog != null)
                     {
-                        combatLog.LogDamageReduced(target, clampedDamage, finalDamage, reducedAmount);
+                        combatLog.LogDamageReduced(target, amplifiedDamage, finalDamage, reducedAmount);
                     }
                 }
             }

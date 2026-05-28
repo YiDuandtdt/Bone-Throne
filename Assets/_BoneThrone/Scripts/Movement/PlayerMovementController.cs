@@ -120,13 +120,6 @@ namespace BoneThrone.Movement
                 return false;
             }
 
-            GridPosition targetPosition = tile.Position;
-            if (!reachablePositions.Contains(targetPosition))
-            {
-                Debug.LogWarning("Tile click ignored because " + targetPosition + " is not in the selected unit's reachable range.", tile);
-                return false;
-            }
-
             Unit selectedUnit = selectionManager.SelectedUnit;
             if (selectedUnit == null || selectedUnit.CurrentTile == null)
             {
@@ -138,6 +131,25 @@ namespace BoneThrone.Movement
             if (selectedTurnState != null && selectedTurnState.HasEnded)
             {
                 Debug.LogWarning("Movement ignored because the selected unit has already ended this turn.", selectedUnit);
+                return false;
+            }
+
+            if (IsTurnGatingConfigured() && actionPermissionService.TryConsumeStunForAction(selectedUnit, turnManager))
+            {
+                reachablePositions.Clear();
+                if (debugHighlighter != null)
+                {
+                    debugHighlighter.ClearActionHighlights();
+                    debugHighlighter.ShowSelected(selectedUnit.CurrentTile);
+                }
+
+                return false;
+            }
+
+            GridPosition targetPosition = tile.Position;
+            if (!reachablePositions.Contains(targetPosition))
+            {
+                Debug.LogWarning("Tile click ignored because " + targetPosition + " is not in the selected unit's reachable range.", tile);
                 return false;
             }
 

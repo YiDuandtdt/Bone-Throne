@@ -1,4 +1,5 @@
 using BoneThrone.Units;
+using BoneThrone.Combat;
 using UnityEngine;
 
 namespace BoneThrone.Turns
@@ -31,6 +32,13 @@ namespace BoneThrone.Turns
                 return false;
             }
 
+            UnitStunState stunState = unit.GetComponent<UnitStunState>();
+            if (stunState != null && stunState.IsStunned)
+            {
+                Debug.LogWarning("Move denied because unit " + unit.UnitId + " is stunned.", unit);
+                return false;
+            }
+
             return true;
         }
 
@@ -48,6 +56,44 @@ namespace BoneThrone.Turns
                 return false;
             }
 
+            UnitStunState stunState = unit.GetComponent<UnitStunState>();
+            if (stunState != null && stunState.IsStunned)
+            {
+                Debug.LogWarning("Action denied because unit " + unit.UnitId + " is stunned.", unit);
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool TryConsumeStunForAction(Unit unit, TurnManager turnManager)
+        {
+            UnitTurnState turnState;
+            if (!CanUseUnit(unit, turnManager, out turnState))
+            {
+                return false;
+            }
+
+            if (turnState.HasActed)
+            {
+                return false;
+            }
+
+            UnitStunState stunState = unit.GetComponent<UnitStunState>();
+            if (stunState == null || !stunState.TryConsumeStun())
+            {
+                return false;
+            }
+
+            turnState.MarkMoved();
+            turnState.MarkActed();
+            CombatLog combatLog = Object.FindFirstObjectByType<CombatLog>();
+            if (combatLog != null)
+            {
+                combatLog.LogStunConsumed(unit);
+            }
+
+            Debug.LogWarning("Turn opportunity blocked because unit " + unit.UnitId + " is stunned.", unit);
             return true;
         }
 

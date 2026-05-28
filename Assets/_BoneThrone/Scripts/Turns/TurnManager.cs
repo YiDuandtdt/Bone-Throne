@@ -1,5 +1,6 @@
 using BoneThrone.Core;
 using BoneThrone.AI;
+using BoneThrone.Combat;
 using BoneThrone.Skills;
 using BoneThrone.Units;
 using UnityEngine;
@@ -16,6 +17,8 @@ namespace BoneThrone.Turns
         [SerializeField] private SkillSystem skillSystem;
         [SerializeField] private EnemyTurnRunner enemyTurnRunner;
         [SerializeField] private ActionPermissionService actionPermissionService;
+        [SerializeField] private DamageResolver damageResolver;
+        [SerializeField] private CombatLog combatLog;
         [SerializeField] private Unit[] playerUnits;
         [SerializeField] private TurnPhase currentPhase = TurnPhase.None;
         [SerializeField] private RoleId currentRole = RoleId.None;
@@ -55,6 +58,7 @@ namespace BoneThrone.Turns
             ResetPlayerUnitTurnStates();
             DisablePlayerRoleRequirementForFreeOrder();
             TickCooldownsForAlivePlayers();
+            TickBleedForAlivePlayers();
             currentPhase = TurnPhase.PlayerTurn;
             currentRole = RoleId.None;
             currentTurnIndex = -1;
@@ -341,6 +345,47 @@ namespace BoneThrone.Turns
             }
         }
 
+        private void TickBleedForAlivePlayers()
+        {
+            ResolveCombatReferences();
+            if (damageResolver == null || playerUnits == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < playerUnits.Length; i++)
+            {
+                Unit unit = playerUnits[i];
+                if (unit == null || !unit.IsAlive)
+                {
+                    continue;
+                }
+
+                UnitBleedState bleedState = unit.GetComponent<UnitBleedState>();
+                if (bleedState == null || !bleedState.HasBleed)
+                {
+                    continue;
+                }
+
+                int bleedDamage;
+                if (!bleedState.TryConsumeTick(out bleedDamage))
+                {
+                    continue;
+                }
+
+                bool died = damageResolver.ApplyDamage(unit, bleedDamage);
+                int remainingHp = unit.RuntimeState != null ? unit.RuntimeState.CurrentHp : 0;
+                if (combatLog != null)
+                {
+                    combatLog.LogBleedTick(unit, bleedDamage, remainingHp, bleedState.RemainingTurns);
+                    if (died)
+                    {
+                        combatLog.LogDeath(unit);
+                    }
+                }
+            }
+        }
+
         private void SkipUnavailableActor(RoleId role, Unit actor)
         {
             int maxSkips = turnOrderService != null ? turnOrderService.Count : 5;
@@ -403,6 +448,21 @@ namespace BoneThrone.Turns
             if (actionPermissionService == null)
             {
                 actionPermissionService = Object.FindFirstObjectByType<ActionPermissionService>();
+            }
+
+            ResolveCombatReferences();
+        }
+
+        private void ResolveCombatReferences()
+        {
+            if (damageResolver == null)
+            {
+                damageResolver = Object.FindFirstObjectByType<DamageResolver>();
+            }
+
+            if (combatLog == null)
+            {
+                combatLog = Object.FindFirstObjectByType<CombatLog>();
             }
         }
 

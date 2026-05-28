@@ -16,6 +16,6 @@ MonoBehaviour:
   displayName: mage_fireball
   unlockLevel: 1
   range: 3
-  cooldownTurns: 2
+  cooldownTurns: 1
   guaranteedDamage: 3
   targetType: 0

@@ -22,6 +22,8 @@ namespace BoneThrone.AI
         [SerializeField] private AttackRangeService attackRangeService;
         [SerializeField] private CombatSystem combatSystem;
         [SerializeField] private ActionPermissionService actionPermissionService;
+        [SerializeField] private DamageResolver damageResolver;
+        [SerializeField] private CombatLog combatLog;
 
         private readonly EnemyAIController enemyAIController = new EnemyAIController();
         private readonly List<Unit> activeEnemies = new List<Unit>();
@@ -68,7 +70,19 @@ namespace BoneThrone.AI
                         continue;
                     }
 
+                    TickBleed(enemy);
+                    if (!IsActiveAliveEnemy(enemy))
+                    {
+                        continue;
+                    }
+
                     ResetEnemyAllowance(enemy);
+                    if (actionPermissionService != null && actionPermissionService.TryConsumeStunForAction(enemy, turnManager))
+                    {
+                        Debug.Log("EnemyTurnRunner skipped stunned enemy " + enemy.UnitId + ".", enemy);
+                        continue;
+                    }
+
                     EnemyAIResult result = enemyAIController.TryRunAction(
                         enemy,
                         activePlayers,
@@ -197,6 +211,47 @@ namespace BoneThrone.AI
             if (actionPermissionService == null)
             {
                 actionPermissionService = Object.FindFirstObjectByType<ActionPermissionService>();
+            }
+
+            if (damageResolver == null)
+            {
+                damageResolver = Object.FindFirstObjectByType<DamageResolver>();
+            }
+
+            if (combatLog == null)
+            {
+                combatLog = Object.FindFirstObjectByType<CombatLog>();
+            }
+        }
+
+        private void TickBleed(Unit enemy)
+        {
+            if (enemy == null || damageResolver == null)
+            {
+                return;
+            }
+
+            UnitBleedState bleedState = enemy.GetComponent<UnitBleedState>();
+            if (bleedState == null || !bleedState.HasBleed)
+            {
+                return;
+            }
+
+            int bleedDamage;
+            if (!bleedState.TryConsumeTick(out bleedDamage))
+            {
+                return;
+            }
+
+            bool died = damageResolver.ApplyDamage(enemy, bleedDamage);
+            int remainingHp = enemy.RuntimeState != null ? enemy.RuntimeState.CurrentHp : 0;
+            if (combatLog != null)
+            {
+                combatLog.LogBleedTick(enemy, bleedDamage, remainingHp, bleedState.RemainingTurns);
+                if (died)
+                {
+                    combatLog.LogDeath(enemy);
+                }
             }
         }
 

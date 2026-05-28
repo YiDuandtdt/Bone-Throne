@@ -15,7 +15,7 @@ MonoBehaviour:
   skillId: 10
   displayName: mage_arcane_burst
   unlockLevel: 3
-  range: 3
+  range: 4
   cooldownTurns: 3
   guaranteedDamage: 3
   targetType: 0

@@ -15,7 +15,7 @@ MonoBehaviour:
   skillId: 9
   displayName: mage_frost_bolt
   unlockLevel: 2
-  range: 3
-  cooldownTurns: 1
+  range: 5
+  cooldownTurns: 2
   guaranteedDamage: 2
   targetType: 0
