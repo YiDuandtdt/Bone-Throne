@@ -121,6 +121,10 @@ namespace BoneThrone.UI
             skillBarView.BasicAttackClicked += HandleBasicAttackClicked;
             skillBarView.SkillSlot0Clicked -= HandleSkillSlot0Clicked;
             skillBarView.SkillSlot0Clicked += HandleSkillSlot0Clicked;
+            skillBarView.SkillSlot1Clicked -= HandleSkillSlot1Clicked;
+            skillBarView.SkillSlot1Clicked += HandleSkillSlot1Clicked;
+            skillBarView.SkillSlot2Clicked -= HandleSkillSlot2Clicked;
+            skillBarView.SkillSlot2Clicked += HandleSkillSlot2Clicked;
         }
 
         private void UnsubscribeSkillBar()
@@ -130,6 +134,8 @@ namespace BoneThrone.UI
                 skillBarView.MoveClicked -= HandleMoveClicked;
                 skillBarView.BasicAttackClicked -= HandleBasicAttackClicked;
                 skillBarView.SkillSlot0Clicked -= HandleSkillSlot0Clicked;
+                skillBarView.SkillSlot1Clicked -= HandleSkillSlot1Clicked;
+                skillBarView.SkillSlot2Clicked -= HandleSkillSlot2Clicked;
             }
         }
 
@@ -165,6 +171,21 @@ namespace BoneThrone.UI
 
         private void HandleSkillSlot0Clicked()
         {
+            HandleSkillSlotClicked(0);
+        }
+
+        private void HandleSkillSlot1Clicked()
+        {
+            HandleSkillSlotClicked(1);
+        }
+
+        private void HandleSkillSlot2Clicked()
+        {
+            HandleSkillSlotClicked(2);
+        }
+
+        private void HandleSkillSlotClicked(int slotIndex)
+        {
             if (actionModeController == null)
             {
                 if (promptView != null)
@@ -175,7 +196,7 @@ namespace BoneThrone.UI
                 return;
             }
 
-            actionModeController.HandleSkillSlot0ButtonClicked();
+            actionModeController.HandleSkillSlotButtonClicked(slotIndex);
         }
 
         private void EnsureActionModeController()

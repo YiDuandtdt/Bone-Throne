@@ -7,7 +7,7 @@ using UnityEngine.UI;
 namespace BoneThrone.UI
 {
     /// <summary>
-    /// Displays the first prototype action bar. Move, Basic Attack, and Skill Slot 0 emit UI intent events.
+    /// Displays the first prototype action bar. Move, Basic Attack, and skill slots emit UI intent events.
     /// </summary>
     public sealed class SkillBarView : MonoBehaviour
     {
@@ -23,10 +23,14 @@ namespace BoneThrone.UI
         private Button moveButton;
         private Button basicAttackButton;
         private Button slot0Button;
+        private Button slot1Button;
+        private Button slot2Button;
 
         public event System.Action MoveClicked;
         public event System.Action BasicAttackClicked;
         public event System.Action SkillSlot0Clicked;
+        public event System.Action SkillSlot1Clicked;
+        public event System.Action SkillSlot2Clicked;
 
         public void Bind(
             TMP_Text move,
@@ -49,9 +53,11 @@ namespace BoneThrone.UI
             moveButton = actionButtons != null && actionButtons.Length > 0 ? actionButtons[0] : null;
             basicAttackButton = actionButtons != null && actionButtons.Length > 1 ? actionButtons[1] : null;
             slot0Button = actionButtons != null && actionButtons.Length > 2 ? actionButtons[2] : null;
+            slot1Button = actionButtons != null && actionButtons.Length > 3 ? actionButtons[3] : null;
+            slot2Button = actionButtons != null && actionButtons.Length > 4 ? actionButtons[4] : null;
             ConfigureMoveButton();
             ConfigureBasicAttackButton();
-            ConfigureSlot0Button();
+            ConfigureSkillSlotButtons();
             DisablePlaceholderButtons();
         }
 
@@ -60,42 +66,44 @@ namespace BoneThrone.UI
             DisablePlaceholderButtons();
             SetMoveInteractable(true);
             SetBasicAttackInteractable(true);
-            SetSlot0Interactable(true);
+            SetSkillSlotInteractable(0, true);
+            SetSkillSlotInteractable(1, true);
+            SetSkillSlotInteractable(2, true);
 
             SetText(moveText, selectedUnit != null ? "Move\nTarget" : "Move\nSelect Unit");
             SetText(basicAttackText, selectedUnit != null ? "Basic Attack\nTarget" : "Basic Attack\nSelect Unit");
-            RefreshSlot0(selectedUnit);
-            SetText(slot1Text, "Slot 1\nPlaceholder");
-            SetText(slot2Text, "Slot 2\nPlaceholder");
+            RefreshSkillSlot(selectedUnit, 0, slot0Text);
+            RefreshSkillSlot(selectedUnit, 1, slot1Text);
+            RefreshSkillSlot(selectedUnit, 2, slot2Text);
             SetText(defendText, "Defend\nPlaceholder");
             SetText(potionText, "Potion\nPlaceholder");
         }
 
-        private void RefreshSlot0(Unit selectedUnit)
+        private void RefreshSkillSlot(Unit selectedUnit, int slotIndex, TMP_Text text)
         {
-            if (slot0Text == null)
+            if (text == null)
             {
                 return;
             }
 
             if (selectedUnit == null)
             {
-                slot0Text.text = "Skill 0\nNo Unit";
+                text.text = "Skill " + slotIndex + "\nNo Unit";
                 return;
             }
 
             SkillRuntime runtime = selectedUnit.GetComponent<SkillRuntime>();
-            if (runtime == null || !runtime.HasSkill(0))
+            if (runtime == null || !runtime.HasSkill(slotIndex))
             {
-                slot0Text.text = "Skill 0\n--";
+                text.text = "Skill " + slotIndex + "\nEmpty";
                 return;
             }
 
-            SkillData skill = runtime.GetSkill(0);
-            bool unlocked = runtime.IsUnlocked(selectedUnit, 0);
-            int cooldown = runtime.GetCooldown(0);
+            SkillData skill = runtime.GetSkill(slotIndex);
+            bool unlocked = runtime.IsUnlocked(selectedUnit, slotIndex);
+            int cooldown = runtime.GetCooldown(slotIndex);
             string state = !unlocked ? "Locked" : cooldown > 0 ? "Cooldown " + cooldown : "Ready";
-            slot0Text.text = skill.DisplayName + "\n" + state;
+            text.text = skill.DisplayName + "\n" + state;
         }
 
         private void ConfigureMoveButton()
@@ -122,16 +130,25 @@ namespace BoneThrone.UI
             SetBasicAttackInteractable(true);
         }
 
-        private void ConfigureSlot0Button()
+        private void ConfigureSkillSlotButtons()
         {
-            if (slot0Button == null)
+            ConfigureSkillSlotButton(slot0Button, HandleSkillSlot0Clicked);
+            ConfigureSkillSlotButton(slot1Button, HandleSkillSlot1Clicked);
+            ConfigureSkillSlotButton(slot2Button, HandleSkillSlot2Clicked);
+            SetSkillSlotInteractable(0, true);
+            SetSkillSlotInteractable(1, true);
+            SetSkillSlotInteractable(2, true);
+        }
+
+        private void ConfigureSkillSlotButton(Button button, UnityEngine.Events.UnityAction handler)
+        {
+            if (button == null)
             {
                 return;
             }
 
-            slot0Button.onClick.RemoveListener(HandleSkillSlot0Clicked);
-            slot0Button.onClick.AddListener(HandleSkillSlot0Clicked);
-            SetSlot0Interactable(true);
+            button.onClick.RemoveListener(handler);
+            button.onClick.AddListener(handler);
         }
 
         private void HandleMoveClicked()
@@ -155,6 +172,22 @@ namespace BoneThrone.UI
             if (SkillSlot0Clicked != null)
             {
                 SkillSlot0Clicked();
+            }
+        }
+
+        private void HandleSkillSlot1Clicked()
+        {
+            if (SkillSlot1Clicked != null)
+            {
+                SkillSlot1Clicked();
+            }
+        }
+
+        private void HandleSkillSlot2Clicked()
+        {
+            if (SkillSlot2Clicked != null)
+            {
+                SkillSlot2Clicked();
             }
         }
 
@@ -186,17 +219,33 @@ namespace BoneThrone.UI
             }
         }
 
-        private void SetSlot0Interactable(bool interactable)
+        private void SetSkillSlotInteractable(int slotIndex, bool interactable)
         {
-            if (slot0Button == null)
+            Button button = GetSkillSlotButton(slotIndex);
+            if (button == null)
             {
                 return;
             }
 
-            slot0Button.interactable = interactable;
-            if (slot0Button.targetGraphic != null)
+            button.interactable = interactable;
+            if (button.targetGraphic != null)
             {
-                slot0Button.targetGraphic.raycastTarget = interactable;
+                button.targetGraphic.raycastTarget = interactable;
+            }
+        }
+
+        private Button GetSkillSlotButton(int slotIndex)
+        {
+            switch (slotIndex)
+            {
+                case 0:
+                    return slot0Button;
+                case 1:
+                    return slot1Button;
+                case 2:
+                    return slot2Button;
+                default:
+                    return null;
             }
         }
 
@@ -211,7 +260,7 @@ namespace BoneThrone.UI
             {
                 if (actionButtons[i] != null)
                 {
-                    bool isSupportedAction = i == 0 || i == 1 || i == 2;
+                    bool isSupportedAction = i >= 0 && i <= 4;
                     actionButtons[i].interactable = isSupportedAction;
                     if (actionButtons[i].targetGraphic != null)
                     {

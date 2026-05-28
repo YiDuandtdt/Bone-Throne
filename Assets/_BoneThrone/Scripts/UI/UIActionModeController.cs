@@ -197,8 +197,11 @@ namespace BoneThrone.UI
 
         public void HandleSkillSlot0ButtonClicked()
         {
-            const int slotIndex = 0;
+            HandleSkillSlotButtonClicked(0);
+        }
 
+        public void HandleSkillSlotButtonClicked(int slotIndex)
+        {
             if (currentMode == ActionMode.SkillTargeting && pendingSkillSlotIndex == slotIndex)
             {
                 CancelTargeting();
@@ -234,7 +237,7 @@ namespace BoneThrone.UI
 
             if (!runtime.HasSkill(slotIndex))
             {
-                ShowPrompt("No skill in slot 0.");
+                ShowPrompt("No skill in slot " + slotIndex + ".");
                 return;
             }
 
