@@ -1,74 +1,72 @@
 ﻿# ACTIVE_TASK.md
 
 ## Current phase
-Phase 14.11 - Active Enemy Provider and Auto Enemy Collection
+Phase 14.12 - Skill SO Cleanup
 
 ## Goal
-Reduce manual enemy array dependency in GridTest by adding a lightweight active enemy provider.
+Audit and clean up the current Slot 0 SkillData ScriptableObject assets and their prefab references.
 
-The provider should help UI targeting and skill splash logic access current alive active enemies without requiring repeated manual enemyUnits / knownUnits setup.
+This phase must ensure the four current representative skills are correctly named, referenced, and documented without changing gameplay formulas or expanding the skill system.
 
-This phase must preserve current gameplay behavior and must not rewrite combat, skill, unit, room, level, UI action, or damage systems.
+Current Slot 0 skills:
+- Fighter: Shield Bash
+- Ranger: Precision Shot
+- Mage: Fireball
+- Barbarian: Heavy Cleave
 
 ## Allowed files
-- Assets/_BoneThrone/Scripts/Units/ActiveUnitProvider.cs
-- Assets/_BoneThrone/Scripts/UI/BattleHUDController.cs, only if needed to read active enemies from provider
-- Assets/_BoneThrone/Scripts/UI/UIActionModeController.cs, only if needed to read active enemies from provider without changing action execution semantics
-- Assets/_BoneThrone/Scripts/Skills/SkillEffectExecutor.cs, only if needed to read known units from provider without changing skill formulas
-- Assets/_BoneThrone/Scenes/GridTest.unity, only if needed to add/configure provider
-- Docs/DevLogs/Phase14.11_ActiveEnemyProvider.md
+- Assets/_BoneThrone/Data/OnlyTest/Skills/*.asset, only for correcting obvious SkillData field errors
+- Assets/_BoneThrone/Prefabs/Units/Players/*.prefab, only if Slot 0 SkillRuntime references are missing or incorrect
+- Docs/DevLogs/Phase14.12_SkillSOCleanup.md
 - Docs/ACTIVE_TASK.md
 
 ## Forbidden changes
 - Do not modify DamageResolver.
-- Do not change skill damage formulas.
-- Do not change SkillEffectExecutor formula behavior.
-- Do not change CombatSystem.TryBasicAttack execution semantics.
-- Do not change SkillSystem.TryUseSkill execution semantics.
-- Do not make UI directly modify HP, cooldown, acted, or moved state.
-- Do not call TryBasicAttack or TryUseSkill for highlight.
-- Do not modify player prefabs.
-- Do not modify enemy prefabs unless explicitly required and approved.
-- Do not modify SkillData assets.
+- Do not modify SkillEffectExecutor formulas.
+- Do not modify MageSkillEffects formulas.
+- Do not modify SkillSystem execution semantics.
+- Do not modify CombatSystem.
+- Do not change skill damage formulas unless explicitly approved.
+- Do not create Skill Slot 1 / Slot 2 assets in this phase.
+- Do not implement new skills.
+- Do not modify enemy prefabs.
 - Do not modify KayKit original assets.
 - Do not rename Skeleton_Rogue.
 - Do not use Skeleton_Golem as a normal enemy.
 - Do not change Ranger visual back to Adventurers Ranger.
+- Do not modify Phase 14.10 camera controls.
+- Do not modify Phase 14.11 ActiveUnitProvider behavior.
 
 ## Required behavior
-1. Active enemy collection:
-   - Collect alive active enemy units in the current scene.
-   - Ignore dead units.
-   - Ignore inactive units.
-   - Ignore player units.
-   - Provide a read-only list or method for consumers.
+1. SkillData audit:
+   - Verify the four current Slot 0 SkillData assets exist.
+   - Verify each has clear displayName.
+   - Verify each has expected role usage.
+   - Verify unlockLevel is appropriate for Slot 0.
+   - Verify range / cooldown / guaranteedDamage are not accidentally empty or nonsensical.
 
-2. UI compatibility:
-   - Basic Attack target highlight still works.
-   - Skill target highlight still works.
-   - UI still does not execute gameplay during highlight.
+2. Prefab reference audit:
+   - Verify Fighter prefab Slot 0 references Fighter Shield Bash.
+   - Verify Ranger prefab Slot 0 references Ranger Precision Shot.
+   - Verify Mage prefab Slot 0 references Mage Fireball.
+   - Verify Barbarian prefab Slot 0 references Barbarian Heavy Cleave.
 
-3. Skill compatibility:
-   - Mage Fireball splash still works.
-   - Skill formulas must not change.
-   - SkillEffectResult structured feedback must remain.
-
-4. Backward compatibility:
-   - Existing manually assigned arrays should remain usable as fallback.
-   - Current GridTest setup must still pass regression.
+3. Safety:
+   - Preserve formulas.
+   - Preserve SkillEffectResult.
+   - Preserve Fireball splash behavior.
+   - Preserve ActiveUnitProvider provider/fallback behavior.
+   - Preserve current regression-passing behavior.
 
 ## Validation
-Manual Unity Play Mode tests:
-1. Open GridTest.unity.
-2. Confirm no compile errors.
-3. Enter Play Mode.
-4. Basic Attack highlight includes active enemies.
-5. Skill Slot 0 highlight includes active enemies.
-6. Mage Fireball splash still hits adjacent valid enemy.
-7. Dead enemies are not treated as valid active targets.
-8. Room-triggered enemies become available after activation.
-9. CombatLog structured entries still work.
-10. Enemy HP Bar still works.
-11. Room / Key / Stairs / LevelUp still work.
-12. Camera middle drag, wheel zoom, and right drag rotation still work.
-13. Console has no new red errors.
+Manual Unity checks:
+1. Open Unity and confirm no compile errors.
+2. Inspect four SkillData assets.
+3. Inspect four Player prefabs.
+4. Enter GridTest Play Mode.
+5. Test Fighter Slot 0.
+6. Test Ranger Slot 0.
+7. Test Mage Fireball Slot 0 and splash.
+8. Test Barbarian Slot 0.
+9. Confirm CombatLog structured feedback still works.
+10. Confirm Console has no new red errors.
