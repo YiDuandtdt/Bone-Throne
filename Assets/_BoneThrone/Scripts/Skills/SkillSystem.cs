@@ -247,8 +247,9 @@ namespace BoneThrone.Skills
                 return false;
             }
 
-            reason = "Turn gate passed.";
-            return true;
+            bool canAct = actionPermissionService.CanAct(caster, turnManager);
+            reason = canAct ? "Turn gate passed." : "Caster cannot act.";
+            return canAct;
         }
 
         private bool ValidateTurnGate(Unit caster)
@@ -265,6 +266,11 @@ namespace BoneThrone.Skills
             if (!hasTurnManager)
             {
                 return true;
+            }
+
+            if (actionPermissionService.TryConsumeStunForAction(caster, turnManager))
+            {
+                return false;
             }
 
             return actionPermissionService.CanAct(caster, turnManager);

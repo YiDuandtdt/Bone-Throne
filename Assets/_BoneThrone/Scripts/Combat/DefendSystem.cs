@@ -44,6 +44,11 @@ namespace BoneThrone.Combat
                 return false;
             }
 
+            if (actionPermissionService.TryConsumeStunForAction(unit, turnManager))
+            {
+                return false;
+            }
+
             if (!actionPermissionService.CanAct(unit, turnManager))
             {
                 LogRejected("unit cannot act.", unit);

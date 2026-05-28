@@ -220,8 +220,9 @@ namespace BoneThrone.Combat
                 return false;
             }
 
-            reason = "Turn gate passed.";
-            return true;
+            bool canAct = actionPermissionService.CanAct(attacker, turnManager);
+            reason = canAct ? "Turn gate passed." : "Attacker cannot act.";
+            return canAct;
         }
 
         private bool CanUseCombatServices(out string reason)
@@ -309,6 +310,11 @@ namespace BoneThrone.Combat
             if (!hasTurnManager)
             {
                 return true;
+            }
+
+            if (actionPermissionService.TryConsumeStunForAction(attacker, turnManager))
+            {
+                return false;
             }
 
             return actionPermissionService.CanAct(attacker, turnManager);

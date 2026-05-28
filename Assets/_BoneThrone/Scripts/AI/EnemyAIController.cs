@@ -52,6 +52,13 @@ namespace BoneThrone.AI
                     return EnemyAIResult.Skipped(enemy, target, "Enemy AI skipped attack because CombatSystem is missing.");
                 }
 
+                if (actionPermissionService != null
+                    && turnManager != null
+                    && actionPermissionService.TryConsumeStunForAction(enemy, turnManager))
+                {
+                    return EnemyAIResult.Skipped(enemy, target, "Enemy AI skipped attack because stun consumed its action.");
+                }
+
                 if (!CanAct(enemy, actionPermissionService, turnManager))
                 {
                     return EnemyAIResult.Skipped(enemy, target, "Enemy AI skipped attack because action permission rejected the enemy.");
