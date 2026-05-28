@@ -1,72 +1,91 @@
 ﻿# ACTIVE_TASK.md
 
 ## Current phase
-Phase 14.12 - Skill SO Cleanup
+Phase 14.13-A - SkillData Assets and Player Prefab Slot Wiring
 
 ## Goal
-Audit and clean up the current Slot 0 SkillData ScriptableObject assets and their prefab references.
+Add Slot 1 and Slot 2 SkillData assets for the four player roles and wire them into the existing Player prefabs.
 
-This phase must ensure the four current representative skills are correctly named, referenced, and documented without changing gameplay formulas or expanding the skill system.
+This phase must only create the missing SkillData assets and update Player prefab SkillRuntime slot references.
 
-Current Slot 0 skills:
-- Fighter: Shield Bash
-- Ranger: Precision Shot
-- Mage: Fireball
-- Barbarian: Heavy Cleave
+It must not modify gameplay code, UI code, combat code, skill execution code, or skill formulas.
 
 ## Allowed files
-- Assets/_BoneThrone/Data/OnlyTest/Skills/*.asset, only for correcting obvious SkillData field errors
-- Assets/_BoneThrone/Prefabs/Units/Players/*.prefab, only if Slot 0 SkillRuntime references are missing or incorrect
-- Docs/DevLogs/Phase14.12_SkillSOCleanup.md
+- Assets/_BoneThrone/Data/OnlyTest/Skills/*.asset
+- Assets/_BoneThrone/Data/OnlyTest/Skills/*.asset.meta
+- Assets/_BoneThrone/Prefabs/Units/Players/Fighter.prefab
+- Assets/_BoneThrone/Prefabs/Units/Players/Ranger.prefab
+- Assets/_BoneThrone/Prefabs/Units/Players/Mage.prefab
+- Assets/_BoneThrone/Prefabs/Units/Players/Barbarian.prefab
+- Docs/DevLogs/Phase14.13A_SkillAssetsAndPrefabSlots.md
 - Docs/ACTIVE_TASK.md
 
 ## Forbidden changes
+- Do not modify C# scripts.
+- Do not modify SkillEffectExecutor.
+- Do not modify FighterSkillEffects.
+- Do not modify RangerSkillEffects.
+- Do not modify MageSkillEffects.
+- Do not modify BarbarianSkillEffects.
+- Do not modify SkillSystem.
+- Do not modify SkillTargetingService.
 - Do not modify DamageResolver.
-- Do not modify SkillEffectExecutor formulas.
-- Do not modify MageSkillEffects formulas.
-- Do not modify SkillSystem execution semantics.
 - Do not modify CombatSystem.
-- Do not change skill damage formulas unless explicitly approved.
-- Do not create Skill Slot 1 / Slot 2 assets in this phase.
-- Do not implement new skills.
+- Do not modify UI scripts.
 - Do not modify enemy prefabs.
 - Do not modify KayKit original assets.
 - Do not rename Skeleton_Rogue.
 - Do not use Skeleton_Golem as a normal enemy.
 - Do not change Ranger visual back to Adventurers Ranger.
-- Do not modify Phase 14.10 camera controls.
-- Do not modify Phase 14.11 ActiveUnitProvider behavior.
+- Do not modify camera controls.
+- Do not modify ActiveUnitProvider behavior.
 
-## Required behavior
-1. SkillData audit:
-   - Verify the four current Slot 0 SkillData assets exist.
-   - Verify each has clear displayName.
-   - Verify each has expected role usage.
-   - Verify unlockLevel is appropriate for Slot 0.
-   - Verify range / cooldown / guaranteedDamage are not accidentally empty or nonsensical.
+## Required SkillData assets
+Create the following 8 assets in Assets/_BoneThrone/Data/OnlyTest/Skills/:
 
-2. Prefab reference audit:
-   - Verify Fighter prefab Slot 0 references Fighter Shield Bash.
-   - Verify Ranger prefab Slot 0 references Ranger Precision Shot.
-   - Verify Mage prefab Slot 0 references Mage Fireball.
-   - Verify Barbarian prefab Slot 0 references Barbarian Heavy Cleave.
+Fighter:
+- fighter_guard_strike.asset
+- fighter_crushing_challenge.asset
 
-3. Safety:
-   - Preserve formulas.
-   - Preserve SkillEffectResult.
-   - Preserve Fireball splash behavior.
-   - Preserve ActiveUnitProvider provider/fallback behavior.
-   - Preserve current regression-passing behavior.
+Ranger:
+- ranger_quick_shot.asset
+- ranger_piercing_arrow.asset
+
+Mage:
+- mage_frost_bolt.asset
+- mage_arcane_burst.asset
+
+Barbarian:
+- barbarian_rage_strike.asset
+- barbarian_blood_fury_slash.asset
+
+## Required SkillData values
+Use Enemy target type for all new skills.
+
+- fighter_guard_strike: id 5, displayName fighter_guard_strike, unlockLevel 2, range 1, cooldown 1, guaranteedDamage 2
+- fighter_crushing_challenge: id 6, displayName fighter_crushing_challenge, unlockLevel 3, range 1, cooldown 3, guaranteedDamage 4
+- ranger_quick_shot: id 7, displayName ranger_quick_shot, unlockLevel 2, range 4, cooldown 1, guaranteedDamage 2
+- ranger_piercing_arrow: id 8, displayName ranger_piercing_arrow, unlockLevel 3, range 5, cooldown 3, guaranteedDamage 3
+- mage_frost_bolt: id 9, displayName mage_frost_bolt, unlockLevel 2, range 3, cooldown 1, guaranteedDamage 2
+- mage_arcane_burst: id 10, displayName mage_arcane_burst, unlockLevel 3, range 3, cooldown 3, guaranteedDamage 3
+- barbarian_rage_strike: id 11, displayName barbarian_rage_strike, unlockLevel 2, range 1, cooldown 1, guaranteedDamage 3
+- barbarian_blood_fury_slash: id 12, displayName barbarian_blood_fury_slash, unlockLevel 3, range 1, cooldown 3, guaranteedDamage 4
+
+## Required Player prefab wiring
+- Fighter Slot 1 -> fighter_guard_strike
+- Fighter Slot 2 -> fighter_crushing_challenge
+- Ranger Slot 1 -> ranger_quick_shot
+- Ranger Slot 2 -> ranger_piercing_arrow
+- Mage Slot 1 -> mage_frost_bolt
+- Mage Slot 2 -> mage_arcane_burst
+- Barbarian Slot 1 -> barbarian_rage_strike
+- Barbarian Slot 2 -> barbarian_blood_fury_slash
 
 ## Validation
 Manual Unity checks:
-1. Open Unity and confirm no compile errors.
-2. Inspect four SkillData assets.
-3. Inspect four Player prefabs.
-4. Enter GridTest Play Mode.
-5. Test Fighter Slot 0.
-6. Test Ranger Slot 0.
-7. Test Mage Fireball Slot 0 and splash.
-8. Test Barbarian Slot 0.
-9. Confirm CombatLog structured feedback still works.
-10. Confirm Console has no new red errors.
+1. Open Unity and wait for import.
+2. Confirm 8 new SkillData assets exist and have .meta files.
+3. Inspect each asset field.
+4. Inspect four Player prefabs and confirm Slot 1 / Slot 2 references.
+5. Confirm no C# files changed.
+6. Confirm no compile errors.

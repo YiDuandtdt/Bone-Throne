@@ -94,8 +94,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Skills.SkillRuntime
   skillSlots:
   - {fileID: 11400000, guid: 2b20a4601b59fe0428918eab5adcf0eb, type: 2}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 11400000, guid: 94f7df6c51e0474fbfdaf0555d353b0c, type: 2}
+  - {fileID: 11400000, guid: d46a50858ec0478ab05b25e0792c79f1, type: 2}
   currentCooldowns: 000000000000000000000000
 --- !u!54 &120005
 Rigidbody:
