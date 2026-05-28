@@ -4,6 +4,7 @@ using BoneThrone.Grid;
 using BoneThrone.Movement;
 using BoneThrone.Turns;
 using BoneThrone.Units;
+using System.Collections;
 using UnityEngine;
 
 namespace BoneThrone.AI
@@ -24,10 +25,13 @@ namespace BoneThrone.AI
         [SerializeField] private ActionPermissionService actionPermissionService;
         [SerializeField] private DamageResolver damageResolver;
         [SerializeField] private CombatLog combatLog;
+        [SerializeField] private float enemyActionDelay = 0.4f;
 
         private readonly EnemyAIController enemyAIController = new EnemyAIController();
         private readonly List<Unit> activeEnemies = new List<Unit>();
         private readonly List<Unit> activePlayers = new List<Unit>();
+        private Coroutine runningRoutine;
+        private TurnManager runningTurnManager;
         private bool isRunning;
 
         private void Awake()
@@ -50,18 +54,46 @@ namespace BoneThrone.AI
             }
 
             isRunning = true;
-            try
+            runningTurnManager = turnManager;
+            runningRoutine = StartCoroutine(RunEnemyTurnRoutine(turnManager));
+        }
+
+        private void OnDisable()
+        {
+            if (runningRoutine != null)
             {
-                ResolveReferences();
-                CollectActivePlayers();
-                CollectActiveEnemies();
+                StopCoroutine(runningRoutine);
+                runningRoutine = null;
+            }
 
-                if (activeEnemies.Count == 0)
-                {
-                    Debug.Log("EnemyTurnRunner completed with no active alive enemies.", this);
-                    return;
-                }
+            TurnManager turnManager = runningTurnManager;
+            runningTurnManager = null;
+            bool wasRunning = isRunning;
+            isRunning = false;
 
+            if (wasRunning && turnManager != null && turnManager.CurrentPhase == TurnPhase.EnemyTurn)
+            {
+                turnManager.EndEnemyTurn();
+            }
+        }
+
+        private IEnumerator RunEnemyTurnRoutine(TurnManager turnManager)
+        {
+            ResolveReferences();
+            CollectActivePlayers();
+            CollectActiveEnemies();
+            SortActiveEnemies();
+
+            if (activePlayers.Count == 0)
+            {
+                Debug.Log("EnemyTurnRunner completed with no active alive players.", this);
+            }
+            else if (activeEnemies.Count == 0)
+            {
+                Debug.Log("EnemyTurnRunner completed with no active alive enemies.", this);
+            }
+            else
+            {
                 for (int i = 0; i < activeEnemies.Count; i++)
                 {
                     Unit enemy = activeEnemies[i];
@@ -73,6 +105,7 @@ namespace BoneThrone.AI
                     TickBleed(enemy);
                     if (!IsActiveAliveEnemy(enemy))
                     {
+                        yield return WaitForEnemyActionDelay();
                         continue;
                     }
 
@@ -80,6 +113,7 @@ namespace BoneThrone.AI
                     if (actionPermissionService != null && actionPermissionService.TryConsumeStunForAction(enemy, turnManager))
                     {
                         Debug.Log("EnemyTurnRunner skipped stunned enemy " + enemy.UnitId + ".", enemy);
+                        yield return WaitForEnemyActionDelay();
                         continue;
                     }
 
@@ -95,13 +129,14 @@ namespace BoneThrone.AI
                         turnManager);
 
                     LogResult(result);
+                    yield return WaitForEnemyActionDelay();
                 }
             }
-            finally
-            {
-                isRunning = false;
-                turnManager.EndEnemyTurn();
-            }
+
+            runningRoutine = null;
+            runningTurnManager = null;
+            isRunning = false;
+            turnManager.EndEnemyTurn();
         }
 
         private void CollectActiveEnemies()
@@ -165,6 +200,59 @@ namespace BoneThrone.AI
                 && enemy.gameObject.activeInHierarchy
                 && enemy.IsAlive
                 && enemy.Faction == UnitFaction.Enemy;
+        }
+
+        private void SortActiveEnemies()
+        {
+            activeEnemies.Sort(CompareEnemiesForTurnOrder);
+        }
+
+        private static int CompareEnemiesForTurnOrder(Unit a, Unit b)
+        {
+            if (ReferenceEquals(a, b))
+            {
+                return 0;
+            }
+
+            if (a == null)
+            {
+                return 1;
+            }
+
+            if (b == null)
+            {
+                return -1;
+            }
+
+            bool aHasTile = a.CurrentTile != null;
+            bool bHasTile = b.CurrentTile != null;
+            if (aHasTile != bHasTile)
+            {
+                return aHasTile ? -1 : 1;
+            }
+
+            if (aHasTile && bHasTile)
+            {
+                int yCompare = a.CurrentTile.Position.Y.CompareTo(b.CurrentTile.Position.Y);
+                if (yCompare != 0)
+                {
+                    return yCompare;
+                }
+
+                int xCompare = a.CurrentTile.Position.X.CompareTo(b.CurrentTile.Position.X);
+                if (xCompare != 0)
+                {
+                    return xCompare;
+                }
+            }
+
+            int idCompare = a.UnitId.CompareTo(b.UnitId);
+            if (idCompare != 0)
+            {
+                return idCompare;
+            }
+
+            return a.GetInstanceID().CompareTo(b.GetInstanceID());
         }
 
         private static void ResetEnemyAllowance(Unit enemy)
@@ -253,6 +341,11 @@ namespace BoneThrone.AI
                     combatLog.LogDeath(enemy);
                 }
             }
+        }
+
+        private WaitForSeconds WaitForEnemyActionDelay()
+        {
+            return new WaitForSeconds(Mathf.Max(0f, enemyActionDelay));
         }
 
         private void LogResult(EnemyAIResult result)
