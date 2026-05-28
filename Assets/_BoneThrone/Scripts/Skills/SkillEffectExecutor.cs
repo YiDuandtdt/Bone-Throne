@@ -11,6 +11,7 @@ namespace BoneThrone.Skills
     public sealed class SkillEffectExecutor : MonoBehaviour
     {
         [SerializeField] private Unit[] knownUnits;
+        [SerializeField] private ActiveUnitProvider activeUnitProvider;
 
         public bool TryExecute(Unit caster, Unit target, SkillData skill, DamageResolver damageResolver, out string resultLog)
         {
@@ -50,7 +51,7 @@ namespace BoneThrone.Skills
                     break;
 
                 case RoleId.Mage:
-                    if (MageSkillEffects.TryExecute(caster, target, skill, damageResolver, knownUnits, this, result))
+                    if (MageSkillEffects.TryExecute(caster, target, skill, damageResolver, GetKnownUnitsForSkillEffects(), this, result))
                     {
                         return result.PrimaryTargetDied;
                     }
@@ -69,6 +70,28 @@ namespace BoneThrone.Skills
             ApplyFallbackDamage(target, skill, damageResolver, result);
             result.Summary = "Phase 11 fallback guaranteed damage " + skill.GuaranteedDamage + ".";
             return result.PrimaryTargetDied;
+        }
+
+        private Unit[] GetKnownUnitsForSkillEffects()
+        {
+            ActiveUnitProvider provider = ResolveActiveUnitProvider();
+            Unit[] activeUnits = provider != null ? provider.GetActiveAliveUnits() : null;
+            if (activeUnits != null && activeUnits.Length > 0)
+            {
+                return activeUnits;
+            }
+
+            return knownUnits;
+        }
+
+        private ActiveUnitProvider ResolveActiveUnitProvider()
+        {
+            if (activeUnitProvider == null)
+            {
+                activeUnitProvider = Object.FindFirstObjectByType<ActiveUnitProvider>();
+            }
+
+            return activeUnitProvider;
         }
 
         internal static bool SkillNameMatches(SkillData skill, string expectedName)

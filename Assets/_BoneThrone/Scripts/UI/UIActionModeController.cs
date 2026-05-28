@@ -34,6 +34,7 @@ namespace BoneThrone.UI
         [SerializeField] private float maxRayDistance = 500f;
         [SerializeField] private PlayerMovementController movementControllerToSuspend;
         [SerializeField] private MovementDebugHighlighter highlighter;
+        [SerializeField] private ActiveUnitProvider activeUnitProvider;
 
         private ActionMode currentMode = ActionMode.None;
         private int pendingSkillSlotIndex = -1;
@@ -58,7 +59,8 @@ namespace BoneThrone.UI
             Camera camera,
             LayerMask layerMask,
             PlayerMovementController movementController,
-            MovementDebugHighlighter tileHighlighter)
+            MovementDebugHighlighter tileHighlighter,
+            ActiveUnitProvider unitProvider = null)
         {
             selectionManager = selection;
             gridManager = grid;
@@ -70,6 +72,7 @@ namespace BoneThrone.UI
             targetLayerMask = layerMask;
             movementControllerToSuspend = movementController;
             highlighter = tileHighlighter;
+            activeUnitProvider = unitProvider;
         }
 
         private void OnDisable()
@@ -423,19 +426,21 @@ namespace BoneThrone.UI
             }
 
             Unit attacker = selectionManager != null ? selectionManager.SelectedUnit : null;
-            if (attacker == null || combatSystem == null || enemyUnits == null)
+            Unit[] enemies = GetEnemyTargetsForPreview();
+            if (attacker == null || combatSystem == null || enemies == null)
             {
                 highlighter.ClearActionHighlights();
                 return;
             }
 
             List<Tile> targetTiles = new List<Tile>();
-            for (int i = 0; i < enemyUnits.Length; i++)
+            for (int i = 0; i < enemies.Length; i++)
             {
-                Unit enemy = enemyUnits[i];
+                Unit enemy = enemies[i];
                 string reason;
                 if (enemy != null
                     && enemy.gameObject.activeInHierarchy
+                    && enemy.IsAlive
                     && enemy.CurrentTile != null
                     && combatSystem.CanBasicAttack(attacker, enemy, out reason))
                 {
@@ -454,16 +459,17 @@ namespace BoneThrone.UI
             }
 
             Unit caster = selectionManager != null ? selectionManager.SelectedUnit : null;
-            if (caster == null || skillSystem == null || enemyUnits == null)
+            Unit[] enemies = GetEnemyTargetsForPreview();
+            if (caster == null || skillSystem == null || enemies == null)
             {
                 highlighter.ClearActionHighlights();
                 return;
             }
 
             List<Tile> targetTiles = new List<Tile>();
-            for (int i = 0; i < enemyUnits.Length; i++)
+            for (int i = 0; i < enemies.Length; i++)
             {
-                Unit enemy = enemyUnits[i];
+                Unit enemy = enemies[i];
                 string reason;
                 if (enemy != null
                     && enemy.gameObject.activeInHierarchy
@@ -476,6 +482,28 @@ namespace BoneThrone.UI
             }
 
             highlighter.ShowSkillTargets(targetTiles);
+        }
+
+        private Unit[] GetEnemyTargetsForPreview()
+        {
+            ActiveUnitProvider provider = ResolveActiveUnitProvider();
+            Unit[] activeEnemies = provider != null ? provider.GetActiveAliveEnemies() : null;
+            if (activeEnemies != null && activeEnemies.Length > 0)
+            {
+                return activeEnemies;
+            }
+
+            return enemyUnits;
+        }
+
+        private ActiveUnitProvider ResolveActiveUnitProvider()
+        {
+            if (activeUnitProvider == null)
+            {
+                activeUnitProvider = Object.FindFirstObjectByType<ActiveUnitProvider>();
+            }
+
+            return activeUnitProvider;
         }
 
         private bool IsCurrentSelectedUnit(Unit unit)

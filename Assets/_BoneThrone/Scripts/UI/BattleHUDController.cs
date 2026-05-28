@@ -29,6 +29,7 @@ namespace BoneThrone.UI
         [SerializeField] private SkillSystem skillSystem;
         [SerializeField] private Unit[] playerUnits = new Unit[4];
         [SerializeField] private Unit[] enemyUnits;
+        [SerializeField] private ActiveUnitProvider activeUnitProvider;
 
         [Header("Action Mode References")]
         [SerializeField] private UIActionModeController actionModeController;
@@ -56,6 +57,7 @@ namespace BoneThrone.UI
                 EnsureRuntimeLayout();
             }
 
+            EnsureActiveUnitProvider();
             EnsureActionModeController();
             ConfigureActionModeController();
         }
@@ -189,6 +191,20 @@ namespace BoneThrone.UI
             }
         }
 
+        private void EnsureActiveUnitProvider()
+        {
+            if (activeUnitProvider != null)
+            {
+                return;
+            }
+
+            activeUnitProvider = Object.FindFirstObjectByType<ActiveUnitProvider>();
+            if (activeUnitProvider == null)
+            {
+                activeUnitProvider = gameObject.AddComponent<ActiveUnitProvider>();
+            }
+        }
+
         private void ConfigureActionModeController()
         {
             if (actionModeController == null)
@@ -206,7 +222,8 @@ namespace BoneThrone.UI
                 actionInputCamera,
                 actionTargetLayerMask,
                 movementControllerToSuspend,
-                movementHighlighter);
+                movementHighlighter,
+                activeUnitProvider);
         }
 
         private void SubscribeCombatLog()
