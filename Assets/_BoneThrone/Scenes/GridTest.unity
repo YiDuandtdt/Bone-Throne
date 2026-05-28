@@ -12576,6 +12576,10 @@ MonoBehaviour:
   reachableColor: {r: 0.25, g: 0.85, b: 0.35, a: 1}
   attackColor: {r: 0.95, g: 0.18, b: 0.16, a: 1}
   skillColor: {r: 1, g: 0.86, b: 0.12, a: 1}
+  showPlayerFootTiles: 1
+  playerFootTileColor: {r: 1, g: 1, b: 1, a: 1}
+  autoRefreshPlayerFootTiles: 1
+  playerFootTileRefreshInterval: 0.25
 --- !u!114 &510826843
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -22307,6 +22311,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Turns.TurnManager
   turnOrderService: {fileID: 916906061}
+  skillSystem: {fileID: 0}
+  enemyTurnRunner: {fileID: 0}
+  actionPermissionService: {fileID: 0}
+  damageResolver: {fileID: 0}
+  combatLog: {fileID: 0}
   playerUnits:
   - {fileID: 28712471}
   - {fileID: 1349290702}
@@ -26598,6 +26607,67 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1091754614}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &1093291334
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 300000, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
+      propertyPath: m_Name
+      value: Key_2
+      objectReference: {fileID: 0}
+    - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -1.96
+      objectReference: {fileID: 0}
+    - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 14.06128
+      objectReference: {fileID: 0}
+    - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 300002, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
+      propertyPath: progressionService
+      value: 
+      objectReference: {fileID: 1520370594}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
 --- !u!1 &1099291080
 GameObject:
   m_ObjectHideFlags: 0
@@ -27437,6 +27507,7 @@ MonoBehaviour:
   - {fileID: 1222606558}
   - {fileID: 1959007542}
   activeUnitProvider: {fileID: 0}
+  combatLog: {fileID: 0}
 --- !u!1 &1122344522
 GameObject:
   m_ObjectHideFlags: 0
@@ -29382,7 +29453,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 300000, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
       propertyPath: m_Name
-      value: Key
+      value: Key_1
       objectReference: {fileID: 0}
     - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
       propertyPath: m_LocalPosition.x
@@ -45989,6 +46060,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b385fd0f63835e44883cacc1e2ae31b6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Combat.DamageResolver
+  combatLog: {fileID: 0}
 --- !u!114 &1809320149
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -54871,6 +54943,7 @@ SceneRoots:
   - {fileID: 673753917}
   - {fileID: 361748297}
   - {fileID: 1196215137}
+  - {fileID: 1093291334}
   - {fileID: 196201661}
   - {fileID: 1149658086}
   - {fileID: 1102446554}
