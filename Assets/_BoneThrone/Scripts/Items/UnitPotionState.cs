@@ -44,6 +44,17 @@ namespace BoneThrone.Items
             return true;
         }
 
+        public void AddPotions(int amount)
+        {
+            if (amount <= 0)
+            {
+                return;
+            }
+
+            EnsureInitialized();
+            currentPotionCount += amount;
+        }
+
         [ContextMenu("Phase 14/Reset Potion Count")]
         public void ResetForTest()
         {
