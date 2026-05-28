@@ -57,6 +57,7 @@ namespace BoneThrone.UI
                 EnsureRuntimeLayout();
             }
 
+            EnsureEndTurnButton();
             EnsureActiveUnitProvider();
             EnsureActionModeController();
             ConfigureActionModeController();
@@ -95,11 +96,12 @@ namespace BoneThrone.UI
                 turnBannerView.Refresh(turnManager, selectedUnit);
             }
 
-            RefreshHeroPanels();
+            RefreshHeroPanels(selectedUnit);
 
             if (skillBarView != null)
             {
                 skillBarView.Refresh(selectedUnit);
+                skillBarView.SetEndTurnInteractable(turnManager != null && turnManager.CurrentPhase == TurnPhase.PlayerTurn);
             }
 
             if (promptView != null)
@@ -125,6 +127,8 @@ namespace BoneThrone.UI
             skillBarView.SkillSlot1Clicked += HandleSkillSlot1Clicked;
             skillBarView.SkillSlot2Clicked -= HandleSkillSlot2Clicked;
             skillBarView.SkillSlot2Clicked += HandleSkillSlot2Clicked;
+            skillBarView.EndTurnClicked -= HandleEndTurnClicked;
+            skillBarView.EndTurnClicked += HandleEndTurnClicked;
         }
 
         private void UnsubscribeSkillBar()
@@ -136,6 +140,7 @@ namespace BoneThrone.UI
                 skillBarView.SkillSlot0Clicked -= HandleSkillSlot0Clicked;
                 skillBarView.SkillSlot1Clicked -= HandleSkillSlot1Clicked;
                 skillBarView.SkillSlot2Clicked -= HandleSkillSlot2Clicked;
+                skillBarView.EndTurnClicked -= HandleEndTurnClicked;
             }
         }
 
@@ -199,6 +204,100 @@ namespace BoneThrone.UI
             actionModeController.HandleSkillSlotButtonClicked(slotIndex);
         }
 
+        private void HandleEndTurnClicked()
+        {
+            if (turnManager == null)
+            {
+                if (promptView != null)
+                {
+                    promptView.ShowOverride("End turn unavailable: TurnManager unbound.", 1.5f);
+                }
+
+                return;
+            }
+
+            if (turnManager.CurrentPhase != TurnPhase.PlayerTurn)
+            {
+                if (promptView != null)
+                {
+                    promptView.ShowOverride("End turn unavailable during EnemyTurn.", 1.5f);
+                }
+
+                return;
+            }
+
+            Unit selectedUnit = selectionManager != null ? selectionManager.SelectedUnit : null;
+            if (selectedUnit == null)
+            {
+                if (promptView != null)
+                {
+                    promptView.ShowOverride("Select a player unit first.", 1.5f);
+                }
+
+                return;
+            }
+
+            if (selectedUnit.Faction != UnitFaction.Player)
+            {
+                if (promptView != null)
+                {
+                    promptView.ShowOverride("Selected unit is not a player unit.", 1.5f);
+                }
+
+                return;
+            }
+
+            if (!selectedUnit.IsAlive)
+            {
+                if (promptView != null)
+                {
+                    promptView.ShowOverride("Selected unit is dead.", 1.5f);
+                }
+
+                return;
+            }
+
+            UnitTurnState turnState = selectedUnit.GetComponent<UnitTurnState>();
+            if (turnState == null)
+            {
+                if (promptView != null)
+                {
+                    promptView.ShowOverride("Selected unit has no turn state.", 1.5f);
+                }
+
+                return;
+            }
+
+            if (turnState.HasEnded)
+            {
+                if (promptView != null)
+                {
+                    promptView.ShowOverride("Selected unit has already ended.", 1.5f);
+                }
+
+                return;
+            }
+
+            if (actionModeController != null)
+            {
+                actionModeController.CancelTargetingForExternalAction();
+            }
+
+            bool ended = turnManager.TryEndPlayerUnitTurn(selectedUnit);
+            if (ended)
+            {
+                if (selectionManager != null)
+                {
+                    selectionManager.ClearSelection();
+                }
+
+                if (movementHighlighter != null)
+                {
+                    movementHighlighter.Clear();
+                }
+            }
+        }
+
         private void EnsureActionModeController()
         {
             if (actionModeController == null)
@@ -247,6 +346,14 @@ namespace BoneThrone.UI
                 activeUnitProvider);
         }
 
+        private void EnsureEndTurnButton()
+        {
+            if (skillBarView != null)
+            {
+                skillBarView.EnsureEndTurnButton();
+            }
+        }
+
         private void SubscribeCombatLog()
         {
             if (combatLog == null)
@@ -271,7 +378,7 @@ namespace BoneThrone.UI
             }
         }
 
-        private void RefreshHeroPanels()
+        private void RefreshHeroPanels(Unit selectedUnit)
         {
             if (heroPanels == null)
             {
@@ -286,7 +393,7 @@ namespace BoneThrone.UI
                 }
 
                 Unit unit = GetPlayerUnit(i);
-                heroPanels[i].Refresh(unit);
+                heroPanels[i].Refresh(unit, selectedUnit);
             }
         }
 
@@ -383,7 +490,8 @@ namespace BoneThrone.UI
             TMP_Text slot2 = CreateActionButton(bar.transform, "SkillSlot2", "Slot 2", buttons);
             TMP_Text defend = CreateActionButton(bar.transform, "Defend", "Defend", buttons);
             TMP_Text potion = CreateActionButton(bar.transform, "Potion", "Potion", buttons);
-            bar.Bind(move, basic, slot0, slot1, slot2, defend, potion, buttons.ToArray());
+            TMP_Text endTurn = CreateActionButton(bar.transform, "EndTurn", "End\nTurn", buttons);
+            bar.Bind(move, basic, slot0, slot1, slot2, defend, potion, endTurn, buttons.ToArray());
             return bar;
         }
 

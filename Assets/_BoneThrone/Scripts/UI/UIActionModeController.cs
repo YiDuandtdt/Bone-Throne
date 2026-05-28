@@ -80,6 +80,17 @@ namespace BoneThrone.UI
             ExitTargetingMode();
         }
 
+        public void CancelTargetingForExternalAction()
+        {
+            if (currentMode == ActionMode.None)
+            {
+                return;
+            }
+
+            ExitTargetingMode();
+            ClearPrompt();
+        }
+
         private void Update()
         {
             RefreshSelectedHighlight();
@@ -137,6 +148,12 @@ namespace BoneThrone.UI
             }
 
             UnitTurnState turnState = selectedUnit.GetComponent<UnitTurnState>();
+            if (turnState != null && turnState.HasEnded)
+            {
+                ShowPrompt("Selected unit has already ended.");
+                return;
+            }
+
             if (turnState != null && turnState.HasMoved)
             {
                 ShowPrompt("Selected unit has already moved.");
@@ -180,6 +197,12 @@ namespace BoneThrone.UI
             }
 
             UnitTurnState turnState = selectedUnit.GetComponent<UnitTurnState>();
+            if (turnState != null && turnState.HasEnded)
+            {
+                ShowPrompt("Selected unit has already ended.");
+                return;
+            }
+
             if (turnState != null && turnState.HasActed)
             {
                 ShowPrompt("Selected unit has already acted.");
@@ -222,6 +245,12 @@ namespace BoneThrone.UI
             }
 
             UnitTurnState turnState = selectedUnit.GetComponent<UnitTurnState>();
+            if (turnState != null && turnState.HasEnded)
+            {
+                ShowPrompt("Selected unit has already ended.");
+                return;
+            }
+
             if (turnState != null && turnState.HasActed)
             {
                 ShowPrompt("Selected unit has already acted.");

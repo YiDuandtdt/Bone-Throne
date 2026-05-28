@@ -5,7 +5,7 @@ namespace BoneThrone.Turns
 {
     /// <summary>
     /// Answers whether a unit may consume movement or action during the current turn.
-    /// By default this preserves singleplayer free selection among player units.
+    /// Player units are gated by PlayerTurn, and enemy units are gated by EnemyTurn.
     /// </summary>
     public sealed class ActionPermissionService : MonoBehaviour
     {
@@ -20,7 +20,7 @@ namespace BoneThrone.Turns
         public bool CanMove(Unit unit, TurnManager turnManager)
         {
             UnitTurnState turnState;
-            if (!CanUsePlayerUnit(unit, turnManager, out turnState))
+            if (!CanUseUnit(unit, turnManager, out turnState))
             {
                 return false;
             }
@@ -37,7 +37,7 @@ namespace BoneThrone.Turns
         public bool CanAct(Unit unit, TurnManager turnManager)
         {
             UnitTurnState turnState;
-            if (!CanUsePlayerUnit(unit, turnManager, out turnState))
+            if (!CanUseUnit(unit, turnManager, out turnState))
             {
                 return false;
             }
@@ -51,7 +51,7 @@ namespace BoneThrone.Turns
             return true;
         }
 
-        private bool CanUsePlayerUnit(Unit unit, TurnManager turnManager, out UnitTurnState turnState)
+        private bool CanUseUnit(Unit unit, TurnManager turnManager, out UnitTurnState turnState)
         {
             turnState = null;
 
@@ -67,15 +67,15 @@ namespace BoneThrone.Turns
                 return false;
             }
 
-            if (turnManager.CurrentPhase != TurnPhase.PlayerTurn)
+            if (!IsFactionAllowedForCurrentPhase(unit, turnManager))
             {
-                Debug.LogWarning("Action permission denied because current phase is " + turnManager.CurrentPhase + ".", unit);
-                return false;
-            }
-
-            if (unit.Faction != UnitFaction.Player)
-            {
-                Debug.LogWarning("Action permission denied because only player units can act during PlayerTurn.", unit);
+                Debug.LogWarning(
+                    "Action permission denied because unit faction "
+                    + unit.Faction
+                    + " cannot act during "
+                    + turnManager.CurrentPhase
+                    + ".",
+                    unit);
                 return false;
             }
 
@@ -92,13 +92,42 @@ namespace BoneThrone.Turns
                 return false;
             }
 
-            if (requireCurrentRole && unit.RoleId != turnManager.CurrentRole)
+            if (turnState.HasEnded)
+            {
+                Debug.LogWarning("Action permission denied because unit " + unit.UnitId + " has already ended this turn.", unit);
+                return false;
+            }
+
+            if (requireCurrentRole
+                && unit.Faction == UnitFaction.Player
+                && turnManager.CurrentRole != BoneThrone.Core.RoleId.None
+                && unit.RoleId != turnManager.CurrentRole)
             {
                 Debug.LogWarning("Action permission denied because unit role " + unit.RoleId + " does not match current role " + turnManager.CurrentRole + ".", unit);
                 return false;
             }
 
             return true;
+        }
+
+        private static bool IsFactionAllowedForCurrentPhase(Unit unit, TurnManager turnManager)
+        {
+            if (unit == null || turnManager == null)
+            {
+                return false;
+            }
+
+            if (turnManager.CurrentPhase == TurnPhase.PlayerTurn)
+            {
+                return unit.Faction == UnitFaction.Player;
+            }
+
+            if (turnManager.CurrentPhase == TurnPhase.EnemyTurn)
+            {
+                return unit.Faction == UnitFaction.Enemy;
+            }
+
+            return false;
         }
     }
 }

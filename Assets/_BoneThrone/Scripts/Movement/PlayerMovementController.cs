@@ -59,6 +59,12 @@ namespace BoneThrone.Movement
                 return;
             }
 
+            if (turnManager != null && turnManager.CurrentPhase != TurnPhase.PlayerTurn)
+            {
+                Debug.LogWarning("Selection ignored because current phase is " + turnManager.CurrentPhase + ".", unit);
+                return;
+            }
+
             if (unit != null && selectionManager.SelectedUnit == unit)
             {
                 selectionManager.ClearSelection();
@@ -125,6 +131,13 @@ namespace BoneThrone.Movement
             if (selectedUnit == null || selectedUnit.CurrentTile == null)
             {
                 Debug.LogWarning("Movement ignored because the selected unit has no current tile.", this);
+                return false;
+            }
+
+            UnitTurnState selectedTurnState = selectedUnit.GetComponent<UnitTurnState>();
+            if (selectedTurnState != null && selectedTurnState.HasEnded)
+            {
+                Debug.LogWarning("Movement ignored because the selected unit has already ended this turn.", selectedUnit);
                 return false;
             }
 

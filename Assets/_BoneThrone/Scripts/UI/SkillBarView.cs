@@ -18,6 +18,7 @@ namespace BoneThrone.UI
         [SerializeField] private TMP_Text slot2Text;
         [SerializeField] private TMP_Text defendText;
         [SerializeField] private TMP_Text potionText;
+        [SerializeField] private TMP_Text endTurnText;
         [SerializeField] private Button[] actionButtons;
 
         private Button moveButton;
@@ -25,12 +26,14 @@ namespace BoneThrone.UI
         private Button slot0Button;
         private Button slot1Button;
         private Button slot2Button;
+        private Button endTurnButton;
 
         public event System.Action MoveClicked;
         public event System.Action BasicAttackClicked;
         public event System.Action SkillSlot0Clicked;
         public event System.Action SkillSlot1Clicked;
         public event System.Action SkillSlot2Clicked;
+        public event System.Action EndTurnClicked;
 
         public void Bind(
             TMP_Text move,
@@ -40,6 +43,7 @@ namespace BoneThrone.UI
             TMP_Text slot2,
             TMP_Text defend,
             TMP_Text potion,
+            TMP_Text endTurn,
             Button[] buttons)
         {
             moveText = move;
@@ -49,15 +53,18 @@ namespace BoneThrone.UI
             slot2Text = slot2;
             defendText = defend;
             potionText = potion;
+            endTurnText = endTurn;
             actionButtons = buttons;
             moveButton = actionButtons != null && actionButtons.Length > 0 ? actionButtons[0] : null;
             basicAttackButton = actionButtons != null && actionButtons.Length > 1 ? actionButtons[1] : null;
             slot0Button = actionButtons != null && actionButtons.Length > 2 ? actionButtons[2] : null;
             slot1Button = actionButtons != null && actionButtons.Length > 3 ? actionButtons[3] : null;
             slot2Button = actionButtons != null && actionButtons.Length > 4 ? actionButtons[4] : null;
+            endTurnButton = actionButtons != null && actionButtons.Length > 7 ? actionButtons[7] : null;
             ConfigureMoveButton();
             ConfigureBasicAttackButton();
             ConfigureSkillSlotButtons();
+            ConfigureEndTurnButton();
             DisablePlaceholderButtons();
         }
 
@@ -77,6 +84,63 @@ namespace BoneThrone.UI
             RefreshSkillSlot(selectedUnit, 2, slot2Text);
             SetText(defendText, "Defend\nPlaceholder");
             SetText(potionText, "Potion\nPlaceholder");
+            SetText(endTurnText, "End\nTurn");
+        }
+
+        public void EnsureEndTurnButton()
+        {
+            if (endTurnButton != null)
+            {
+                ConfigureEndTurnButton();
+                return;
+            }
+
+            if (actionButtons != null && actionButtons.Length > 7 && actionButtons[7] != null)
+            {
+                endTurnButton = actionButtons[7];
+                ConfigureEndTurnButton();
+                return;
+            }
+
+            Button createdButton = CreateRuntimeEndTurnButton();
+            if (createdButton == null)
+            {
+                return;
+            }
+
+            Button[] expandedButtons = new Button[8];
+            if (actionButtons != null)
+            {
+                for (int i = 0; i < actionButtons.Length && i < expandedButtons.Length; i++)
+                {
+                    expandedButtons[i] = actionButtons[i];
+                }
+            }
+
+            expandedButtons[7] = createdButton;
+            actionButtons = expandedButtons;
+            endTurnButton = createdButton;
+            ConfigureEndTurnButton();
+            DisablePlaceholderButtons();
+        }
+
+        public void SetEndTurnInteractable(bool interactable)
+        {
+            if (endTurnButton == null)
+            {
+                EnsureEndTurnButton();
+            }
+
+            if (endTurnButton == null)
+            {
+                return;
+            }
+
+            endTurnButton.interactable = interactable;
+            if (endTurnButton.targetGraphic != null)
+            {
+                endTurnButton.targetGraphic.raycastTarget = interactable;
+            }
         }
 
         private void RefreshSkillSlot(Unit selectedUnit, int slotIndex, TMP_Text text)
@@ -140,6 +204,18 @@ namespace BoneThrone.UI
             SetSkillSlotInteractable(2, true);
         }
 
+        private void ConfigureEndTurnButton()
+        {
+            if (endTurnButton == null)
+            {
+                return;
+            }
+
+            endTurnButton.onClick.RemoveListener(HandleEndTurnClicked);
+            endTurnButton.onClick.AddListener(HandleEndTurnClicked);
+            SetEndTurnInteractable(true);
+        }
+
         private void ConfigureSkillSlotButton(Button button, UnityEngine.Events.UnityAction handler)
         {
             if (button == null)
@@ -188,6 +264,14 @@ namespace BoneThrone.UI
             if (SkillSlot2Clicked != null)
             {
                 SkillSlot2Clicked();
+            }
+        }
+
+        private void HandleEndTurnClicked()
+        {
+            if (EndTurnClicked != null)
+            {
+                EndTurnClicked();
             }
         }
 
@@ -260,7 +344,7 @@ namespace BoneThrone.UI
             {
                 if (actionButtons[i] != null)
                 {
-                    bool isSupportedAction = i >= 0 && i <= 4;
+                    bool isSupportedAction = (i >= 0 && i <= 4) || i == 7;
                     actionButtons[i].interactable = isSupportedAction;
                     if (actionButtons[i].targetGraphic != null)
                     {
@@ -276,6 +360,39 @@ namespace BoneThrone.UI
             {
                 text.text = value;
             }
+        }
+
+        private Button CreateRuntimeEndTurnButton()
+        {
+            GameObject buttonObject = new GameObject("EndTurn", typeof(RectTransform));
+            buttonObject.transform.SetParent(transform, false);
+            Image image = buttonObject.AddComponent<Image>();
+            image.color = new Color(0.12f, 0.12f, 0.12f, 0.72f);
+            image.raycastTarget = false;
+            Button button = buttonObject.AddComponent<Button>();
+            button.interactable = false;
+
+            GameObject textObject = new GameObject("EndTurnText", typeof(RectTransform));
+            textObject.transform.SetParent(buttonObject.transform, false);
+            RectTransform rect = textObject.GetComponent<RectTransform>();
+            rect.localScale = Vector3.one;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = new Vector2(8f, 6f);
+            rect.offsetMax = new Vector2(-8f, -6f);
+            TMP_Text label = textObject.AddComponent<TextMeshProUGUI>();
+            label.text = "End\nTurn";
+            label.fontSize = 16;
+            label.enableAutoSizing = false;
+            label.richText = true;
+            label.fontStyle = FontStyles.Bold;
+            label.color = Color.white;
+            label.alignment = TextAlignmentOptions.Center;
+            label.raycastTarget = false;
+            label.textWrappingMode = TextWrappingModes.Normal;
+            label.extraPadding = true;
+            endTurnText = label;
+            return button;
         }
     }
 }

@@ -1,4 +1,5 @@
 using BoneThrone.Units;
+using BoneThrone.Turns;
 using UnityEngine;
 
 namespace BoneThrone.Movement
@@ -37,6 +38,13 @@ namespace BoneThrone.Movement
             if (!unit.IsAlive)
             {
                 Debug.LogWarning("Selection failed because dead units cannot be selected.", unit);
+                return false;
+            }
+
+            UnitTurnState turnState = unit.GetComponent<UnitTurnState>();
+            if (turnState != null && turnState.HasEnded)
+            {
+                Debug.LogWarning("Selection failed because unit " + unit.UnitId + " has already ended this turn.", unit);
                 return false;
             }
 

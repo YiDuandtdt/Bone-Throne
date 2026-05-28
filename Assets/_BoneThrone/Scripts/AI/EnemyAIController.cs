@@ -24,7 +24,9 @@ namespace BoneThrone.AI
             Pathfinder pathfinder,
             UnitMover unitMover,
             AttackRangeService attackRangeService,
-            CombatSystem combatSystem)
+            CombatSystem combatSystem,
+            ActionPermissionService actionPermissionService = null,
+            TurnManager turnManager = null)
         {
             EnemyAIResult guardResult;
             if (!TryValidateEnemy(enemy, out guardResult))
@@ -50,6 +52,11 @@ namespace BoneThrone.AI
                     return EnemyAIResult.Skipped(enemy, target, "Enemy AI skipped attack because CombatSystem is missing.");
                 }
 
+                if (!CanAct(enemy, actionPermissionService, turnManager))
+                {
+                    return EnemyAIResult.Skipped(enemy, target, "Enemy AI skipped attack because action permission rejected the enemy.");
+                }
+
                 bool attacked = combatSystem.TryBasicAttack(enemy, target);
                 return attacked
                     ? EnemyAIResult.Attacked(enemy, target)
@@ -59,6 +66,11 @@ namespace BoneThrone.AI
             if (gridManager == null || pathfinder == null || unitMover == null)
             {
                 return EnemyAIResult.Skipped(enemy, target, "Enemy AI skipped movement because a movement service reference is missing.");
+            }
+
+            if (!CanMove(enemy, actionPermissionService, turnManager))
+            {
+                return EnemyAIResult.Skipped(enemy, target, "Enemy AI skipped movement because action permission rejected the enemy.");
             }
 
             List<GridPosition> path;
@@ -105,6 +117,50 @@ namespace BoneThrone.AI
 
             result = default(EnemyAIResult);
             return true;
+        }
+
+        private static bool CanMove(Unit enemy, ActionPermissionService actionPermissionService, TurnManager turnManager)
+        {
+            if (actionPermissionService == null && turnManager == null)
+            {
+                return !HasMoved(enemy);
+            }
+
+            if (actionPermissionService == null || turnManager == null)
+            {
+                Debug.LogWarning("Enemy AI movement gate is partially configured. Bind both ActionPermissionService and TurnManager, or leave both empty.", enemy);
+                return false;
+            }
+
+            return actionPermissionService.CanMove(enemy, turnManager);
+        }
+
+        private static bool CanAct(Unit enemy, ActionPermissionService actionPermissionService, TurnManager turnManager)
+        {
+            if (actionPermissionService == null && turnManager == null)
+            {
+                return !HasActed(enemy);
+            }
+
+            if (actionPermissionService == null || turnManager == null)
+            {
+                Debug.LogWarning("Enemy AI action gate is partially configured. Bind both ActionPermissionService and TurnManager, or leave both empty.", enemy);
+                return false;
+            }
+
+            return actionPermissionService.CanAct(enemy, turnManager);
+        }
+
+        private static bool HasMoved(Unit enemy)
+        {
+            UnitTurnState turnState = enemy != null ? enemy.GetComponent<UnitTurnState>() : null;
+            return turnState != null && turnState.HasMoved;
+        }
+
+        private static bool HasActed(Unit enemy)
+        {
+            UnitTurnState turnState = enemy != null ? enemy.GetComponent<UnitTurnState>() : null;
+            return turnState != null && turnState.HasActed;
         }
 
         private static void MarkMoved(Unit enemy)

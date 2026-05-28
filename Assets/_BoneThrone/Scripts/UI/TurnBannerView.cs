@@ -48,15 +48,10 @@ namespace BoneThrone.UI
                     string displayName = string.IsNullOrEmpty(selectedUnit.DisplayName)
                         ? selectedUnit.RoleId.ToString()
                         : selectedUnit.DisplayName;
-                    return "Turn: Player Turn | Actor: " + displayName;
+                    return "Turn: Player Turn | Selected: " + displayName;
                 }
 
-                if (role == RoleId.None)
-                {
-                    return "Turn: Player Turn | Actor: Free Select";
-                }
-
-                return "Turn: Player Turn | Actor: " + role;
+                return "Turn: Player Turn - Select a unit";
             }
 
             return "Turn: -- | Actor: --";

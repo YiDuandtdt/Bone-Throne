@@ -10,6 +10,7 @@ namespace BoneThrone.Turns
     {
         [SerializeField] private bool hasMoved;
         [SerializeField] private bool hasActed;
+        [SerializeField] private bool hasEnded;
 
         public bool HasMoved
         {
@@ -21,10 +22,16 @@ namespace BoneThrone.Turns
             get { return hasActed; }
         }
 
+        public bool HasEnded
+        {
+            get { return hasEnded; }
+        }
+
         public void ResetForNewRound()
         {
             hasMoved = false;
             hasActed = false;
+            hasEnded = false;
         }
 
         public void MarkMoved()
@@ -35,6 +42,11 @@ namespace BoneThrone.Turns
         public void MarkActed()
         {
             hasActed = true;
+        }
+
+        public void MarkEnded()
+        {
+            hasEnded = true;
         }
     }
 }
