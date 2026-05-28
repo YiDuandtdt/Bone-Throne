@@ -22309,9 +22309,9 @@ MonoBehaviour:
   turnOrderService: {fileID: 916906061}
   playerUnits:
   - {fileID: 28712471}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 1349290702}
+  - {fileID: 1557234268}
+  - {fileID: 782111276}
   currentPhase: 1
   currentRole: 0
   currentTurnIndex: 0
@@ -27436,6 +27436,7 @@ MonoBehaviour:
   knownUnits:
   - {fileID: 1222606558}
   - {fileID: 1959007542}
+  activeUnitProvider: {fileID: 0}
 --- !u!1 &1122344522
 GameObject:
   m_ObjectHideFlags: 0
@@ -38141,6 +38142,7 @@ GameObject:
   - component: {fileID: 1553934667}
   - component: {fileID: 1553934666}
   - component: {fileID: 1553934669}
+  - component: {fileID: 1553934670}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -38266,6 +38268,41 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!114 &1553934670
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1553934665}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7deca0fbf160bcc4a8bd35ba4b1f1eef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.CameraControls.GridTestCameraController
+  controlsEnabled: 1
+  blockWhenPointerOverUI: 1
+  panSpeed: 0.02
+  zoomSpeed: 2
+  minOrthographicSize: 3
+  maxOrthographicSize: 14
+  perspectiveMinDistance: 8
+  perspectiveMaxDistance: 35
+  invertDrag: 0
+  useForwardDollyForPerspective: 1
+  zoomPivot: {fileID: 0}
+  rotationEnabled: 1
+  rotationSpeed: 0.2
+  invertRotation: 0
+  rotationStartThresholdPixels: 3
+  rotationPivot: {fileID: 0}
+  reuseZoomPivotForRotation: 1
+  fallbackPivotDistance: 18
+  verticalRotationEnabled: 1
+  verticalRotationSpeed: 0.15
+  invertVerticalRotation: 0
+  minPitch: 35
+  maxPitch: 75
 --- !u!114 &1557234268 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 120002, guid: 44eb417b15134d818dfda70c2db7d60f, type: 3}
