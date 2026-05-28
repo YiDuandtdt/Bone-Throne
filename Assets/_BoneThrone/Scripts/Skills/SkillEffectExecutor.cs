@@ -67,9 +67,121 @@ namespace BoneThrone.Skills
                     break;
             }
 
+            if (TryExecutePhase1413Skill(caster, target, skill, damageResolver, result))
+            {
+                return result.PrimaryTargetDied;
+            }
+
             ApplyFallbackDamage(target, skill, damageResolver, result);
             result.Summary = "Phase 11 fallback guaranteed damage " + skill.GuaranteedDamage + ".";
             return result.PrimaryTargetDied;
+        }
+
+        private bool TryExecutePhase1413Skill(Unit caster, Unit target, SkillData skill, DamageResolver damageResolver, SkillEffectResult result)
+        {
+            switch (caster.RoleId)
+            {
+                case RoleId.Fighter:
+                    return TryExecutePhase1413FighterSkill(target, skill, damageResolver, result);
+                case RoleId.Ranger:
+                    return TryExecutePhase1413RangerSkill(target, skill, damageResolver, result);
+                case RoleId.Mage:
+                    return TryExecutePhase1413MageSkill(caster, target, skill, damageResolver, result);
+                case RoleId.Barbarian:
+                    return TryExecutePhase1413BarbarianSkill(caster, target, skill, damageResolver, result);
+                default:
+                    return false;
+            }
+        }
+
+        private static bool TryExecutePhase1413FighterSkill(Unit target, SkillData skill, DamageResolver damageResolver, SkillEffectResult result)
+        {
+            if (SkillNameMatches(skill, "fighter_guard_strike"))
+            {
+                int damage = skill.GuaranteedDamage + 1;
+                ApplySingleTargetDamage(target, damage, damageResolver, result);
+                result.Summary = "Fighter Guard Strike dealt guaranteed damage " + damage + ".";
+                return true;
+            }
+
+            if (SkillNameMatches(skill, "fighter_crushing_challenge"))
+            {
+                int damage = skill.GuaranteedDamage + 2;
+                ApplySingleTargetDamage(target, damage, damageResolver, result);
+                result.Summary = "Fighter Crushing Challenge dealt guaranteed damage " + damage + ".";
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryExecutePhase1413RangerSkill(Unit target, SkillData skill, DamageResolver damageResolver, SkillEffectResult result)
+        {
+            if (SkillNameMatches(skill, "ranger_quick_shot"))
+            {
+                int damage = skill.GuaranteedDamage;
+                ApplySingleTargetDamage(target, damage, damageResolver, result);
+                result.Summary = "Ranger Quick Shot dealt guaranteed damage " + damage + ".";
+                return true;
+            }
+
+            if (SkillNameMatches(skill, "ranger_piercing_arrow"))
+            {
+                int damage = skill.GuaranteedDamage + 1;
+                ApplySingleTargetDamage(target, damage, damageResolver, result);
+                result.Summary = "Ranger Piercing Arrow dealt guaranteed damage " + damage + ".";
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryExecutePhase1413MageSkill(Unit caster, Unit target, SkillData skill, DamageResolver damageResolver, SkillEffectResult result)
+        {
+            if (SkillNameMatches(skill, "mage_frost_bolt"))
+            {
+                int damage = skill.GuaranteedDamage;
+                ApplySingleTargetDamage(target, damage, damageResolver, result);
+                result.Summary = "Mage Frost Bolt dealt guaranteed damage " + damage + ".";
+                return true;
+            }
+
+            if (SkillNameMatches(skill, "mage_arcane_burst"))
+            {
+                int damage = skill.GuaranteedDamage;
+                ApplySingleTargetDamage(target, damage, damageResolver, result);
+                int splashHits = ApplyArcaneBurstSplash(caster, target, damageResolver, GetKnownUnitsForSkillEffects(), result);
+                result.Summary = "Mage Arcane Burst dealt guaranteed damage " + damage + " and splash hits " + splashHits + ".";
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryExecutePhase1413BarbarianSkill(Unit caster, Unit target, SkillData skill, DamageResolver damageResolver, SkillEffectResult result)
+        {
+            if (SkillNameMatches(skill, "barbarian_rage_strike"))
+            {
+                int damage = skill.GuaranteedDamage + 1;
+                ApplySingleTargetDamage(target, damage, damageResolver, result);
+                result.Summary = "Barbarian Rage Strike dealt guaranteed damage " + damage + ".";
+                return true;
+            }
+
+            if (SkillNameMatches(skill, "barbarian_blood_fury_slash"))
+            {
+                int damage = skill.GuaranteedDamage + 2;
+                if (IsAtOrBelowHalfHp(caster))
+                {
+                    damage++;
+                }
+
+                ApplySingleTargetDamage(target, damage, damageResolver, result);
+                result.Summary = "Barbarian Blood Fury Slash dealt guaranteed damage " + damage + ".";
+                return true;
+            }
+
+            return false;
         }
 
         private Unit[] GetKnownUnitsForSkillEffects()
@@ -121,11 +233,67 @@ namespace BoneThrone.Skills
             return dx + dy;
         }
 
+        private static void ApplySingleTargetDamage(Unit target, int damage, DamageResolver damageResolver, SkillEffectResult result)
+        {
+            bool targetDied = damageResolver.ApplyDamage(target, damage);
+            int remainingHp = target.RuntimeState != null ? target.RuntimeState.CurrentHp : 0;
+            result.AddDamage(target, damage, remainingHp, targetDied, true);
+        }
+
+        private static int ApplyArcaneBurstSplash(Unit caster, Unit target, DamageResolver damageResolver, Unit[] knownUnits, SkillEffectResult result)
+        {
+            if (knownUnits == null || knownUnits.Length == 0)
+            {
+                return 0;
+            }
+
+            int splashHits = 0;
+            for (int i = 0; i < knownUnits.Length; i++)
+            {
+                Unit candidate = knownUnits[i];
+                if (!IsValidArcaneBurstSplashTarget(caster, target, candidate))
+                {
+                    continue;
+                }
+
+                if (GetManhattanDistance(target, candidate) == 1)
+                {
+                    bool targetDied = damageResolver.ApplyDamage(candidate, 1);
+                    int remainingHp = candidate.RuntimeState != null ? candidate.RuntimeState.CurrentHp : 0;
+                    result.AddDamage(candidate, 1, remainingHp, targetDied, false);
+                    splashHits++;
+                }
+            }
+
+            return splashHits;
+        }
+
+        private static bool IsValidArcaneBurstSplashTarget(Unit caster, Unit primaryTarget, Unit candidate)
+        {
+            return caster != null
+                && primaryTarget != null
+                && candidate != null
+                && candidate != primaryTarget
+                && candidate.gameObject.activeInHierarchy
+                && candidate.IsAlive
+                && candidate.Faction != caster.Faction
+                && candidate.CurrentTile != null;
+        }
+
+        private static bool IsAtOrBelowHalfHp(Unit caster)
+        {
+            if (caster == null || caster.Stats == null || caster.RuntimeState == null)
+            {
+                return false;
+            }
+
+            int maxHp = caster.Stats.GetClampedMaxHp();
+            return caster.RuntimeState.CurrentHp * 2 <= maxHp;
+        }
+
         private static void ApplyFallbackDamage(Unit target, SkillData skill, DamageResolver damageResolver, SkillEffectResult result)
         {
-            bool targetDied = damageResolver.ApplyDamage(target, skill.GuaranteedDamage);
-            int remainingHp = target.RuntimeState != null ? target.RuntimeState.CurrentHp : 0;
-            result.AddDamage(target, skill.GuaranteedDamage, remainingHp, targetDied, true);
+            ApplySingleTargetDamage(target, skill.GuaranteedDamage, damageResolver, result);
         }
 
         private static string NormalizeSkillName(string value)
