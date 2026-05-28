@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using BoneThrone.Grid;
+using BoneThrone.Turns;
 using BoneThrone.Units;
 using UnityEngine;
 
@@ -16,11 +17,12 @@ namespace BoneThrone.Movement
         [SerializeField] private Color skillColor = new Color(1f, 0.86f, 0.12f, 1f);
         [SerializeField] private bool showPlayerFootTiles = true;
         [SerializeField] private Color playerFootTileColor = Color.white;
+        [SerializeField] private Color endedPlayerFootTileColor = Color.gray;
         [SerializeField] private bool autoRefreshPlayerFootTiles = true;
         [SerializeField] private float playerFootTileRefreshInterval = 0.25f;
 
         private readonly Dictionary<Renderer, Color> originalColors = new Dictionary<Renderer, Color>();
-        private readonly HashSet<Renderer> playerFootRenderers = new HashSet<Renderer>();
+        private readonly Dictionary<Renderer, Color> playerFootColors = new Dictionary<Renderer, Color>();
         private readonly HashSet<Renderer> actionRenderers = new HashSet<Renderer>();
         private Renderer selectedRenderer;
         private Color actionColor;
@@ -49,7 +51,7 @@ namespace BoneThrone.Movement
 
         public void RefreshPlayerFootTiles()
         {
-            playerFootRenderers.Clear();
+            playerFootColors.Clear();
 
             if (!showPlayerFootTiles)
             {
@@ -77,7 +79,7 @@ namespace BoneThrone.Movement
                 }
 
                 RememberOriginalColor(renderer);
-                playerFootRenderers.Add(renderer);
+                playerFootColors[renderer] = GetPlayerFootTileColor(unit);
             }
 
             Repaint();
@@ -85,7 +87,7 @@ namespace BoneThrone.Movement
 
         public void ClearPlayerFootTiles()
         {
-            playerFootRenderers.Clear();
+            playerFootColors.Clear();
             Repaint();
         }
 
@@ -216,7 +218,8 @@ namespace BoneThrone.Movement
         public void Clear()
         {
             actionRenderers.Clear();
-            ClearSelected();
+            selectedRenderer = null;
+            RefreshPlayerFootTiles();
         }
 
         private void Repaint()
@@ -229,11 +232,11 @@ namespace BoneThrone.Movement
                 }
             }
 
-            foreach (Renderer renderer in playerFootRenderers)
+            foreach (KeyValuePair<Renderer, Color> pair in playerFootColors)
             {
-                if (renderer != null)
+                if (pair.Key != null)
                 {
-                    SetRendererColor(renderer, playerFootTileColor);
+                    SetRendererColor(pair.Key, pair.Value);
                 }
             }
 
@@ -264,6 +267,17 @@ namespace BoneThrone.Movement
         private static Renderer GetTileRenderer(Tile tile)
         {
             return tile != null ? tile.GetComponentInChildren<Renderer>() : null;
+        }
+
+        private Color GetPlayerFootTileColor(Unit unit)
+        {
+            UnitTurnState turnState = unit != null ? unit.GetComponent<UnitTurnState>() : null;
+            if (turnState != null && turnState.HasEnded)
+            {
+                return endedPlayerFootTileColor;
+            }
+
+            return playerFootTileColor;
         }
 
         private static Color GetRendererColor(Renderer renderer)
