@@ -22,7 +22,12 @@ namespace BoneThrone.Combat
             SkillUse = 5,
             SkillEffect = 6,
             SkillRejected = 7,
-            SkillCooldown = 8
+            SkillCooldown = 8,
+            Defend = 9,
+            DamageReduced = 10,
+            Potion = 11,
+            Heal = 12,
+            PotionRejected = 13
         }
 
         public sealed class Entry
@@ -161,6 +166,61 @@ namespace BoneThrone.Combat
                 + " cooldown for Unit " + GetUnitId(caster)
                 + ": " + Mathf.Max(0, cooldown) + ".";
             Debug.Log(message, caster);
+        }
+
+        public void LogDefend(Unit unit, int reduction)
+        {
+            string message = GetDisplayName(unit)
+                + " is defending. Next damage reduced by "
+                + Mathf.Max(0, reduction)
+                + ".";
+            AddEntry(EntryType.Defend, message);
+            Debug.Log(message, unit);
+        }
+
+        public void LogDefendRejected(string reason, UnityEngine.Object context)
+        {
+            string message = "Defend rejected: " + reason;
+            AddEntry(EntryType.Rejected, message);
+            Debug.LogWarning(message, context);
+        }
+
+        public void LogDamageReduced(Unit target, int originalDamage, int finalDamage, int reducedAmount)
+        {
+            string message = GetDisplayName(target)
+                + " defended. Damage "
+                + Mathf.Max(0, originalDamage)
+                + " -> "
+                + Mathf.Max(0, finalDamage)
+                + " (reduced "
+                + Mathf.Max(0, reducedAmount)
+                + ").";
+            AddEntry(EntryType.DamageReduced, message);
+            Debug.Log(message, target);
+        }
+
+        public void LogPotionUsed(Unit unit, int healAmount, int currentHp, int maxHp, int remainingPotions)
+        {
+            string message = GetDisplayName(unit)
+                + " used Potion, healed "
+                + Mathf.Max(0, healAmount)
+                + " HP. HP="
+                + Mathf.Max(0, currentHp)
+                + " / "
+                + Mathf.Max(1, maxHp)
+                + ". Potions="
+                + Mathf.Max(0, remainingPotions)
+                + ".";
+            AddEntry(EntryType.Potion, message);
+            AddEntry(EntryType.Heal, message);
+            Debug.Log(message, unit);
+        }
+
+        public void LogPotionRejected(string reason, UnityEngine.Object context)
+        {
+            string message = "Potion rejected: " + reason;
+            AddEntry(EntryType.PotionRejected, message);
+            Debug.LogWarning(message, context);
         }
 
         private void AddEntry(EntryType type, string message)

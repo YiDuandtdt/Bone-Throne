@@ -1,29 +1,34 @@
 # ACTIVE_TASK.md
 
 ## Current phase
-Phase 14.15-D - Player Foot Tile Indicator
+Phase 14.17 - Defend / Potion / Skill Availability Implementation
 
 ## Goal
-Add a lightweight player foot tile indicator to the current debug highlighter flow.
+Implement the Phase 14.16 plan:
 
-Rules:
-
-- Alive player units show their current tile as white by default.
-- Enemy tiles do not become white.
-- Dead player units do not keep a white tile marker.
-- Player movement refreshes the marker so the old tile returns to its baseline and the new tile becomes white.
-- Selected, move, attack, and skill highlights can temporarily override the white marker.
-- Clearing highlights reapplies the white player foot tile baseline.
-- No scene, prefab, material asset, KayKit, combat, skill, or turn-rule changes.
+- Skill Slot 0 / 1 / 2 availability: Empty / Locked / Cooldown are disabled and greyed out; Ready is clickable.
+- Defend action: selected player self-action, consumes action, does not end turn, gives one-hit flat damage reduction.
+- Potion action: selected player self-action, consumes action, does not end turn, heals self, each player defaults to one potion.
 
 ## Allowed files
-- `Assets/_BoneThrone/Scripts/Movement/MovementDebugHighlighter.cs`
-- `Assets/_BoneThrone/Scripts/Movement/PlayerMovementController.cs`
-- `Docs/DevLogs/Phase14.15D_PlayerFootTileIndicator.md`
+- `Assets/_BoneThrone/Scripts/UI/SkillBarView.cs`
+- `Assets/_BoneThrone/Scripts/UI/BattleHUDController.cs`
+- `Assets/_BoneThrone/Scripts/UI/UIActionModeController.cs`
+- `Assets/_BoneThrone/Scripts/Combat/CombatLog.cs`
+- `Assets/_BoneThrone/Scripts/Combat/DamageResolver.cs`
+- `Assets/_BoneThrone/Scripts/Combat/DefendSystem.cs`
+- `Assets/_BoneThrone/Scripts/Combat/DefendSystem.cs.meta`
+- `Assets/_BoneThrone/Scripts/Combat/UnitDefenseState.cs`
+- `Assets/_BoneThrone/Scripts/Combat/UnitDefenseState.cs.meta`
+- `Assets/_BoneThrone/Scripts/Items/PotionSystem.cs`
+- `Assets/_BoneThrone/Scripts/Items/PotionSystem.cs.meta`
+- `Assets/_BoneThrone/Scripts/Items/UnitPotionState.cs`
+- `Assets/_BoneThrone/Scripts/Items/UnitPotionState.cs.meta`
+- `Assets/_BoneThrone/Scripts/Items.meta`
+- `Docs/DevLogs/Phase14.17_DefendPotionSkillAvailabilityImplementation.md`
 - `Docs/ACTIVE_TASK.md`
 
 ## Forbidden changes
-- Do not modify `DamageResolver.cs`.
 - Do not modify `SkillEffectExecutor.cs`.
 - Do not modify `SkillSystem.cs`.
 - Do not modify `SkillTargetingService.cs`.
@@ -33,37 +38,19 @@ Rules:
 - Do not modify enemy prefabs.
 - Do not modify scene files, including `GridTest.unity`.
 - Do not modify KayKit original assets.
-- Do not modify `Skeleton_Rogue`.
-- Do not modify `Skeleton_Golem`.
+- Do not modify `Skeleton_Rogue` or `Skeleton_Golem`.
 - Do not modify Ranger visual or identity.
-- Do not implement Defend.
-- Do not implement Potion.
-- Do not rebuild skills.
-- Do not introduce initiative, AP, networking, behavior trees, or complex UI art.
-- Do not modify camera controls.
-- Do not modify `ActiveUnitProvider` behavior.
-
-## Required output
-After implementation, report:
-
-1. Actual modified files.
-2. Whether `MovementDebugHighlighter` was modified.
-3. Whether `PlayerMovementController`, `BattleHUDController`, or `TurnManager` were modified.
-4. How player foot tile white is implemented.
-5. How enemy tiles are avoided.
-6. How old/new tile colors update after movement.
-7. How Clear restores player foot tile white.
-8. Whether scene / prefab / assets were modified.
-9. Unity Play Mode test steps.
-10. Risks and rollback.
+- Do not modify the 12 formal skill formulas.
+- Do not modify free player turn order, End Turn rules, player foot tile indicator, camera controls, or `ActiveUnitProvider` behavior.
+- Do not implement a backpack system, multiple potion types, taunt, counterattack, guard ally, skill rebuild, enemy skills, networking, initiative, AP, or behavior trees.
 
 ## Validation
 Implementation phase.
 
 Manual checks:
 
-1. Confirm only allowed files changed for this phase.
+1. Confirm only allowed files changed.
 2. Confirm no scene, prefab, SkillData, Packages, ProjectSettings, Library, Temp, Obj, Logs, or UserSettings changes.
 3. Run C# compilation.
 4. Open `Assets/_BoneThrone/Scenes/GridTest.unity`.
-5. Enter Play Mode and validate player foot tile indicators.
+5. Enter Play Mode and validate skill availability, Defend, Potion, and regressions.

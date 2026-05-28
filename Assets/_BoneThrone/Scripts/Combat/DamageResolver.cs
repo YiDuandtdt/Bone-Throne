@@ -9,6 +9,8 @@ namespace BoneThrone.Combat
     /// </summary>
     public sealed class DamageResolver : MonoBehaviour
     {
+        [SerializeField] private CombatLog combatLog;
+
         public bool ApplyDamage(Unit target, int damage)
         {
             if (target == null)
@@ -24,7 +26,22 @@ namespace BoneThrone.Combat
             }
 
             int clampedDamage = Mathf.Max(0, damage);
-            int nextHp = Mathf.Max(0, target.RuntimeState.CurrentHp - clampedDamage);
+            int finalDamage = clampedDamage;
+            UnitDefenseState defenseState = target.GetComponent<UnitDefenseState>();
+            if (defenseState != null && defenseState.IsDefending)
+            {
+                int reducedAmount;
+                if (defenseState.TryConsumeReduction(clampedDamage, out finalDamage, out reducedAmount))
+                {
+                    ResolveCombatLog();
+                    if (combatLog != null)
+                    {
+                        combatLog.LogDamageReduced(target, clampedDamage, finalDamage, reducedAmount);
+                    }
+                }
+            }
+
+            int nextHp = Mathf.Max(0, target.RuntimeState.CurrentHp - finalDamage);
             target.RuntimeState.SetCurrentHp(nextHp);
 
             if (target.RuntimeState.CurrentHp <= 0)
@@ -34,6 +51,14 @@ namespace BoneThrone.Combat
             }
 
             return false;
+        }
+
+        private void ResolveCombatLog()
+        {
+            if (combatLog == null)
+            {
+                combatLog = Object.FindFirstObjectByType<CombatLog>();
+            }
         }
     }
 }

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using BoneThrone.Combat;
 using BoneThrone.Grid;
 using BoneThrone.Interactables;
+using BoneThrone.Items;
 using BoneThrone.Levels;
 using BoneThrone.Movement;
 using BoneThrone.Skills;
@@ -27,6 +28,8 @@ namespace BoneThrone.UI
         [SerializeField] private GridManager gridManager;
         [SerializeField] private CombatSystem combatSystem;
         [SerializeField] private SkillSystem skillSystem;
+        [SerializeField] private DefendSystem defendSystem;
+        [SerializeField] private PotionSystem potionSystem;
         [SerializeField] private Unit[] playerUnits = new Unit[4];
         [SerializeField] private Unit[] enemyUnits;
         [SerializeField] private ActiveUnitProvider activeUnitProvider;
@@ -59,6 +62,8 @@ namespace BoneThrone.UI
 
             EnsureEndTurnButton();
             EnsureActiveUnitProvider();
+            EnsureDefendSystem();
+            EnsurePotionSystem();
             EnsureActionModeController();
             ConfigureActionModeController();
         }
@@ -100,7 +105,8 @@ namespace BoneThrone.UI
 
             if (skillBarView != null)
             {
-                skillBarView.Refresh(selectedUnit);
+                bool isPlayerTurn = turnManager != null && turnManager.CurrentPhase == TurnPhase.PlayerTurn;
+                skillBarView.Refresh(selectedUnit, isPlayerTurn);
                 skillBarView.SetEndTurnInteractable(turnManager != null && turnManager.CurrentPhase == TurnPhase.PlayerTurn);
             }
 
@@ -127,6 +133,10 @@ namespace BoneThrone.UI
             skillBarView.SkillSlot1Clicked += HandleSkillSlot1Clicked;
             skillBarView.SkillSlot2Clicked -= HandleSkillSlot2Clicked;
             skillBarView.SkillSlot2Clicked += HandleSkillSlot2Clicked;
+            skillBarView.DefendClicked -= HandleDefendClicked;
+            skillBarView.DefendClicked += HandleDefendClicked;
+            skillBarView.PotionClicked -= HandlePotionClicked;
+            skillBarView.PotionClicked += HandlePotionClicked;
             skillBarView.EndTurnClicked -= HandleEndTurnClicked;
             skillBarView.EndTurnClicked += HandleEndTurnClicked;
         }
@@ -140,6 +150,8 @@ namespace BoneThrone.UI
                 skillBarView.SkillSlot0Clicked -= HandleSkillSlot0Clicked;
                 skillBarView.SkillSlot1Clicked -= HandleSkillSlot1Clicked;
                 skillBarView.SkillSlot2Clicked -= HandleSkillSlot2Clicked;
+                skillBarView.DefendClicked -= HandleDefendClicked;
+                skillBarView.PotionClicked -= HandlePotionClicked;
                 skillBarView.EndTurnClicked -= HandleEndTurnClicked;
             }
         }
@@ -202,6 +214,60 @@ namespace BoneThrone.UI
             }
 
             actionModeController.HandleSkillSlotButtonClicked(slotIndex);
+        }
+
+        private void HandleDefendClicked()
+        {
+            Unit selectedUnit = GetSelectedUnitForSelfAction("Defend");
+            if (selectedUnit == null)
+            {
+                return;
+            }
+
+            EnsureDefendSystem();
+            if (defendSystem == null)
+            {
+                if (promptView != null)
+                {
+                    promptView.ShowOverride("Defend unavailable: DefendSystem missing.", 1.5f);
+                }
+
+                return;
+            }
+
+            if (actionModeController != null)
+            {
+                actionModeController.CancelTargetingForExternalAction();
+            }
+
+            defendSystem.TryDefend(selectedUnit);
+        }
+
+        private void HandlePotionClicked()
+        {
+            Unit selectedUnit = GetSelectedUnitForSelfAction("Potion");
+            if (selectedUnit == null)
+            {
+                return;
+            }
+
+            EnsurePotionSystem();
+            if (potionSystem == null)
+            {
+                if (promptView != null)
+                {
+                    promptView.ShowOverride("Potion unavailable: PotionSystem missing.", 1.5f);
+                }
+
+                return;
+            }
+
+            if (actionModeController != null)
+            {
+                actionModeController.CancelTargetingForExternalAction();
+            }
+
+            potionSystem.TryUsePotion(selectedUnit);
         }
 
         private void HandleEndTurnClicked()
@@ -311,6 +377,32 @@ namespace BoneThrone.UI
             }
         }
 
+        private void EnsureDefendSystem()
+        {
+            if (defendSystem == null)
+            {
+                defendSystem = Object.FindFirstObjectByType<DefendSystem>();
+            }
+
+            if (defendSystem == null)
+            {
+                defendSystem = gameObject.AddComponent<DefendSystem>();
+            }
+        }
+
+        private void EnsurePotionSystem()
+        {
+            if (potionSystem == null)
+            {
+                potionSystem = Object.FindFirstObjectByType<PotionSystem>();
+            }
+
+            if (potionSystem == null)
+            {
+                potionSystem = gameObject.AddComponent<PotionSystem>();
+            }
+        }
+
         private void EnsureActiveUnitProvider()
         {
             if (activeUnitProvider != null)
@@ -376,6 +468,62 @@ namespace BoneThrone.UI
             {
                 combatFeedbackView.AddEntry(entry);
             }
+        }
+
+        private Unit GetSelectedUnitForSelfAction(string actionName)
+        {
+            if (turnManager == null)
+            {
+                if (promptView != null)
+                {
+                    promptView.ShowOverride(actionName + " unavailable: TurnManager unbound.", 1.5f);
+                }
+
+                return null;
+            }
+
+            if (turnManager.CurrentPhase != TurnPhase.PlayerTurn)
+            {
+                if (promptView != null)
+                {
+                    promptView.ShowOverride(actionName + " unavailable during EnemyTurn.", 1.5f);
+                }
+
+                return null;
+            }
+
+            Unit selectedUnit = selectionManager != null ? selectionManager.SelectedUnit : null;
+            if (selectedUnit == null)
+            {
+                if (promptView != null)
+                {
+                    promptView.ShowOverride("Select a player unit first.", 1.5f);
+                }
+
+                return null;
+            }
+
+            if (selectedUnit.Faction != UnitFaction.Player)
+            {
+                if (promptView != null)
+                {
+                    promptView.ShowOverride("Selected unit is not a player unit.", 1.5f);
+                }
+
+                return null;
+            }
+
+            if (!selectedUnit.IsAlive)
+            {
+                if (promptView != null)
+                {
+                    promptView.ShowOverride("Selected unit is dead.", 1.5f);
+                }
+
+                return null;
+            }
+
+            return selectedUnit;
         }
 
         private void RefreshHeroPanels(Unit selectedUnit)

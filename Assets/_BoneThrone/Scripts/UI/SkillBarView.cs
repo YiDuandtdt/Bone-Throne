@@ -1,4 +1,6 @@
+using BoneThrone.Items;
 using BoneThrone.Skills;
+using BoneThrone.Turns;
 using BoneThrone.Units;
 using TMPro;
 using UnityEngine;
@@ -20,12 +22,17 @@ namespace BoneThrone.UI
         [SerializeField] private TMP_Text potionText;
         [SerializeField] private TMP_Text endTurnText;
         [SerializeField] private Button[] actionButtons;
+        [SerializeField] private Color enabledTextColor = Color.white;
+        [SerializeField] private Color disabledTextColor = Color.gray;
+        [SerializeField] private Color cooldownTextColor = new Color(0.65f, 0.75f, 1f, 1f);
 
         private Button moveButton;
         private Button basicAttackButton;
         private Button slot0Button;
         private Button slot1Button;
         private Button slot2Button;
+        private Button defendButton;
+        private Button potionButton;
         private Button endTurnButton;
 
         public event System.Action MoveClicked;
@@ -33,6 +40,8 @@ namespace BoneThrone.UI
         public event System.Action SkillSlot0Clicked;
         public event System.Action SkillSlot1Clicked;
         public event System.Action SkillSlot2Clicked;
+        public event System.Action DefendClicked;
+        public event System.Action PotionClicked;
         public event System.Action EndTurnClicked;
 
         public void Bind(
@@ -60,30 +69,36 @@ namespace BoneThrone.UI
             slot0Button = actionButtons != null && actionButtons.Length > 2 ? actionButtons[2] : null;
             slot1Button = actionButtons != null && actionButtons.Length > 3 ? actionButtons[3] : null;
             slot2Button = actionButtons != null && actionButtons.Length > 4 ? actionButtons[4] : null;
+            defendButton = actionButtons != null && actionButtons.Length > 5 ? actionButtons[5] : null;
+            potionButton = actionButtons != null && actionButtons.Length > 6 ? actionButtons[6] : null;
             endTurnButton = actionButtons != null && actionButtons.Length > 7 ? actionButtons[7] : null;
             ConfigureMoveButton();
             ConfigureBasicAttackButton();
             ConfigureSkillSlotButtons();
+            ConfigureDefendButton();
+            ConfigurePotionButton();
             ConfigureEndTurnButton();
             DisablePlaceholderButtons();
         }
 
         public void Refresh(Unit selectedUnit)
         {
+            Refresh(selectedUnit, true);
+        }
+
+        public void Refresh(Unit selectedUnit, bool isPlayerTurn)
+        {
             DisablePlaceholderButtons();
-            SetMoveInteractable(true);
-            SetBasicAttackInteractable(true);
-            SetSkillSlotInteractable(0, true);
-            SetSkillSlotInteractable(1, true);
-            SetSkillSlotInteractable(2, true);
+            SetMoveInteractable(isPlayerTurn && selectedUnit != null);
+            SetBasicAttackInteractable(isPlayerTurn && CanSelectedUnitAct(selectedUnit));
 
             SetText(moveText, selectedUnit != null ? "Move\nTarget" : "Move\nSelect Unit");
             SetText(basicAttackText, selectedUnit != null ? "Basic Attack\nTarget" : "Basic Attack\nSelect Unit");
-            RefreshSkillSlot(selectedUnit, 0, slot0Text);
-            RefreshSkillSlot(selectedUnit, 1, slot1Text);
-            RefreshSkillSlot(selectedUnit, 2, slot2Text);
-            SetText(defendText, "Defend\nPlaceholder");
-            SetText(potionText, "Potion\nPlaceholder");
+            RefreshSkillSlot(selectedUnit, 0, slot0Text, isPlayerTurn);
+            RefreshSkillSlot(selectedUnit, 1, slot1Text, isPlayerTurn);
+            RefreshSkillSlot(selectedUnit, 2, slot2Text, isPlayerTurn);
+            RefreshDefend(selectedUnit, isPlayerTurn);
+            RefreshPotion(selectedUnit, isPlayerTurn);
             SetText(endTurnText, "End\nTurn");
         }
 
@@ -143,7 +158,7 @@ namespace BoneThrone.UI
             }
         }
 
-        private void RefreshSkillSlot(Unit selectedUnit, int slotIndex, TMP_Text text)
+        private void RefreshSkillSlot(Unit selectedUnit, int slotIndex, TMP_Text text, bool isPlayerTurn)
         {
             if (text == null)
             {
@@ -153,6 +168,7 @@ namespace BoneThrone.UI
             if (selectedUnit == null)
             {
                 text.text = "Skill " + slotIndex + "\nNo Unit";
+                SetSkillSlotVisual(slotIndex, text, false, disabledTextColor);
                 return;
             }
 
@@ -160,6 +176,7 @@ namespace BoneThrone.UI
             if (runtime == null || !runtime.HasSkill(slotIndex))
             {
                 text.text = "Skill " + slotIndex + "\nEmpty";
+                SetSkillSlotVisual(slotIndex, text, false, disabledTextColor);
                 return;
             }
 
@@ -168,6 +185,32 @@ namespace BoneThrone.UI
             int cooldown = runtime.GetCooldown(slotIndex);
             string state = !unlocked ? "Locked" : cooldown > 0 ? "Cooldown " + cooldown : "Ready";
             text.text = skill.DisplayName + "\n" + state;
+            bool canUse = isPlayerTurn && unlocked && cooldown <= 0 && CanSelectedUnitAct(selectedUnit);
+            Color textColor = canUse ? enabledTextColor : cooldown > 0 ? cooldownTextColor : disabledTextColor;
+            SetSkillSlotVisual(slotIndex, text, canUse, textColor);
+        }
+
+        private void RefreshDefend(Unit selectedUnit, bool isPlayerTurn)
+        {
+            bool canAct = isPlayerTurn && CanSelectedUnitAct(selectedUnit);
+            string state = selectedUnit == null ? "Unavailable" : canAct ? "Ready" : "Used";
+            SetText(defendText, "Defend\n" + state);
+            SetTextColor(defendText, canAct ? enabledTextColor : disabledTextColor);
+            SetDefendInteractable(canAct);
+        }
+
+        private void RefreshPotion(Unit selectedUnit, bool isPlayerTurn)
+        {
+            bool canAct = isPlayerTurn && CanSelectedUnitAct(selectedUnit);
+            int potionCount = GetPotionCount(selectedUnit);
+            bool fullHp = IsFullHp(selectedUnit);
+            bool canUse = canAct && potionCount > 0 && !fullHp;
+            string state = selectedUnit == null
+                ? "Unavailable"
+                : potionCount <= 0 ? "Empty" : fullHp ? "Full HP" : "x" + potionCount;
+            SetText(potionText, "Potion\n" + state);
+            SetTextColor(potionText, canUse ? enabledTextColor : disabledTextColor);
+            SetPotionInteractable(canUse);
         }
 
         private void ConfigureMoveButton()
@@ -202,6 +245,28 @@ namespace BoneThrone.UI
             SetSkillSlotInteractable(0, true);
             SetSkillSlotInteractable(1, true);
             SetSkillSlotInteractable(2, true);
+        }
+
+        private void ConfigureDefendButton()
+        {
+            if (defendButton == null)
+            {
+                return;
+            }
+
+            defendButton.onClick.RemoveListener(HandleDefendClicked);
+            defendButton.onClick.AddListener(HandleDefendClicked);
+        }
+
+        private void ConfigurePotionButton()
+        {
+            if (potionButton == null)
+            {
+                return;
+            }
+
+            potionButton.onClick.RemoveListener(HandlePotionClicked);
+            potionButton.onClick.AddListener(HandlePotionClicked);
         }
 
         private void ConfigureEndTurnButton()
@@ -264,6 +329,22 @@ namespace BoneThrone.UI
             if (SkillSlot2Clicked != null)
             {
                 SkillSlot2Clicked();
+            }
+        }
+
+        private void HandleDefendClicked()
+        {
+            if (DefendClicked != null)
+            {
+                DefendClicked();
+            }
+        }
+
+        private void HandlePotionClicked()
+        {
+            if (PotionClicked != null)
+            {
+                PotionClicked();
             }
         }
 
@@ -333,6 +414,36 @@ namespace BoneThrone.UI
             }
         }
 
+        private void SetDefendInteractable(bool interactable)
+        {
+            SetButtonInteractable(defendButton, interactable);
+        }
+
+        private void SetPotionInteractable(bool interactable)
+        {
+            SetButtonInteractable(potionButton, interactable);
+        }
+
+        private void SetSkillSlotVisual(int slotIndex, TMP_Text text, bool interactable, Color color)
+        {
+            SetSkillSlotInteractable(slotIndex, interactable);
+            SetTextColor(text, color);
+        }
+
+        private static void SetButtonInteractable(Button button, bool interactable)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            button.interactable = interactable;
+            if (button.targetGraphic != null)
+            {
+                button.targetGraphic.raycastTarget = interactable;
+            }
+        }
+
         private void DisablePlaceholderButtons()
         {
             if (actionButtons == null)
@@ -344,7 +455,7 @@ namespace BoneThrone.UI
             {
                 if (actionButtons[i] != null)
                 {
-                    bool isSupportedAction = (i >= 0 && i <= 4) || i == 7;
+                    bool isSupportedAction = (i >= 0 && i <= 7);
                     actionButtons[i].interactable = isSupportedAction;
                     if (actionButtons[i].targetGraphic != null)
                     {
@@ -360,6 +471,46 @@ namespace BoneThrone.UI
             {
                 text.text = value;
             }
+        }
+
+        private static void SetTextColor(TMP_Text text, Color color)
+        {
+            if (text != null)
+            {
+                text.color = color;
+            }
+        }
+
+        private static bool CanSelectedUnitAct(Unit selectedUnit)
+        {
+            if (selectedUnit == null || !selectedUnit.IsAlive)
+            {
+                return false;
+            }
+
+            UnitTurnState turnState = selectedUnit.GetComponent<UnitTurnState>();
+            return turnState != null && !turnState.HasActed && !turnState.HasEnded;
+        }
+
+        private static int GetPotionCount(Unit selectedUnit)
+        {
+            if (selectedUnit == null)
+            {
+                return 0;
+            }
+
+            UnitPotionState potionState = selectedUnit.GetComponent<UnitPotionState>();
+            return potionState != null ? potionState.CurrentPotionCount : 1;
+        }
+
+        private static bool IsFullHp(Unit selectedUnit)
+        {
+            if (selectedUnit == null || selectedUnit.RuntimeState == null || selectedUnit.Stats == null)
+            {
+                return true;
+            }
+
+            return selectedUnit.RuntimeState.CurrentHp >= selectedUnit.Stats.GetClampedMaxHp();
         }
 
         private Button CreateRuntimeEndTurnButton()
