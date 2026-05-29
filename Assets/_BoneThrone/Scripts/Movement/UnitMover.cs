@@ -46,14 +46,19 @@ namespace BoneThrone.Movement
                 return false;
             }
 
+            UnitAnimationController animationController = unit.GetComponent<UnitAnimationController>();
+            animationController?.SetMoveSpeed(1f);
+
             Tile originalTile = unit.CurrentTile;
             bool moved = unit.TryPlaceOnTile(targetTile);
             if (!moved)
             {
+                animationController?.SetMoveSpeed(0f);
                 return false;
             }
 
             unit.transform.position = targetTile.transform.position + worldPositionOffset;
+            animationController?.SetMoveSpeed(0f);
 
             if (originalTile != null && originalTile != targetTile && originalTile.IsOccupied)
             {

@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 100004}
   - component: {fileID: 100005}
   - component: {fileID: 100006}
+  - component: {fileID: 730000152202711}
   m_Layer: 0
   m_Name: Fighter
   m_TagString: Untagged
@@ -390,3 +391,4 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: b2288bf90ea962f43a92815407511622, type: 3}
   m_PrefabInstance: {fileID: 720000152202717}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &730000152202711 MonoBehaviour:   m_ObjectHideFlags: 0   m_CorrespondingSourceObject: {fileID: 0}   m_PrefabInstance: {fileID: 0}   m_PrefabAsset: {fileID: 0}   m_GameObject: {fileID: 100000}   m_Enabled: 1   m_EditorHideFlags: 0   m_Script: {fileID: 11500000, guid: 9c1a8f0c67a4470bb83204e9289e0f5a, type: 3}   m_Name:    m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Units.UnitAnimationController   animator: {fileID: 0}   warnWhenAnimatorMissing: 1

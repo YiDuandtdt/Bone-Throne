@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 110004}
   - component: {fileID: 110005}
   - component: {fileID: 110006}
+  - component: {fileID: 730000210502337}
   m_Layer: 0
   m_Name: Ranger
   m_TagString: Untagged
@@ -374,3 +375,4 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 295915f4b8a84684ab79c2be6b043492, type: 3}
   m_PrefabInstance: {fileID: 720000210502343}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &730000210502337 MonoBehaviour:   m_ObjectHideFlags: 0   m_CorrespondingSourceObject: {fileID: 0}   m_PrefabInstance: {fileID: 0}   m_PrefabAsset: {fileID: 0}   m_GameObject: {fileID: 110000}   m_Enabled: 1   m_EditorHideFlags: 0   m_Script: {fileID: 11500000, guid: 9c1a8f0c67a4470bb83204e9289e0f5a, type: 3}   m_Name:    m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Units.UnitAnimationController   animator: {fileID: 0}   warnWhenAnimatorMissing: 1

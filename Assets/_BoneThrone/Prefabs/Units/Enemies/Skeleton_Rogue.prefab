@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 230003}
   - component: {fileID: 230004}
   - component: {fileID: 230005}
+  - component: {fileID: 730000725610770}
   m_Layer: 0
   m_Name: Skeleton_Rogue
   m_TagString: Untagged
@@ -308,3 +309,4 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 82bbe5a05060c8a4ab2f40ea3d9bc44f, type: 3}
   m_PrefabInstance: {fileID: 720000725610772}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &730000725610770 MonoBehaviour:   m_ObjectHideFlags: 0   m_CorrespondingSourceObject: {fileID: 0}   m_PrefabInstance: {fileID: 0}   m_PrefabAsset: {fileID: 0}   m_GameObject: {fileID: 230000}   m_Enabled: 1   m_EditorHideFlags: 0   m_Script: {fileID: 11500000, guid: 9c1a8f0c67a4470bb83204e9289e0f5a, type: 3}   m_Name:    m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Units.UnitAnimationController   animator: {fileID: 0}   warnWhenAnimatorMissing: 1

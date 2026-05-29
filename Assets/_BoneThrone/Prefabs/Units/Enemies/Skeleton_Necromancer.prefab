@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 220003}
   - component: {fileID: 220004}
   - component: {fileID: 220005}
+  - component: {fileID: 730000051224229}
   m_Layer: 0
   m_Name: Skeleton_Necromancer
   m_TagString: Untagged
@@ -309,3 +310,4 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
   m_PrefabInstance: {fileID: 720000051224231}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &730000051224229 MonoBehaviour:   m_ObjectHideFlags: 0   m_CorrespondingSourceObject: {fileID: 0}   m_PrefabInstance: {fileID: 0}   m_PrefabAsset: {fileID: 0}   m_GameObject: {fileID: 220000}   m_Enabled: 1   m_EditorHideFlags: 0   m_Script: {fileID: 11500000, guid: 9c1a8f0c67a4470bb83204e9289e0f5a, type: 3}   m_Name:    m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Units.UnitAnimationController   animator: {fileID: 0}   warnWhenAnimatorMissing: 1

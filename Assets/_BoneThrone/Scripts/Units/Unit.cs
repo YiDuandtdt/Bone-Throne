@@ -140,6 +140,8 @@ namespace BoneThrone.Units
             }
 
             runtimeState.MarkDead();
+            UnitAnimationController animationController = GetComponent<UnitAnimationController>();
+            animationController?.SetDead(true);
             ReleaseTile();
         }
     }

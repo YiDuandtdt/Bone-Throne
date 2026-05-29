@@ -99,6 +99,8 @@ namespace BoneThrone.Items
 
             unit.RuntimeState.SetCurrentHp(nextHp);
             MarkActed(unit);
+            UnitAnimationController animationController = unit.GetComponent<UnitAnimationController>();
+            animationController?.PlayUsePotion();
 
             if (combatLog != null)
             {

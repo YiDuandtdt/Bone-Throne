@@ -76,6 +76,9 @@ namespace BoneThrone.Combat
                 return false;
             }
 
+            UnitAnimationController attackerAnimation = attacker.GetComponent<UnitAnimationController>();
+            attackerAnimation?.PlayBasicAttack();
+
             int roll = d20Roller.RollD20();
             int attackModifier = attacker.Stats != null ? attacker.Stats.AttackModifier : 0;
             int defense = target.Stats != null ? target.Stats.Defense : 0;

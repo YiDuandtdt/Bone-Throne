@@ -66,6 +66,12 @@ namespace BoneThrone.Combat
                 return true;
             }
 
+            if (finalDamage > 0)
+            {
+                UnitAnimationController targetAnimation = target.GetComponent<UnitAnimationController>();
+                targetAnimation?.PlayHit();
+            }
+
             return false;
         }
 

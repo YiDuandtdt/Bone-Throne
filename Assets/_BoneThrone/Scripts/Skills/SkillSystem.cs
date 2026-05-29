@@ -119,6 +119,9 @@ namespace BoneThrone.Skills
                 effectResult.AddDamage(target, skill.GuaranteedDamage, fallbackRemainingHp, targetDied, true);
             }
 
+            UnitAnimationController casterAnimation = caster.GetComponent<UnitAnimationController>();
+            casterAnimation?.PlaySkill();
+
             runtime.StartCooldown(slotIndex);
             MarkCasterActed(caster);
 

@@ -63,6 +63,9 @@ namespace BoneThrone.Combat
 
             defenseState.SetDefending(defendReduction);
             MarkActed(unit);
+            UnitAnimationController animationController = unit.GetComponent<UnitAnimationController>();
+            animationController?.PlayDefend();
+
             if (combatLog != null)
             {
                 combatLog.LogDefend(unit, defendReduction);
