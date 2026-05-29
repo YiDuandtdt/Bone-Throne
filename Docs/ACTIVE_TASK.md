@@ -1,90 +1,71 @@
-# ACTIVE_TASK.md
+继续执行 Unity 6.3 LTS 项目《Bone Throne / 骸骨王座》。
 
-## Current Phase
+当前 Phase 15.8 - Character Animator Controllers and Animation State Machines 已完成并提交。
 
-Phase 15.5 - Interactable Prefab Completion Pass
+现在请只更新文档任务状态，不要修改任何 code / prefab / scene / material / SkillData。
 
-## Phase 15.4 Completion Note
+允许修改文件：
 
-Phase 15.4 - Environment Prefabization Pass is complete and closed.
+* Docs/ACTIVE_TASK.md
 
-Phase 15.4 created project-owned Environment prefabs under:
+目标：
+将当前阶段更新为：
 
-- `Assets/_BoneThrone/Prefabs/Environment/`
+Phase 15.9 - Animation Integration with Movement / Combat / Skill / Potion
 
-Phase 15.4 closeout is documented in:
+请在 ACTIVE_TASK.md 中写清：
 
-- `Docs/Phase15_EnvironmentPrefabizationSummary.md`
-- `Docs/DevLogs/Phase15.4_EnvironmentPrefabizationPass.md`
+## Current phase
+
+Phase 15.9 - Animation Integration with Movement / Combat / Skill / Potion
 
 ## Goal
 
-Implement only the Phase 15.5 slice: Interactable Prefab Completion Pass.
+Connect the Phase 15.8 Animator Controllers to runtime presentation so units can visually respond to movement, basic attack, skill cast, hit, defend, potion use, and death. Animation must remain presentation-only and must not drive gameplay logic.
 
-Phase 15.5 should review and complete project-owned Interactable prefabs based on existing project prefabs and actual scanned source assets.
+## Allowed files
 
-## Reference Documents
+Phase 15.9 方案阶段先不允许改文件。后续实现阶段可能涉及：
 
-Phase 15.5 should use:
+* Assets/_BoneThrone/Scripts/Units/UnitAnimationController.cs
+* Assets/_BoneThrone/Scripts/Movement/* only if needed for MoveSpeed presentation
+* Assets/_BoneThrone/Scripts/Combat/* only if needed to trigger BasicAttack / Hit presentation
+* Assets/_BoneThrone/Scripts/Skills/* only if needed to trigger Skill presentation
+* Assets/_BoneThrone/Scripts/Items/* only if needed to trigger UsePotion presentation
+* Assets/_BoneThrone/Prefabs/Units/Players/*.prefab only if UnitAnimationController must be attached
+* Assets/_BoneThrone/Prefabs/Units/Enemies/*.prefab only if UnitAnimationController must be attached
+* Assets/_BoneThrone/Prefabs/Units/Boss/*.prefab only if UnitAnimationController must be attached
+* Docs/DevLogs/Phase15.9_AnimationIntegration.md
 
-- `Docs/Phase15_AssetInventoryAndPrefabizationPlan.md`
-- `Docs/Phase15_EnvironmentPrefabizationSummary.md`
-- `Docs/DevLogs/Phase15.4_EnvironmentPrefabizationPass.md`
+## Forbidden changes
 
-## Phase 15.5 Scope Direction
+* Do not modify gameplay rules.
+* Do not let animation events drive damage, cooldown, MarkMoved, MarkActed, End Turn, death, or turn progression.
+* Do not modify CombatSystem damage rules.
+* Do not modify SkillSystem resolution rules.
+* Do not modify TurnManager turn rules.
+* Do not modify PotionSystem potion rules.
+* Do not modify SkillData.
+* Do not modify KayKit source assets.
+* Do not modify GridTest.unity.
+* Do not create formal Level scenes.
+* Do not modify LAN / Networking.
+* Do not add animation events.
+* Do not treat animation as authority; animation is presentation only.
 
-- Phase 15.5 only handles Interactable prefabs.
-- Phase 15.5 should prioritize current project interactables and actual scanned interactable-looking candidates.
-- Current project interactables include `HealthPotion`, `Key`, and `Stairs`.
-- Scanned interactable-looking candidates include chest / door / supply-looking candidates if they actually exist in the imported assets.
-- Phase 15.5 must not modify KayKit original resources.
-- Phase 15.5 must not process Environment prefabs except for read-only reference.
-- Phase 15.5 must not process Characters.
-- Phase 15.5 must not process Weapons / Equipment.
-- Phase 15.5 must not process Animations / Animator Controllers.
-- Phase 15.5 must not modify Turn, Combat, Skill, Potion, LAN, or Networking systems.
-- Phase 15.5 must not create formal Level scenes.
-- `GridTest.unity` remains the regression baseline and must not be converted into a formal level.
+## Notes
 
-## Allowed Files
+Phase 15.8 created:
 
-Phase 15.5 allowed files must be confirmed before implementation.
+* BT_Player_Medium.controller
+* BT_Skeleton_Medium.controller
+* BT_Boss_Large.controller
 
-Expected direction:
+Phase 15.9 should first produce an implementation plan before writing code.
 
-- Project-owned interactable prefab paths under `Assets/_BoneThrone/Prefabs/Interactables/`
-- Existing minimal interactable scripts only if Phase 15.5 explicitly proves a script change is required
-- A Phase 15.5 DevLog under `Docs/DevLogs/`
+完成后输出：
 
-Do not expand this scope without first explaining why.
-
-## Forbidden Changes
-
-- Do not modify prefab files during planning or review unless Phase 15.5 explicitly authorizes an interactable prefab edit.
-- Do not modify Art / KayKit original resources.
-- Do not modify scenes.
-- Do not modify C# code unless Phase 15.5 explicitly approves a minimal interactable-only script change.
-- Do not modify materials.
-- Do not modify SkillData.
-- Do not process Environment as a creation/modification target in Phase 15.5.
-- Do not process Characters.
-- Do not process Weapons / Equipment.
-- Do not process Animations / Animator Controllers.
-- Do not create formal Level scenes.
-- Do not change the single-player PlayerTurn rule.
-- Do not use Fighter -> Ranger -> Mage -> Barbarian fixed-order for single-player.
-- Do not modify LAN / Networking.
-- Do not implement Boss content.
-
-## Validation Direction
-
-Phase 15.5 validation should be defined before implementation.
-
-Expected validation direction:
-
-1. Confirm selected Interactable prefab candidates come from existing project prefabs or actual scanned source assets.
-2. Confirm any created or modified Interactable prefab lives under `_BoneThrone/Prefabs/Interactables`.
-3. Confirm no KayKit original resources were modified.
-4. Confirm no Environment, Character, Weapon, Animation, SkillData, LAN, Boss, or formal Level scene work was introduced.
-5. Confirm `GridTest.unity` remains a regression baseline and is not converted into a formal level.
-6. Confirm single-player free-order PlayerTurn remains unchanged.
+1. 实际修改文件。
+2. ACTIVE_TASK.md 改了什么。
+3. 明确说明没有修改 code / prefab / scene / material / SkillData。
+4. 下一步 Phase 15.9 方案 Prompt 建议。
