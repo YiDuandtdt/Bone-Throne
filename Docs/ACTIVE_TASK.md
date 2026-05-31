@@ -2,104 +2,95 @@
 
 ## Current Phase
 
-Phase 15.16 - Boss Door / Boss Key / Supply Point Preparation
+Phase 16.0 - Manual Level Production Support and Review Checklist
 
 ## Status
 
-Phase 15.16 is a documentation-only preparation pass for future BossDoor, BossKey, and SupplyPoint work.
+Phase 16.0 is a docs-only support phase for user-owned formal level production.
 
-No BossDoor, BossKey, or SupplyPoint runtime feature has been implemented.
+Codex is not responsible for building, modifying, or wiring formal level scenes.
 
-No formal level scene was modified.
+Formal `Level_01`, `Level_02`, and `Level_03` remain manually owned by the user.
 
-Formal level scene content remains user-owned.
+## Phase 16.0 Output
 
-`GridTest.unity` remains the regression baseline and must not be converted into a formal level.
+Created:
 
-## Phase 15.16 Result
+- `Docs/Phase16_ManualLevelProductionSupport.md`
+- `Docs/DevLogs/Phase16.0_ManualLevelProductionSupport.md`
 
-Created planning documentation for:
+Updated:
 
-- BossKey future responsibility
-- BossDoor future responsibility
-- SupplyPoint future responsibility
-- relationship to `KeyItem`, `InteractableStairs`, `LevelProgressionService`, `LevelManager`, `HealthPotionPickup`, `PotionSystem`, and room systems
-- future possible script / prefab / data scope
-- deferred Boss fight / formal scene integration work
-- risks and scene ownership boundaries
+- `Docs/ACTIVE_TASK.md`
 
-Phase 15.16 output:
+The new support document provides:
 
-- `Docs/Phase15_BossDoorBossKeySupplyPointPreparation.md`
-- `Docs/DevLogs/Phase15.16_BossDoorBossKeySupplyPointPreparation.md`
+- manual formal level production principles
+- Codex allowed / forbidden scope
+- `Level_01` manual repair checklist
+- `Level_02` / `Level_03` manual production checklist
+- required scene system object checklist
+- player / enemy / interactable / UI / room / grid review checklist
+- BossKey / BossDoor / SupplyPoint manual placement checklist
+- Victory / Defeat / Retry follow-up checklist
+- Unity-Skills read-only review flow
+- Git checks before commit
+- rollback and risk notes
 
-## Codex Scene Boundary
+## Scene Boundary
 
-Codex no longer owns:
+Do not modify:
 
-- creating formal level scenes
-- modifying formal level scenes
-- wiring level scene managers
-- building room / tile / encounter / interactable scene content
-- making `Level_01`, `Level_02`, or `Level_03` playable slices
-- extending `Level_02` / `Level_03` progression scenes
-- modifying `GridTest` as a formal level
-- automatically copying `GridTest` structure into formal levels
+- `Assets/_BoneThrone/Scenes/GridTest.unity`
+- `Assets/_BoneThrone/Scenes/Level_01.unity`
+- `Assets/_BoneThrone/Scenes/Level_02.unity`
+- `Assets/_BoneThrone/Scenes/Level_03.unity`
 
-Codex may still help with:
+Do not directly:
 
-- documentation planning
-- checklist creation
+- create formal level scenes
+- wire scene managers
+- place room, grid, unit, enemy, interactable, UI, BossGate, fog, or progression objects
+- copy `GridTest` into formal levels
+
+## Codex Allowed Work
+
+Allowed when phase-scoped:
+
+- documentation
+- checklists
 - review notes
-- DevLogs
-- narrow code fixes
-- narrow prefab fixes when explicitly approved
-- non-scene rules / data / UI / system preparation
-- scene inspection advice for user-made levels, without direct scene modification
+- screenshot / hierarchy review
+- read-only Unity-Skills review if available
+- narrow non-scene code / prefab fixes only when explicitly approved
 
-## References
+## Standing Rules
 
-Current references:
-
-- `Docs/Phase15_FormalLevelScenePlan.md`
-- `Docs/Phase15_FormalDataAssetizationPlan.md`
-- `Docs/Phase15_AssetInventoryAndPrefabizationPlan.md`
-- `Docs/Phase15_EnvironmentPrefabizationSummary.md`
-- `Docs/DevLogs/Phase15.10_GridTestSceneAssemblyKitValidation.md`
-- `Docs/DevLogs/Phase15.13_LevelSceneSetup.md`
-- `Docs/DevLogs/Phase15.14_Level01PlayableSlice.md`
-- `Docs/DevLogs/Phase15.15_ManualLevelSceneOwnership.md`
-- `Docs/DevLogs/Phase15.16_BossDoorBossKeySupplyPointPreparation.md`
-- `Docs/Phase15_BossDoorBossKeySupplyPointPreparation.md`
-- `Docs/Phase15_Plan.md`
+- Preserve `GridTest.unity` regression baseline.
+- Preserve single-player free-order PlayerTurn.
+- Do not use Fighter -> Ranger -> Mage -> Barbarian fixed-order for single-player.
+- Do not modify SkillData unless explicitly approved.
+- Do not modify KayKit source assets.
+- Do not create ScriptableObject assets unless explicitly approved.
+- `Skeleton_Golem` / `Skeleton_Golem_Boss` are Boss / heavy boss placeholders only.
+- `Skeleton_Rogue` is the ordinary Rogue enemy.
+- Ranger gameplay identity remains Ranger.
 
 ## Next Phase Candidate
 
-Phase 15.17 - BossDoor / BossKey / SupplyPoint Minimal Contract Review
+Next phase should be selected after the user manually reviews or revises formal level scenes.
 
-Phase 15.17 should remain non-scene. It may review minimal API contracts, checklist requirements, and future implementation order for BossDoor / BossKey / SupplyPoint. It should not create runtime scripts, prefabs, data assets, or scene placements unless a later prompt explicitly approves a narrow non-scene implementation.
+Safe candidates:
 
-## Forbidden Scene Changes
+- manual scene review report
+- docs-only checklist refinement
+- read-only Unity-Skills scene audit
+- UI result panel prefab pass only if explicitly approved
+- narrow non-scene bug fix
 
-- Do not create formal level scenes.
-- Do not modify formal level scenes.
-- Do not modify `GridTest.unity`.
-- Do not modify `Level_01.unity`, `Level_02.unity`, or `Level_03.unity` unless the user explicitly overrides this boundary.
-- Do not wire level scene managers.
-- Do not build room / tile / encounter / interactable scene content.
-- Do not create playable slices for formal levels.
-- Do not auto-copy `GridTest` scene structure into formal levels.
+Avoid:
 
-## General Forbidden Changes Until Explicitly Approved
-
-- Do not modify C# code unless a phase prompt explicitly approves a narrow fix.
-- Do not modify SkillData.
-- Do not modify KayKit source assets.
-- Do not implement Boss fight.
-- Do not place BossDoor / BossKey.
-- Do not place SupplyPoint.
-- Do not implement Victory / Defeat / Retry.
-- Do not implement LAN / Networking.
-- Do not create ScriptableObject assets unless a later data phase explicitly approves it.
-- Do not change the single-player free-order PlayerTurn rule.
-- Do not use Fighter -> Ranger -> Mage -> Barbarian fixed-order for single-player.
+- direct formal scene construction
+- automatic formal scene wiring
+- Boss fight implementation without explicit scope
+- LAN / Networking without explicit scope

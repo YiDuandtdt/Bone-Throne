@@ -2,9 +2,9 @@
 
 ## Summary
 
-Phase 15.16 is a documentation-only preparation pass for future BossDoor, BossKey, and SupplyPoint work.
+Phase 15.16 began as a documentation-only preparation pass for future BossDoor, BossKey, and SupplyPoint work.
 
-No gameplay feature was implemented.
+Phase 15.16-15.19 combined closure later implemented the minimal non-scene script and prefab support approved by the user. Formal scene placement is still deferred to manual user work.
 
 ## Scope
 
@@ -14,7 +14,7 @@ Allowed files:
 - `Docs/DevLogs/Phase15.16_BossDoorBossKeySupplyPointPreparation.md`
 - `Docs/ACTIVE_TASK.md`
 
-This phase intentionally did not modify:
+The original Phase 15.16 pass intentionally did not modify:
 
 - formal level scenes
 - `GridTest.unity`
@@ -25,6 +25,16 @@ This phase intentionally did not modify:
 - ScriptableObject assets
 - ProjectSettings
 - Packages
+
+The later combined closure added:
+
+- `BossGateProgressionState`
+- `BossKeyItem`
+- `BossDoor`
+- `SupplyPoint`
+- `BossKey.prefab`
+- `BossDoor.prefab`
+- `SupplyPoint.prefab`
 
 ## Context
 
@@ -121,7 +131,7 @@ Deferred content remains:
 
 ## Validation
 
-This was a docs-only phase.
+The original Phase 15.16 pass was docs-only. The combined closure was validated separately.
 
 Validation performed:
 

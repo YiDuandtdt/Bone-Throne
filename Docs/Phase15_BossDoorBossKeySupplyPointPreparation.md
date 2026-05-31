@@ -289,7 +289,29 @@ If a later phase explicitly approves implementation, possible files may include:
 - `Assets/_BoneThrone/Prefabs/Interactables/SupplyPoint.prefab`
 - future docs and DevLogs
 
-This phase creates none of those runtime files.
+Phase 15.16 originally created none of those runtime files.
+
+Phase 15.16-15.19 combined closure later approved a narrow non-scene implementation and created the minimal scripts and reusable prefab assets. Formal scene placement remains user-owned.
+
+Implemented closure files:
+
+- `Assets/_BoneThrone/Scripts/Levels/BossGateProgressionState.cs`
+- `Assets/_BoneThrone/Scripts/Interactables/BossKeyItem.cs`
+- `Assets/_BoneThrone/Scripts/Interactables/BossDoor.cs`
+- `Assets/_BoneThrone/Scripts/Interactables/SupplyPoint.cs`
+- `Assets/_BoneThrone/Prefabs/Interactables/BossKey.prefab`
+- `Assets/_BoneThrone/Prefabs/Interactables/BossDoor.prefab`
+- `Assets/_BoneThrone/Prefabs/Interactables/SupplyPoint.prefab`
+
+Still not implemented:
+
+- formal scene placement
+- Boss fight
+- Boss AI
+- Boss skills
+- scene loading
+- save / load progression
+- data assetization for boss gate or supply rules
 
 ## 7. Relationship To Manual Formal Level Work
 
