@@ -2,31 +2,34 @@
 
 ## Current Phase
 
-Phase 15.12 - Formal Level Scene Plan
+Phase 15.13 - Level_01 / Level_02 / Level_03 Scene Setup
 
 ## Status
 
-Phase 15.11 - Formal Data Assetization Plan is complete.
+Phase 15.12 - Formal Level Scene Plan is complete.
 
-The project now has a docs-only plan for future data assetization:
+The project now has a docs-only formal level scene plan:
 
-- `Docs/Phase15_FormalDataAssetizationPlan.md`
-- `Docs/DevLogs/Phase15.11_FormalDataAssetizationPlan.md`
+- `Docs/Phase15_FormalLevelScenePlan.md`
+- `Docs/DevLogs/Phase15.12_FormalLevelScenePlan.md`
 
-No ScriptableObject assets were created during Phase 15.11. No code, prefab, scene, SkillData, KayKit source, material, animation, ProjectSettings, or Packages file was modified.
+No formal Level scene was created during Phase 15.12. No `GridTest.unity`, code, prefab, SkillData, KayKit source, ScriptableObject, material, animation, ProjectSettings, or Packages file was modified.
 
-## Phase 15.12 Goal
+## Phase 15.13 Goal
 
-Create the formal level scene plan for the future three-floor structure.
+Begin narrow formal scene setup for:
 
-Phase 15.12 is a planning phase. It should define how formal levels should be structured, what scenes will eventually be needed, what each floor should contain, and what dependencies must be resolved before scene construction begins.
+- `Level_01`
+- `Level_02`
+- `Level_03`
 
-Phase 15.12 must not directly build `Level_01`, `Level_02`, or `Level_03`.
+Phase 15.13 should create scene structure only when explicitly approved by the user. It must keep `GridTest.unity` as the regression baseline and must not convert it into a formal level.
 
 ## References
 
-Phase 15.12 should reference:
+Phase 15.13 should reference:
 
+- `Docs/Phase15_FormalLevelScenePlan.md`
 - `Docs/Phase15_FormalDataAssetizationPlan.md`
 - `Docs/Phase15_AssetInventoryAndPrefabizationPlan.md`
 - `Docs/Phase15_EnvironmentPrefabizationSummary.md`
@@ -35,36 +38,37 @@ Phase 15.12 should reference:
 
 ## Allowed Scope
 
-Phase 15.12 should start as docs-only unless a later prompt explicitly approves implementation.
+Phase 15.13 should start with an implementation plan before creating or modifying scenes.
 
-Possible docs output:
+Potential implementation scope, only after explicit approval:
 
-- `Docs/Phase15_FormalLevelScenePlan.md`
-- `Docs/DevLogs/Phase15.12_FormalLevelScenePlan.md`
+- `Assets/_BoneThrone/Scenes/Level_01.unity`
+- `Assets/_BoneThrone/Scenes/Level_02.unity`
+- `Assets/_BoneThrone/Scenes/Level_03.unity`
+- `Docs/DevLogs/Phase15.13_LevelSceneSetup.md`
 
-## Forbidden Changes
+## Forbidden Changes Until Explicitly Approved
 
-- Do not create `Level_01`, `Level_02`, or `Level_03`.
-- Do not create formal level scenes unless a later implementation phase explicitly approves it.
-- Do not modify C# code.
-- Do not modify prefabs.
-- Do not modify scenes.
 - Do not modify `GridTest.unity`.
+- Do not modify C# code.
 - Do not modify SkillData.
-- Do not create ScriptableObject assets.
 - Do not modify KayKit source assets.
-- Do not modify animation controllers or animation clips.
-- Do not modify Turn, Combat, Skill, Potion, or LAN systems.
-- Do not implement Boss fight, BossDoor, BossKey, SupplyPoint, or formal Level progression.
+- Do not implement Boss fight.
+- Do not implement BossDoor / BossKey.
+- Do not implement SupplyPoint.
+- Do not implement Victory / Defeat / Retry.
+- Do not implement LAN / Networking.
+- Do not create ScriptableObject assets unless a later data phase explicitly approves it.
 - Do not change the single-player free-order PlayerTurn rule.
 - Do not use Fighter -> Ranger -> Mage -> Barbarian fixed-order for single-player.
 
 ## Next Step
 
-Begin Phase 15.12 with a plan-only prompt:
+Begin Phase 15.13 with a plan-only prompt:
 
-1. Scan the Phase 15 data assetization plan and prefabization summaries.
-2. Define the intended `Level_01`, `Level_02`, and `Level_03` goals and boundaries.
-3. Plan scene structure, room structure, encounter placement strategy, stairs / key flow, and validation criteria.
-4. Identify what remains deferred to Phase 15.13+.
-5. Do not create scenes or modify files until the Phase 15.12 implementation scope is explicitly approved.
+1. Decide whether scenes should be created from scratch or copied from a minimal GridTest-safe template.
+2. Identify exactly which manager / system objects are allowed to migrate.
+3. Identify which test-only objects must not be copied.
+4. Define the initial scene setup order.
+5. Define validation criteria for each scene.
+6. Do not create scenes until the user explicitly approves the implementation scope.
