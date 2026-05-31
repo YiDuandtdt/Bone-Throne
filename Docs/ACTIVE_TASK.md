@@ -1,27 +1,96 @@
-# ACTIVE_TASK.md
+# ACTIVE TASK
 
-## Current phase
-Phase 0 - Codex Access and Repository Rule Freeze
+## Current Phase
 
-## Goal
-Set up the repository rules, documentation structure, Git hygiene, and Codex working boundaries before implementing gameplay code.
+Phase 16.0 - Manual Level Production Support and Review Checklist
 
-## Allowed files
-- AGENTS.md
-- README.md
-- .gitignore
-- Docs/ACTIVE_TASK.md
-- Docs/DevLogs/
-- Assets/_BoneThrone/ folder structure
+## Status
 
-## Forbidden changes
-- Do not implement grid, movement, combat, AI, rooms, levels, skills, networking gameplay, UI systems, or character logic in this phase.
-- Do not modify Library, Temp, Obj, Logs, UserSettings, or generated IDE files.
-- Do not add large art/audio assets yet.
+Phase 16.0 is a docs-only support phase for user-owned formal level production.
 
-## Acceptance tests in Unity
-1. Unity 6.3 LTS opens the project without compile errors.
-2. Assets/_BoneThrone folder structure exists.
-3. Docs folder contains the three design/workflow documents.
-4. AGENTS.md exists at repository root.
-5. Console has no red compile errors.
+Codex is not responsible for building, modifying, or wiring formal level scenes.
+
+Formal `Level_01`, `Level_02`, and `Level_03` remain manually owned by the user.
+
+## Phase 16.0 Output
+
+Created:
+
+- `Docs/Phase16_ManualLevelProductionSupport.md`
+- `Docs/DevLogs/Phase16.0_ManualLevelProductionSupport.md`
+
+Updated:
+
+- `Docs/ACTIVE_TASK.md`
+
+The new support document provides:
+
+- manual formal level production principles
+- Codex allowed / forbidden scope
+- `Level_01` manual repair checklist
+- `Level_02` / `Level_03` manual production checklist
+- required scene system object checklist
+- player / enemy / interactable / UI / room / grid review checklist
+- BossKey / BossDoor / SupplyPoint manual placement checklist
+- Victory / Defeat / Retry follow-up checklist
+- Unity-Skills read-only review flow
+- Git checks before commit
+- rollback and risk notes
+
+## Scene Boundary
+
+Do not modify:
+
+- `Assets/_BoneThrone/Scenes/GridTest.unity`
+- `Assets/_BoneThrone/Scenes/Level_01.unity`
+- `Assets/_BoneThrone/Scenes/Level_02.unity`
+- `Assets/_BoneThrone/Scenes/Level_03.unity`
+
+Do not directly:
+
+- create formal level scenes
+- wire scene managers
+- place room, grid, unit, enemy, interactable, UI, BossGate, fog, or progression objects
+- copy `GridTest` into formal levels
+
+## Codex Allowed Work
+
+Allowed when phase-scoped:
+
+- documentation
+- checklists
+- review notes
+- screenshot / hierarchy review
+- read-only Unity-Skills review if available
+- narrow non-scene code / prefab fixes only when explicitly approved
+
+## Standing Rules
+
+- Preserve `GridTest.unity` regression baseline.
+- Preserve single-player free-order PlayerTurn.
+- Do not use Fighter -> Ranger -> Mage -> Barbarian fixed-order for single-player.
+- Do not modify SkillData unless explicitly approved.
+- Do not modify KayKit source assets.
+- Do not create ScriptableObject assets unless explicitly approved.
+- `Skeleton_Golem` / `Skeleton_Golem_Boss` are Boss / heavy boss placeholders only.
+- `Skeleton_Rogue` is the ordinary Rogue enemy.
+- Ranger gameplay identity remains Ranger.
+
+## Next Phase Candidate
+
+Next phase should be selected after the user manually reviews or revises formal level scenes.
+
+Safe candidates:
+
+- manual scene review report
+- docs-only checklist refinement
+- read-only Unity-Skills scene audit
+- UI result panel prefab pass only if explicitly approved
+- narrow non-scene bug fix
+
+Avoid:
+
+- direct formal scene construction
+- automatic formal scene wiring
+- Boss fight implementation without explicit scope
+- LAN / Networking without explicit scope
