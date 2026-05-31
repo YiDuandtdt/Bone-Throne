@@ -10,6 +10,8 @@ namespace BoneThrone.Combat
     /// </summary>
     public sealed class CombatSystem : MonoBehaviour
     {
+        private static bool AnimationDebug { get { return false; } }
+
         [SerializeField] private D20Roller d20Roller;
         [SerializeField] private AttackRangeService attackRangeService;
         [SerializeField] private DamageResolver damageResolver;
@@ -77,7 +79,12 @@ namespace BoneThrone.Combat
             }
 
             UnitAnimationController attackerAnimation = attacker.GetComponent<UnitAnimationController>();
-            attackerAnimation?.PlayBasicAttack();
+            LogAnimationDebug(attacker, attackerAnimation, "PlayBasicAttack");
+            if (attackerAnimation != null)
+            {
+                attackerAnimation.FaceTowards(target.transform.position);
+                attackerAnimation.PlayBasicAttack();
+            }
 
             int roll = d20Roller.RollD20();
             int attackModifier = attacker.Stats != null ? attacker.Stats.AttackModifier : 0;
@@ -364,6 +371,26 @@ namespace BoneThrone.Combat
             }
 
             Debug.LogWarning("Basic attack rejected: " + reason, context);
+        }
+
+        private void LogAnimationDebug(Unit unit, UnitAnimationController animationController, string method)
+        {
+            if (!AnimationDebug)
+            {
+                return;
+            }
+
+            Debug.Log(
+                "AnimationDebug CombatSystem: unit="
+                + (unit != null ? unit.name : "null")
+                + " UnitId="
+                + (unit != null ? unit.UnitId.ToString() : "n/a")
+                + " controller="
+                + (animationController != null ? animationController.name : "null")
+                + " method="
+                + method
+                + ".",
+                unit);
         }
     }
 }

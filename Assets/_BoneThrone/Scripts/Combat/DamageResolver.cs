@@ -9,6 +9,8 @@ namespace BoneThrone.Combat
     /// </summary>
     public sealed class DamageResolver : MonoBehaviour
     {
+        private static bool AnimationDebug { get { return false; } }
+
         [SerializeField] private CombatLog combatLog;
 
         public bool ApplyDamage(Unit target, int damage)
@@ -69,6 +71,7 @@ namespace BoneThrone.Combat
             if (finalDamage > 0)
             {
                 UnitAnimationController targetAnimation = target.GetComponent<UnitAnimationController>();
+                LogAnimationDebug(target, targetAnimation, "PlayHit");
                 targetAnimation?.PlayHit();
             }
 
@@ -81,6 +84,26 @@ namespace BoneThrone.Combat
             {
                 combatLog = Object.FindFirstObjectByType<CombatLog>();
             }
+        }
+
+        private void LogAnimationDebug(Unit unit, UnitAnimationController animationController, string method)
+        {
+            if (!AnimationDebug)
+            {
+                return;
+            }
+
+            Debug.Log(
+                "AnimationDebug DamageResolver: unit="
+                + (unit != null ? unit.name : "null")
+                + " UnitId="
+                + (unit != null ? unit.UnitId.ToString() : "n/a")
+                + " controller="
+                + (animationController != null ? animationController.name : "null")
+                + " method="
+                + method
+                + ".",
+                unit);
         }
     }
 }

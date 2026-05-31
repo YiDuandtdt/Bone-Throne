@@ -1,4 +1,5 @@
 using UnityEngine;
+using BoneThrone.Units;
 
 namespace BoneThrone.Combat
 {
@@ -29,6 +30,11 @@ namespace BoneThrone.Combat
         public void ClearDefending()
         {
             isDefending = false;
+            UnitAnimationController animationController = GetComponent<UnitAnimationController>();
+            if (animationController != null)
+            {
+                animationController.SetDefending(false);
+            }
         }
 
         public bool TryConsumeReduction(int incomingDamage, out int finalDamage, out int reducedAmount)

@@ -11,6 +11,8 @@ namespace BoneThrone.Skills
     /// </summary>
     public sealed class SkillSystem : MonoBehaviour
     {
+        private static bool AnimationDebug { get { return false; } }
+
         [SerializeField] private SkillTargetingService targetingService;
         [SerializeField] private DamageResolver damageResolver;
         [SerializeField] private SkillEffectExecutor effectExecutor;
@@ -120,7 +122,16 @@ namespace BoneThrone.Skills
             }
 
             UnitAnimationController casterAnimation = caster.GetComponent<UnitAnimationController>();
-            casterAnimation?.PlaySkill();
+            LogAnimationDebug(caster, casterAnimation, "PlaySkill");
+            if (casterAnimation != null)
+            {
+                if (target != null)
+                {
+                    casterAnimation.FaceTowards(target.transform.position);
+                }
+
+                casterAnimation.PlaySkill();
+            }
 
             runtime.StartCooldown(slotIndex);
             MarkCasterActed(caster);
@@ -297,6 +308,26 @@ namespace BoneThrone.Skills
             }
 
             Debug.LogWarning("Skill rejected: " + reason, context);
+        }
+
+        private void LogAnimationDebug(Unit unit, UnitAnimationController animationController, string method)
+        {
+            if (!AnimationDebug)
+            {
+                return;
+            }
+
+            Debug.Log(
+                "AnimationDebug SkillSystem: unit="
+                + (unit != null ? unit.name : "null")
+                + " UnitId="
+                + (unit != null ? unit.UnitId.ToString() : "n/a")
+                + " controller="
+                + (animationController != null ? animationController.name : "null")
+                + " method="
+                + method
+                + ".",
+                unit);
         }
     }
 }

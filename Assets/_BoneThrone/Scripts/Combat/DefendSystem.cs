@@ -9,6 +9,7 @@ namespace BoneThrone.Combat
     /// </summary>
     public sealed class DefendSystem : MonoBehaviour
     {
+        private static bool AnimationDebug { get { return false; } }
         private const int DefaultReduction = 2;
 
         [SerializeField] private TurnManager turnManager;
@@ -64,7 +65,12 @@ namespace BoneThrone.Combat
             defenseState.SetDefending(defendReduction);
             MarkActed(unit);
             UnitAnimationController animationController = unit.GetComponent<UnitAnimationController>();
-            animationController?.PlayDefend();
+            LogAnimationDebug(unit, animationController, "PlayDefend");
+            if (animationController != null)
+            {
+                animationController.SetDefending(true);
+                animationController.PlayDefend();
+            }
 
             if (combatLog != null)
             {
@@ -111,6 +117,26 @@ namespace BoneThrone.Combat
             }
 
             Debug.LogWarning("Defend rejected: " + reason, context);
+        }
+
+        private void LogAnimationDebug(Unit unit, UnitAnimationController animationController, string method)
+        {
+            if (!AnimationDebug)
+            {
+                return;
+            }
+
+            Debug.Log(
+                "AnimationDebug DefendSystem: unit="
+                + (unit != null ? unit.name : "null")
+                + " UnitId="
+                + (unit != null ? unit.UnitId.ToString() : "n/a")
+                + " controller="
+                + (animationController != null ? animationController.name : "null")
+                + " method="
+                + method
+                + ".",
+                unit);
         }
     }
 }

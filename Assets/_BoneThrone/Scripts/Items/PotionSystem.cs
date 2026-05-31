@@ -10,6 +10,7 @@ namespace BoneThrone.Items
     /// </summary>
     public sealed class PotionSystem : MonoBehaviour
     {
+        private static bool AnimationDebug { get { return false; } }
         private const int DefaultHealAmount = 4;
 
         [SerializeField] private TurnManager turnManager;
@@ -100,6 +101,7 @@ namespace BoneThrone.Items
             unit.RuntimeState.SetCurrentHp(nextHp);
             MarkActed(unit);
             UnitAnimationController animationController = unit.GetComponent<UnitAnimationController>();
+            LogAnimationDebug(unit, animationController, "PlayUsePotion");
             animationController?.PlayUsePotion();
 
             if (combatLog != null)
@@ -147,6 +149,26 @@ namespace BoneThrone.Items
             }
 
             Debug.LogWarning("Potion rejected: " + reason, context);
+        }
+
+        private void LogAnimationDebug(Unit unit, UnitAnimationController animationController, string method)
+        {
+            if (!AnimationDebug)
+            {
+                return;
+            }
+
+            Debug.Log(
+                "AnimationDebug PotionSystem: unit="
+                + (unit != null ? unit.name : "null")
+                + " UnitId="
+                + (unit != null ? unit.UnitId.ToString() : "n/a")
+                + " controller="
+                + (animationController != null ? animationController.name : "null")
+                + " method="
+                + method
+                + ".",
+                unit);
         }
     }
 }

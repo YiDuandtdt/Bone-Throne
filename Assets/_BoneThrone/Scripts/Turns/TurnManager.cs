@@ -172,6 +172,11 @@ namespace BoneThrone.Turns
                 }
 
                 turnState.ResetForNewRound();
+                UnitDefenseState defenseState = unit.GetComponent<UnitDefenseState>();
+                if (defenseState != null && defenseState.IsDefending)
+                {
+                    defenseState.ClearDefending();
+                }
             }
         }
 

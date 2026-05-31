@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!1 &220000
 GameObject:
@@ -36,7 +36,6 @@ Transform:
   m_Children:
   - {fileID: 2299299225364889710}
   - {fileID: 344339}
-  - {fileID: 720000041227933}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &220002
@@ -82,6 +81,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Turns.UnitTurnState
   hasMoved: 0
   hasActed: 0
+  hasEnded: 0
 --- !u!54 &220004
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -131,6 +131,24 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 6633612535945456332, guid: 82924225b449a5747bbf07e8c209bbac, type: 3}
+--- !u!114 &730000041227932
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 220000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c1a8f0c67a4470bb83204e9289e0f5a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Units.UnitAnimationController
+  animator: {fileID: 4231993542320061545}
+  warnWhenAnimatorMissing: 1
+  debugLogging: 0
+  playStatesDirectly: 1
+  directCrossFadeDuration: 0.03
+  faceTurnDuration: 0.12
 --- !u!1001 &220009
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -167,6 +185,11 @@ PrefabInstance:
 --- !u!4 &2299299225364889710 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2299299225365109511, guid: d0439793edeb04c4589d4bc499d4dcbb, type: 3}
+  m_PrefabInstance: {fileID: 220009}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &4231993542320061545 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 4231993542319843072, guid: d0439793edeb04c4589d4bc499d4dcbb, type: 3}
   m_PrefabInstance: {fileID: 220009}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &220050
@@ -215,98 +238,3 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 400001, guid: 7fe6f9b5471e4b7db4c0f4cce19c7a42, type: 3}
   m_PrefabInstance: {fileID: 220050}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &720000041227932
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 720000041227933}
-  m_Layer: 0
-  m_Name: WeaponSocket_R
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &720000041227933
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 720000041227932}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.34, y: 1.04, z: 0.15}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 720000041227935}
-  m_Father: {fileID: 220001}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &720000041227934
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 720000041227933}
-    m_Modifications:
-    - target: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 919132149155446097, guid: f127492911864ca46be976c916507b2d, type: 3}
-      propertyPath: m_Name
-      value: Skeleton_Staff_Visual
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: f127492911864ca46be976c916507b2d, type: 3}
---- !u!4 &720000041227935 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
-  m_PrefabInstance: {fileID: 720000041227934}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &730000041227932 MonoBehaviour:   m_ObjectHideFlags: 0   m_CorrespondingSourceObject: {fileID: 0}   m_PrefabInstance: {fileID: 0}   m_PrefabAsset: {fileID: 0}   m_GameObject: {fileID: 220000}   m_Enabled: 1   m_EditorHideFlags: 0   m_Script: {fileID: 11500000, guid: 9c1a8f0c67a4470bb83204e9289e0f5a, type: 3}   m_Name:    m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Units.UnitAnimationController   animator: {fileID: 0}   warnWhenAnimatorMissing: 1

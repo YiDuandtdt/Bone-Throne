@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!1 &220000
 GameObject:
@@ -36,7 +36,6 @@ Transform:
   m_Children:
   - {fileID: 3461214316779345406}
   - {fileID: 344339}
-  - {fileID: 720000051224230}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &220002
@@ -132,6 +131,24 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 116058061254654003, guid: e23c45660f661b14bb83e6f078c7c08e, type: 3}
+--- !u!114 &730000051224229
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 220000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c1a8f0c67a4470bb83204e9289e0f5a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Units.UnitAnimationController
+  animator: {fileID: 4959992433024398417}
+  warnWhenAnimatorMissing: 1
+  debugLogging: 0
+  playStatesDirectly: 1
+  directCrossFadeDuration: 0.03
+  faceTurnDuration: 0.12
 --- !u!1001 &220009
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -152,14 +169,14 @@ PrefabInstance:
       propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 8570418276746054535, guid: 8be682398d5b6274d89d8cff4299c68c, type: 3}
-      propertyPath: m_Name
-      value: Visual
-      objectReference: {fileID: 0}
     - target: {fileID: 4959992433024184120, guid: 8be682398d5b6274d89d8cff4299c68c, type: 3}
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: 3d52d2bbd4c54884b459161d3dc88919, type: 2}
+    - target: {fileID: 8570418276746054535, guid: 8be682398d5b6274d89d8cff4299c68c, type: 3}
+      propertyPath: m_Name
+      value: Visual
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -168,6 +185,11 @@ PrefabInstance:
 --- !u!4 &3461214316779345406 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3461214316779425431, guid: 8be682398d5b6274d89d8cff4299c68c, type: 3}
+  m_PrefabInstance: {fileID: 220009}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &4959992433024398417 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 4959992433024184120, guid: 8be682398d5b6274d89d8cff4299c68c, type: 3}
   m_PrefabInstance: {fileID: 220009}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &220050
@@ -216,98 +238,3 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 400001, guid: 7fe6f9b5471e4b7db4c0f4cce19c7a42, type: 3}
   m_PrefabInstance: {fileID: 220050}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &720000051224229
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 720000051224230}
-  m_Layer: 0
-  m_Name: WeaponSocket_R
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &720000051224230
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 720000051224229}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.36, y: 1.06, z: 0.16}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 720000051224232}
-  m_Father: {fileID: 220001}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &720000051224231
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 720000051224230}
-    m_Modifications:
-    - target: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 919132149155446097, guid: f127492911864ca46be976c916507b2d, type: 3}
-      propertyPath: m_Name
-      value: Skeleton_Staff_Visual
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: f127492911864ca46be976c916507b2d, type: 3}
---- !u!4 &720000051224232 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: f127492911864ca46be976c916507b2d, type: 3}
-  m_PrefabInstance: {fileID: 720000051224231}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &730000051224229 MonoBehaviour:   m_ObjectHideFlags: 0   m_CorrespondingSourceObject: {fileID: 0}   m_PrefabInstance: {fileID: 0}   m_PrefabAsset: {fileID: 0}   m_GameObject: {fileID: 220000}   m_Enabled: 1   m_EditorHideFlags: 0   m_Script: {fileID: 11500000, guid: 9c1a8f0c67a4470bb83204e9289e0f5a, type: 3}   m_Name:    m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Units.UnitAnimationController   animator: {fileID: 0}   warnWhenAnimatorMissing: 1

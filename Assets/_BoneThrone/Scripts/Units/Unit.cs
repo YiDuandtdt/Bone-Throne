@@ -10,6 +10,8 @@ namespace BoneThrone.Units
     /// </summary>
     public sealed class Unit : MonoBehaviour
     {
+        private static bool AnimationDebug { get { return false; } }
+
         [SerializeField] private int unitId = 1;
         [SerializeField] private string displayName;
         [SerializeField] private RoleId roleId = RoleId.None;
@@ -141,8 +143,29 @@ namespace BoneThrone.Units
 
             runtimeState.MarkDead();
             UnitAnimationController animationController = GetComponent<UnitAnimationController>();
+            LogAnimationDebug(animationController, "SetDead(true)");
             animationController?.SetDead(true);
             ReleaseTile();
+        }
+
+        private void LogAnimationDebug(UnitAnimationController animationController, string method)
+        {
+            if (!AnimationDebug)
+            {
+                return;
+            }
+
+            Debug.Log(
+                "AnimationDebug Unit: unit="
+                + name
+                + " UnitId="
+                + unitId
+                + " controller="
+                + (animationController != null ? animationController.name : "null")
+                + " method="
+                + method
+                + ".",
+                this);
         }
     }
 }
