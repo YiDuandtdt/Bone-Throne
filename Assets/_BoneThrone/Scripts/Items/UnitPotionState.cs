@@ -55,6 +55,11 @@ namespace BoneThrone.Items
             currentPotionCount += amount;
         }
 
+        public void SetPotionCount(int value)
+        {
+            currentPotionCount = Mathf.Max(0, value);
+        }
+
         [ContextMenu("Phase 14/Reset Potion Count")]
         public void ResetForTest()
         {

@@ -1825,12 +1825,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d087e4e53d4f92445b442786c986b5e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Rooms.RoomEnemyActivator
+  enemyPrefabs: []
   assignedEnemies:
   - {fileID: 1722145374}
   - {fileID: 1158182956}
   spawnTiles:
   - {fileID: 1632716381}
   - {fileID: 1056808244}
+  spawnedEnemyParent: {fileID: 0}
   deactivateEnemiesAtStart: 1
 --- !u!114 &184952150
 MonoBehaviour:
@@ -8772,8 +8774,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d087e4e53d4f92445b442786c986b5e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Rooms.RoomEnemyActivator
+  enemyPrefabs: []
   assignedEnemies: []
   spawnTiles: []
+  spawnedEnemyParent: {fileID: 0}
   deactivateEnemiesAtStart: 1
 --- !u!114 &1158726093
 MonoBehaviour:
@@ -9086,7 +9090,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -4.05
+      value: 0.18
       objectReference: {fileID: 0}
     - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
       propertyPath: m_LocalPosition.y
@@ -9094,7 +9098,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 14.06128
+      value: 3.61
       objectReference: {fileID: 0}
     - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
       propertyPath: m_LocalRotation.w
@@ -10707,6 +10711,7 @@ GameObject:
   - component: {fileID: 1520370596}
   - component: {fileID: 1520370595}
   - component: {fileID: 1520370594}
+  - component: {fileID: 1520370597}
   m_Layer: 0
   m_Name: Phase10_Progression
   m_TagString: Untagged
@@ -10734,6 +10739,7 @@ MonoBehaviour:
   - {fileID: 782111276}
   requiredClearedRooms: []
   levelManager: {fileID: 1520370595}
+  sceneTransition: {fileID: 1520370597}
 --- !u!114 &1520370595
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10764,6 +10770,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1520370597
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1520370593}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66e9ea720a724864a8d1a8240f3f66d5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Levels.SceneLevelTransition
+  nextSceneName: Level_3
+  loadSceneMode: 0
+  debugLogging: 1
 --- !u!1 &1544055079
 GameObject:
   m_ObjectHideFlags: 0

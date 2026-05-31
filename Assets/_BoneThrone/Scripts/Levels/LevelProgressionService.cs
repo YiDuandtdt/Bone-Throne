@@ -6,7 +6,8 @@ namespace BoneThrone.Levels
 {
     /// <summary>
     /// Minimal Phase 10 progression state for one shared key, stairs validation, floor switching, and party level-up.
-    /// It does not implement inventory, rewards, boss keys, UI panels, scene loading, or networking.
+    /// Scene loading is optional through an explicitly assigned SceneLevelTransition.
+    /// It does not implement inventory, rewards, boss keys, UI panels, or networking.
     /// </summary>
     public sealed class LevelProgressionService : MonoBehaviour
     {
@@ -14,6 +15,7 @@ namespace BoneThrone.Levels
         [SerializeField] private Unit[] playerUnits;
         [SerializeField] private RoomController[] requiredClearedRooms;
         [SerializeField] private LevelManager levelManager;
+        [SerializeField] private SceneLevelTransition sceneTransition;
 
         private bool transitionInProgress;
 
@@ -30,6 +32,15 @@ namespace BoneThrone.Levels
         public int CurrentLevelIndex
         {
             get { return levelManager != null ? levelManager.CurrentLevelIndex : 0; }
+        }
+
+        private void Start()
+        {
+            int appliedCount = PartyProgressionState.Apply(playerUnits);
+            if (appliedCount > 0)
+            {
+                Debug.Log("LevelProgressionService applied saved party state to " + appliedCount + " player units.", this);
+            }
         }
 
         public void CollectSharedKey(Object source)
@@ -74,6 +85,24 @@ namespace BoneThrone.Levels
             {
                 Debug.LogWarning("Cannot enter next level: " + reason, this);
                 return false;
+            }
+
+            if (sceneTransition != null && sceneTransition.HasNextScene)
+            {
+                if (!sceneTransition.CanLoadNextScene(out reason))
+                {
+                    Debug.LogWarning("Cannot enter next level: " + reason, sceneTransition);
+                    return false;
+                }
+
+                transitionInProgress = true;
+                LevelUpLivingPlayerUnitsOnce();
+                hasSharedKey = false;
+                int capturedCount = PartyProgressionState.Capture(playerUnits);
+                Debug.Log("LevelProgressionService captured party state for " + capturedCount + " player units before scene transition.", this);
+                bool loaded = sceneTransition.TryLoadNextScene();
+                transitionInProgress = false;
+                return loaded;
             }
 
             if (levelManager == null)
@@ -148,7 +177,8 @@ namespace BoneThrone.Levels
         {
             hasSharedKey = false;
             transitionInProgress = false;
-            Debug.Log("Phase 10 progression reset for test. Shared key=false.", this);
+            PartyProgressionState.Clear();
+            Debug.Log("Phase 10 progression reset for test. Shared key=false and saved party state cleared.", this);
         }
 
         private bool AreRequiredRoomsCleared(out string reason)

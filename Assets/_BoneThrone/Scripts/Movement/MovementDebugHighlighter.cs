@@ -16,7 +16,7 @@ namespace BoneThrone.Movement
         [SerializeField] private Color attackColor = new Color(0.95f, 0.18f, 0.16f, 1f);
         [SerializeField] private Color skillColor = new Color(1f, 0.86f, 0.12f, 1f);
         [SerializeField] private bool showPlayerFootTiles = true;
-        [SerializeField] private Color playerFootTileColor = Color.white;
+        [SerializeField] private Color playerFootTileColor = new Color(0.72f, 1f, 1f, 1f);
         [SerializeField] private Color endedPlayerFootTileColor = Color.gray;
         [SerializeField] private bool autoRefreshPlayerFootTiles = true;
         [SerializeField] private float playerFootTileRefreshInterval = 0.25f;
@@ -277,7 +277,7 @@ namespace BoneThrone.Movement
                 return endedPlayerFootTileColor;
             }
 
-            return playerFootTileColor;
+            return playerFootTileColor == Color.white ? new Color(0.72f, 1f, 1f, 1f) : playerFootTileColor;
         }
 
         private static Color GetRendererColor(Renderer renderer)

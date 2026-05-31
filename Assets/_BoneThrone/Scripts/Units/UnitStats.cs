@@ -80,5 +80,11 @@ namespace BoneThrone.Units
             maxHp = Mathf.Max(1, maxHp + Mathf.Max(0, maxHpPerLevel));
             return true;
         }
+
+        public void ApplyProgressionState(int savedLevel, int savedMaxHp)
+        {
+            level = Mathf.Clamp(savedLevel, 1, MaxLevel);
+            maxHp = Mathf.Max(1, savedMaxHp);
+        }
     }
 }
