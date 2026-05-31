@@ -14,6 +14,7 @@ namespace BoneThrone.Units
         [SerializeField] private int maxHpPerLevel = 2;
         [SerializeField] private int maxHp = 10;
         [SerializeField] private int moveRange = 4;
+        [SerializeField] private int basicAttackRange = 1;
         [SerializeField] private int attackModifier;
         [SerializeField] private int defense = 10;
         [SerializeField] private int baseDamage = 1;
@@ -36,6 +37,11 @@ namespace BoneThrone.Units
         public int MoveRange
         {
             get { return moveRange; }
+        }
+
+        public int BasicAttackRange
+        {
+            get { return Mathf.Max(1, basicAttackRange); }
         }
 
         public int AttackModifier

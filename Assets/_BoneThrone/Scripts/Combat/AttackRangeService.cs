@@ -17,9 +17,19 @@ namespace BoneThrone.Combat
             get { return Mathf.Max(1, basicAttackRange); }
         }
 
+        public int GetBasicAttackRange(Unit attacker)
+        {
+            if (attacker == null || attacker.Stats == null)
+            {
+                return BasicAttackRange;
+            }
+
+            return attacker.Stats.BasicAttackRange;
+        }
+
         public bool IsInBasicAttackRange(Unit attacker, Unit target)
         {
-            return GetManhattanDistance(attacker, target) <= BasicAttackRange;
+            return GetManhattanDistance(attacker, target) <= GetBasicAttackRange(attacker);
         }
 
         public int GetManhattanDistance(Unit attacker, Unit target)
