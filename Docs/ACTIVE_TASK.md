@@ -2,30 +2,36 @@
 
 ## Current Phase
 
-Phase 15.15 - Manual Level Scene Ownership and Codex Scope Correction
+Phase 15.16 - Boss Door / Boss Key / Supply Point Preparation
 
 ## Status
 
-Phase 15.15 records a project scope correction after the Phase 15.14 `Level_01` playable-slice wiring attempt.
+Phase 15.16 is a documentation-only preparation pass for future BossDoor, BossKey, and SupplyPoint work.
 
-Phase 15.14 produced a first-pass `Level_01.unity` wiring attempt, but the user has confirmed that version is not suitable as a formal usable level baseline.
+No BossDoor, BossKey, or SupplyPoint runtime feature has been implemented.
 
-From Phase 15.15 onward, formal level scene content is owned manually by the user.
+No formal level scene was modified.
 
-Codex must not create, modify, wire, or auto-generate formal level scenes.
+Formal level scene content remains user-owned.
 
 `GridTest.unity` remains the regression baseline and must not be converted into a formal level.
 
-## Phase 15.14 Result Rebaseline
+## Phase 15.16 Result
 
-Phase 15.14 historical result:
+Created planning documentation for:
 
-- `Level_01.unity` first-pass scene wiring exists in the working tree/history.
-- It is not accepted as the official usable level baseline.
-- It should not be extended by Codex into a formal playable level.
-- The user may manually keep, alter, replace, or discard its scene contents.
+- BossKey future responsibility
+- BossDoor future responsibility
+- SupplyPoint future responsibility
+- relationship to `KeyItem`, `InteractableStairs`, `LevelProgressionService`, `LevelManager`, `HealthPotionPickup`, `PotionSystem`, and room systems
+- future possible script / prefab / data scope
+- deferred Boss fight / formal scene integration work
+- risks and scene ownership boundaries
 
-Codex may document or review user-made scene setup, but must not directly edit formal level scenes.
+Phase 15.16 output:
+
+- `Docs/Phase15_BossDoorBossKeySupplyPointPreparation.md`
+- `Docs/DevLogs/Phase15.16_BossDoorBossKeySupplyPointPreparation.md`
 
 ## Codex Scene Boundary
 
@@ -63,13 +69,15 @@ Current references:
 - `Docs/DevLogs/Phase15.13_LevelSceneSetup.md`
 - `Docs/DevLogs/Phase15.14_Level01PlayableSlice.md`
 - `Docs/DevLogs/Phase15.15_ManualLevelSceneOwnership.md`
+- `Docs/DevLogs/Phase15.16_BossDoorBossKeySupplyPointPreparation.md`
+- `Docs/Phase15_BossDoorBossKeySupplyPointPreparation.md`
 - `Docs/Phase15_Plan.md`
 
 ## Next Phase Candidate
 
-Phase 15.16 - Boss Door / Boss Key / Supply Point Preparation
+Phase 15.17 - BossDoor / BossKey / SupplyPoint Minimal Contract Review
 
-Phase 15.16 should be non-scene preparation only. It may plan or implement narrow code / prefab / data support if explicitly approved, but must not place BossDoor, BossKey, SupplyPoint, or related content into formal level scenes.
+Phase 15.17 should remain non-scene. It may review minimal API contracts, checklist requirements, and future implementation order for BossDoor / BossKey / SupplyPoint. It should not create runtime scripts, prefabs, data assets, or scene placements unless a later prompt explicitly approves a narrow non-scene implementation.
 
 ## Forbidden Scene Changes
 
