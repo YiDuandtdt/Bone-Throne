@@ -60,6 +60,7 @@ MonoBehaviour:
     maxHpPerLevel: 2
     maxHp: 10
     moveRange: 4
+    basicAttackRange: 3
     attackModifier: 0
     defense: 10
     baseDamage: 1

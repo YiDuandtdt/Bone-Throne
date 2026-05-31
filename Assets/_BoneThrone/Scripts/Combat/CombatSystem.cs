@@ -37,12 +37,13 @@ namespace BoneThrone.Combat
             }
 
             int distance = attackRangeService.GetManhattanDistance(attacker, target);
+            int range = attackRangeService.GetBasicAttackRange(attacker);
             if (!attackRangeService.IsInBasicAttackRange(attacker, target))
             {
                 reason = "Target is out of basic attack range. Distance="
                     + distance
                     + " Range="
-                    + attackRangeService.BasicAttackRange
+                    + range
                     + ".";
                 return false;
             }
@@ -69,11 +70,12 @@ namespace BoneThrone.Combat
             }
 
             int distance = attackRangeService.GetManhattanDistance(attacker, target);
+            int range = attackRangeService.GetBasicAttackRange(attacker);
             if (!attackRangeService.IsInBasicAttackRange(attacker, target))
             {
                 LogRejected(
                     "target is out of basic attack range. Distance="
-                    + distance + " Range=" + attackRangeService.BasicAttackRange + ".",
+                    + distance + " Range=" + range + ".",
                     attacker);
                 return false;
             }
