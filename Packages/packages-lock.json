@@ -1,5 +1,14 @@
 {
   "dependencies": {
+    "com.besty.unity-skills": {
+      "version": "file:D:/Users/19798/Downloads/Unity-Skills-2.0.0/SkillsForUnity",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.0.2",
+        "com.unity.timeline": "1.7.7"
+      }
+    },
     "com.unity.ai.navigation": {
       "version": "2.0.12",
       "depth": 0,
