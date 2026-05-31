@@ -2,55 +2,57 @@
 
 ## Current Phase
 
-Phase 15.13 - Level_01 / Level_02 / Level_03 Scene Setup
+Phase 15.14 - Level_01 Playable Slice
 
 ## Status
 
-Phase 15.12 - Formal Level Scene Plan is complete.
+Phase 15.13 - Level_01 / Level_02 / Level_03 Scene Setup is complete.
 
-The project now has a docs-only formal level scene plan:
-
-- `Docs/Phase15_FormalLevelScenePlan.md`
-- `Docs/DevLogs/Phase15.12_FormalLevelScenePlan.md`
-
-No formal Level scene was created during Phase 15.12. No `GridTest.unity`, code, prefab, SkillData, KayKit source, ScriptableObject, material, animation, ProjectSettings, or Packages file was modified.
-
-## Phase 15.13 Goal
-
-Begin narrow formal scene setup for:
-
-- `Level_01`
-- `Level_02`
-- `Level_03`
-
-Phase 15.13 should create scene structure only when explicitly approved by the user. It must keep `GridTest.unity` as the regression baseline and must not convert it into a formal level.
-
-## References
-
-Phase 15.13 should reference:
-
-- `Docs/Phase15_FormalLevelScenePlan.md`
-- `Docs/Phase15_FormalDataAssetizationPlan.md`
-- `Docs/Phase15_AssetInventoryAndPrefabizationPlan.md`
-- `Docs/Phase15_EnvironmentPrefabizationSummary.md`
-- `Docs/DevLogs/Phase15.10_GridTestSceneAssemblyKitValidation.md`
-- `Docs/Phase15_Plan.md`
-
-## Allowed Scope
-
-Phase 15.13 should start with an implementation plan before creating or modifying scenes.
-
-Potential implementation scope, only after explicit approval:
+The project now has initial formal scene skeletons:
 
 - `Assets/_BoneThrone/Scenes/Level_01.unity`
 - `Assets/_BoneThrone/Scenes/Level_02.unity`
 - `Assets/_BoneThrone/Scenes/Level_03.unity`
 - `Docs/DevLogs/Phase15.13_LevelSceneSetup.md`
 
+The scenes are structure-only skeletons with clear hierarchy groups. They do not contain gameplay wiring yet.
+
+No `GridTest.unity`, code, prefab, SkillData, KayKit source, ScriptableObject, material, animation, ProjectSettings, or Packages file was modified.
+
+## Phase 15.14 Goal
+
+Begin the first narrow playable slice for:
+
+- `Level_01`
+
+Phase 15.14 should make `Level_01` minimally playable while keeping `GridTest.unity` as the regression baseline and without converting `GridTest` into a formal level.
+
+## References
+
+Phase 15.14 should reference:
+
+- `Docs/Phase15_FormalLevelScenePlan.md`
+- `Docs/Phase15_FormalDataAssetizationPlan.md`
+- `Docs/Phase15_AssetInventoryAndPrefabizationPlan.md`
+- `Docs/Phase15_EnvironmentPrefabizationSummary.md`
+- `Docs/DevLogs/Phase15.10_GridTestSceneAssemblyKitValidation.md`
+- `Docs/DevLogs/Phase15.13_LevelSceneSetup.md`
+- `Docs/Phase15_Plan.md`
+
+## Allowed Scope
+
+Phase 15.14 should start with an implementation plan before wiring playable systems.
+
+Potential implementation scope, only after explicit approval:
+
+- `Assets/_BoneThrone/Scenes/Level_01.unity`
+- `Docs/DevLogs/Phase15.14_Level01PlayableSlice.md`
+- `Docs/ACTIVE_TASK.md`
+
 ## Forbidden Changes Until Explicitly Approved
 
 - Do not modify `GridTest.unity`.
-- Do not modify C# code.
+- Do not modify C# code unless the Phase 15.14 prompt explicitly approves a narrow fix.
 - Do not modify SkillData.
 - Do not modify KayKit source assets.
 - Do not implement Boss fight.
@@ -64,11 +66,11 @@ Potential implementation scope, only after explicit approval:
 
 ## Next Step
 
-Begin Phase 15.13 with a plan-only prompt:
+Begin Phase 15.14 with a plan-first prompt:
 
-1. Decide whether scenes should be created from scratch or copied from a minimal GridTest-safe template.
-2. Identify exactly which manager / system objects are allowed to migrate.
-3. Identify which test-only objects must not be copied.
-4. Define the initial scene setup order.
-5. Define validation criteria for each scene.
-6. Do not create scenes until the user explicitly approves the implementation scope.
+1. Identify exactly which `Level_01` manager / system objects should be wired.
+2. Identify which GridTest-only testers and temporary objects must not be copied.
+3. Define the minimum playable room, tile, player, enemy, UI, HealthPotion, Key, and Stairs setup.
+4. Define validation criteria for `Level_01`.
+5. Keep `Level_02` and `Level_03` as skeletons unless explicitly approved.
+6. Do not modify `GridTest.unity`.
