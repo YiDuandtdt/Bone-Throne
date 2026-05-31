@@ -323,6 +323,50 @@ If any item fails:
 3. Mark whether it is Phase 15.10 blocking or deferred.
 4. Get explicit approval before modifying scene, prefab, code, SkillData, KayKit source, materials, or animation assets.
 
+## Closeout - Unity Play Mode Validation Passed
+
+Phase 15.10 has been manually validated in Unity 6.3 Play Mode and is closed.
+
+Validation result summary:
+
+| Section | Area | Result | Notes |
+| --- | --- | --- | --- |
+| A | Basic Scene Check | Pass | GridTest opened and entered Play Mode without blocking missing prefab, missing script, missing Animator Controller, or missing parameter issues. |
+| B | PlayerTurn | Pass | Single-player free-order PlayerTurn remains intact; End Turn only ends the selected unit; all alive player units ending advances to EnemyTurn; new PlayerTurn resets moved / acted / ended. |
+| C | Movement / Facing | Pass | Movement is smooth, four-direction facing works, units face nearest alive opponent after movement, and MoveSpeed returns to 0. |
+| D | Basic Attack | Pass | Per-unit Basic Attack ranges validated for melee, Ranger, Mage, Skeleton_Rogue, Skeleton_Mage, and Skeleton_Necromancer; attack facing and one-shot animation behavior validated; D20 / damage / action rules unchanged. |
+| E | Skills | Pass | Skill range still comes from SkillData; targeted skills face target; skill animation plays once; cooldown and action rules unchanged. |
+| F | Potion | Pass | HealthPotion pickup adds count without healing; Potion use heals, consumes count and action, does not auto End Turn, and plays once. |
+| G | Defend | Pass | DefendStart plays once, DefendHold / Blocking holds, new round and consumed defend clear the hold, and Dead remains higher priority. |
+| H | Hit / Dead | Pass | Hit plays on surviving damaged units; Dead activates and holds; dead units cannot continue acting. |
+| I | EnemyTurn | Pass | Enemies act sequentially; bleed / stun timing is preserved; smooth movement does not stall EnemyTurn; EnemyTurn returns to PlayerTurn. |
+| J | Prefab / Art | Pass | Weapon visuals, per-unit Animator Controllers, Ranger identity, Skeleton_Rogue naming, Skeleton_Golem_Boss placeholder boundary, and Chest / Doorway visual-only status were validated. |
+
+Known deferred items:
+
+- Formal data assetization planning moves to Phase 15.11.
+- Formal Level scene planning remains deferred to Phase 15.12.
+- `Level_01`, `Level_02`, and `Level_03` setup remains deferred to Phase 15.13.
+- Boss fight, Boss AI, BossDoor, BossKey, and SupplyPoint complete flow remain deferred to later dedicated phases.
+- Chest loot / reward behavior and Door lock / unlock behavior remain deferred.
+- Environment collider refinement, blocking / walkable semantics, and formal placement rules remain deferred.
+
+Closeout boundary confirmation:
+
+- `GridTest.unity` remains the regression baseline, not a formal level.
+- No scene was modified.
+- No prefab was modified.
+- No C# code was modified.
+- No SkillData was modified.
+- No KayKit source asset was modified.
+- No material, animation clip, Animator Controller, ProjectSettings, or Packages file was modified.
+- No Boss, LAN, formal Level scene, BossDoor, BossKey, or SupplyPoint implementation was added.
+
+Next phase:
+
+- `Docs/ACTIVE_TASK.md` is updated to Phase 15.11 - Formal Data Assetization Plan.
+- Phase 15.11 should remain planning-focused and must not directly create formal Level scenes or implement formal level flow.
+
 ## Rollback
 
 This pass is docs-only. Rollback by deleting this validation record:

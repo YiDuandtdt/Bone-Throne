@@ -1,71 +1,63 @@
-继续执行 Unity 6.3 LTS 项目《Bone Throne / 骸骨王座》。
+# ACTIVE TASK
 
-当前 Phase 15.8 - Character Animator Controllers and Animation State Machines 已完成并提交。
+## Current Phase
 
-现在请只更新文档任务状态，不要修改任何 code / prefab / scene / material / SkillData。
+Phase 15.11 - Formal Data Assetization Plan
 
-允许修改文件：
+## Status
 
-* Docs/ACTIVE_TASK.md
+Phase 15.10 - GridTest Scene Assembly Kit Validation has passed Unity 6.3 Play Mode manual validation and is closed.
 
-目标：
-将当前阶段更新为：
+`Assets/_BoneThrone/Scenes/GridTest.unity` remains the regression baseline. It is not a formal level and must not be converted into `Level_01`, `Level_02`, or `Level_03`.
 
-Phase 15.9 - Animation Integration with Movement / Combat / Skill / Potion
+## Phase 15.11 Goal
 
-请在 ACTIVE_TASK.md 中写清：
+Create the formal data assetization plan for the production foundation built through Phase 15.10.
 
-## Current phase
+Phase 15.11 is a planning phase. It should identify which gameplay, unit, interactable, level-assembly, progression, and configuration data should eventually become formal project-owned data assets, and it should define safe migration order and boundaries.
 
-Phase 15.9 - Animation Integration with Movement / Combat / Skill / Potion
+Phase 15.11 must not directly create formal Level scenes or implement formal level gameplay.
 
-## Goal
+## Allowed Scope
 
-Connect the Phase 15.8 Animator Controllers to runtime presentation so units can visually respond to movement, basic attack, skill cast, hit, defend, potion use, and death. Animation must remain presentation-only and must not drive gameplay logic.
+Phase 15.11 should start as docs-only unless a later prompt explicitly approves implementation.
 
-## Allowed files
+Expected planning inputs:
 
-Phase 15.9 方案阶段先不允许改文件。后续实现阶段可能涉及：
+- `Docs/Phase15_Plan.md`
+- `Docs/Phase15_AssetInventoryAndPrefabizationPlan.md`
+- `Docs/Phase15_EnvironmentPrefabizationSummary.md`
+- `Docs/DevLogs/Phase15.10_GridTestSceneAssemblyKitValidation.md`
+- Current project-owned prefabs and data assets, read-only
+- Current gameplay scripts, read-only
 
-* Assets/_BoneThrone/Scripts/Units/UnitAnimationController.cs
-* Assets/_BoneThrone/Scripts/Movement/* only if needed for MoveSpeed presentation
-* Assets/_BoneThrone/Scripts/Combat/* only if needed to trigger BasicAttack / Hit presentation
-* Assets/_BoneThrone/Scripts/Skills/* only if needed to trigger Skill presentation
-* Assets/_BoneThrone/Scripts/Items/* only if needed to trigger UsePotion presentation
-* Assets/_BoneThrone/Prefabs/Units/Players/*.prefab only if UnitAnimationController must be attached
-* Assets/_BoneThrone/Prefabs/Units/Enemies/*.prefab only if UnitAnimationController must be attached
-* Assets/_BoneThrone/Prefabs/Units/Boss/*.prefab only if UnitAnimationController must be attached
-* Docs/DevLogs/Phase15.9_AnimationIntegration.md
+Possible docs output:
 
-## Forbidden changes
+- `Docs/Phase15_FormalDataAssetizationPlan.md`
+- `Docs/DevLogs/Phase15.11_FormalDataAssetizationPlan.md`
 
-* Do not modify gameplay rules.
-* Do not let animation events drive damage, cooldown, MarkMoved, MarkActed, End Turn, death, or turn progression.
-* Do not modify CombatSystem damage rules.
-* Do not modify SkillSystem resolution rules.
-* Do not modify TurnManager turn rules.
-* Do not modify PotionSystem potion rules.
-* Do not modify SkillData.
-* Do not modify KayKit source assets.
-* Do not modify GridTest.unity.
-* Do not create formal Level scenes.
-* Do not modify LAN / Networking.
-* Do not add animation events.
-* Do not treat animation as authority; animation is presentation only.
+## Forbidden Changes
 
-## Notes
+- Do not create `Level_01`, `Level_02`, or `Level_03`.
+- Do not modify gameplay code.
+- Do not modify prefabs.
+- Do not modify scenes.
+- Do not modify `GridTest.unity`.
+- Do not modify SkillData unless the Phase 15.11 plan explicitly approves a later data migration step.
+- Do not modify KayKit source assets.
+- Do not modify animation controllers or animation clips.
+- Do not modify weapon visual attachments.
+- Do not modify Turn, Combat, Skill, Potion, or LAN systems.
+- Do not implement Boss, BossDoor, BossKey, SupplyPoint, or formal level flow.
+- Do not change the single-player free-order PlayerTurn rule.
+- Do not use Fighter -> Ranger -> Mage -> Barbarian fixed-order for single-player.
 
-Phase 15.8 created:
+## Next Step
 
-* BT_Player_Medium.controller
-* BT_Skeleton_Medium.controller
-* BT_Boss_Large.controller
+Begin Phase 15.11 with a plan-only prompt:
 
-Phase 15.9 should first produce an implementation plan before writing code.
-
-完成后输出：
-
-1. 实际修改文件。
-2. ACTIVE_TASK.md 改了什么。
-3. 明确说明没有修改 code / prefab / scene / material / SkillData。
-4. 下一步 Phase 15.9 方案 Prompt 建议。
+1. Scan current Docs and data / prefab / gameplay configuration state.
+2. Identify which systems are still scene-bound, prefab-bound, or hard-coded.
+3. Propose a formal data assetization map.
+4. Define what should remain untouched until later phases.
+5. Do not modify files until the Phase 15.11 implementation scope is explicitly approved.
