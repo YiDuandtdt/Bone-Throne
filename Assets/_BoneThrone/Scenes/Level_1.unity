@@ -1876,7 +1876,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400001, guid: 9c42a6c38fae4de2a334d92937003110, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -3
+      value: -3.67
       objectReference: {fileID: 0}
     - target: {fileID: 400001, guid: 9c42a6c38fae4de2a334d92937003110, type: 3}
       propertyPath: m_LocalPosition.y
@@ -1884,7 +1884,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400001, guid: 9c42a6c38fae4de2a334d92937003110, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 9
+      value: 8.23
       objectReference: {fileID: 0}
     - target: {fileID: 400001, guid: 9c42a6c38fae4de2a334d92937003110, type: 3}
       propertyPath: m_LocalRotation.w
@@ -5467,7 +5467,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: e73a58f6e2794ae7b1b7e50b7fb811b0, type: 2}
+  - {fileID: 2100000, guid: 71ccb5f3d7fe07247a6bce67c8fcbff2, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -8265,67 +8265,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1082865588}
   m_Mesh: {fileID: -2634147639830484596, guid: 26d7efd706c78714b90a0be2730a9396, type: 3}
---- !u!1001 &1093291334
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 300000, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
-      propertyPath: m_Name
-      value: Key_2
-      objectReference: {fileID: 0}
-    - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -1.96
-      objectReference: {fileID: 0}
-    - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 14.06128
-      objectReference: {fileID: 0}
-    - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 300002, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
-      propertyPath: progressionService
-      value: 
-      objectReference: {fileID: 1520370594}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
 --- !u!1 &1093932796
 GameObject:
   m_ObjectHideFlags: 0
@@ -9143,7 +9082,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 300000, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
       propertyPath: m_Name
-      value: Key_1
+      value: Key
       objectReference: {fileID: 0}
     - target: {fileID: 300001, guid: 8dbd5c3bd8e3496f954ab9df5ab22453, type: 3}
       propertyPath: m_LocalPosition.x
@@ -16400,7 +16339,6 @@ SceneRoots:
   - {fileID: 673753917}
   - {fileID: 361748297}
   - {fileID: 1196215137}
-  - {fileID: 1093291334}
   - {fileID: 196201661}
   - {fileID: 1102446554}
   - {fileID: 1112835312}
