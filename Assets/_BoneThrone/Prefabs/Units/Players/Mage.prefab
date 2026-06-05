@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!1 &120000
 GameObject:
@@ -210,5 +210,3 @@ Animator:
   m_CorrespondingSourceObject: {fileID: -3693372400289761586, guid: 3dcb7923871a02e4288f8c602d3ab3f3, type: 3}
   m_PrefabInstance: {fileID: 120009}
   m_PrefabAsset: {fileID: 0}
-
-

@@ -59,7 +59,7 @@ namespace BoneThrone.UI
 
             if (stairs != null && stairs.ConfirmationPending)
             {
-                promptText.text = "Stairs: click again to enter next level.";
+                promptText.text = "楼梯：再次点击即可进入下一层。";
                 return;
             }
 
@@ -68,22 +68,22 @@ namespace BoneThrone.UI
                 string reason;
                 if (!progressionService.CanEnterNextLevel(out reason))
                 {
-                    promptText.text = "Progression: " + reason;
+                    promptText.text = "进度：" + reason;
                     return;
                 }
             }
 
             if (selectedUnit == null)
             {
-                string stairsState = stairs == null ? " Stairs: Unbound." : string.Empty;
-                promptText.text = "Select a player unit." + stairsState;
+                string stairsState = stairs == null ? " 楼梯：未绑定。" : string.Empty;
+                promptText.text = "请选择一名玩家角色。" + stairsState;
                 return;
             }
 
             string displayName = string.IsNullOrEmpty(selectedUnit.DisplayName)
                 ? selectedUnit.RoleId.ToString()
                 : selectedUnit.DisplayName;
-            promptText.text = "Selected: " + displayName + ".";
+            promptText.text = "当前选择：" + displayName + "。";
         }
 
         private void SetPrompt(string message)

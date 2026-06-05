@@ -3,6 +3,7 @@ using BoneThrone.Combat;
 using BoneThrone.Grid;
 using BoneThrone.Movement;
 using BoneThrone.Turns;
+using BoneThrone.UI;
 using BoneThrone.Units;
 using System.Collections;
 using UnityEngine;
@@ -25,6 +26,8 @@ namespace BoneThrone.AI
         [SerializeField] private ActionPermissionService actionPermissionService;
         [SerializeField] private DamageResolver damageResolver;
         [SerializeField] private CombatLog combatLog;
+        [SerializeField] private TurnTransitionPopupView turnTransitionPopupView;
+        [SerializeField] private TurnPacingSettings turnPacingSettings;
         [SerializeField] private float enemyActionDelay = 0.4f;
 
         private readonly EnemyAIController enemyAIController = new EnemyAIController();
@@ -94,6 +97,8 @@ namespace BoneThrone.AI
             }
             else
             {
+                yield return PlayEnemyTurnIntro();
+
                 for (int i = 0; i < activeEnemies.Count; i++)
                 {
                     Unit enemy = activeEnemies[i];
@@ -131,6 +136,9 @@ namespace BoneThrone.AI
                     LogResult(result);
                     yield return WaitForEnemyActionDelay();
                 }
+
+                yield return WaitForDelay(GetAfterEnemyRoundDelay());
+                yield return PlayPlayerTurnIntro();
             }
 
             runningRoutine = null;
@@ -310,6 +318,16 @@ namespace BoneThrone.AI
             {
                 combatLog = Object.FindFirstObjectByType<CombatLog>();
             }
+
+            if (turnTransitionPopupView == null)
+            {
+                turnTransitionPopupView = Object.FindFirstObjectByType<TurnTransitionPopupView>();
+            }
+
+            if (turnPacingSettings == null && turnTransitionPopupView != null)
+            {
+                turnPacingSettings = turnTransitionPopupView.PacingSettings;
+            }
         }
 
         private void TickBleed(Unit enemy)
@@ -345,7 +363,87 @@ namespace BoneThrone.AI
 
         private WaitForSeconds WaitForEnemyActionDelay()
         {
-            return new WaitForSeconds(Mathf.Max(0f, enemyActionDelay));
+            return new WaitForSeconds(Mathf.Max(0f, GetEnemyActionInterval()));
+        }
+
+        private IEnumerator PlayEnemyTurnIntro()
+        {
+            yield return WaitForDelay(GetBeforeEnemyTurnBannerDelay());
+
+            if (turnTransitionPopupView != null)
+            {
+                yield return turnTransitionPopupView.PlayEnemyTurnAnnouncement();
+            }
+            else
+            {
+                yield return WaitForDelay(GetEnemyTurnBannerHoldDuration());
+            }
+
+            yield return WaitForDelay(GetAfterEnemyTurnBannerDelay());
+        }
+
+        private IEnumerator PlayPlayerTurnIntro()
+        {
+            yield return WaitForDelay(GetBeforePlayerTurnBannerDelay());
+
+            if (turnTransitionPopupView != null)
+            {
+                yield return turnTransitionPopupView.PlayPlayerTurnAnnouncement();
+            }
+            else
+            {
+                yield return WaitForDelay(GetPlayerTurnBannerHoldDuration());
+            }
+
+            yield return WaitForDelay(GetAfterPlayerTurnBannerDelay());
+        }
+
+        private IEnumerator WaitForDelay(float duration)
+        {
+            if (duration > 0f)
+            {
+                yield return new WaitForSeconds(duration);
+            }
+        }
+
+        private float GetBeforeEnemyTurnBannerDelay()
+        {
+            return turnPacingSettings != null ? turnPacingSettings.BeforeEnemyTurnBannerDelay : 0f;
+        }
+
+        private float GetEnemyTurnBannerHoldDuration()
+        {
+            return turnPacingSettings != null ? turnPacingSettings.EnemyTurnBannerHoldDuration : 0f;
+        }
+
+        private float GetAfterEnemyTurnBannerDelay()
+        {
+            return turnPacingSettings != null ? turnPacingSettings.AfterEnemyTurnBannerDelay : 0f;
+        }
+
+        private float GetEnemyActionInterval()
+        {
+            return turnPacingSettings != null ? turnPacingSettings.EnemyActionInterval : enemyActionDelay;
+        }
+
+        private float GetAfterEnemyRoundDelay()
+        {
+            return turnPacingSettings != null ? turnPacingSettings.AfterEnemyRoundDelay : 0f;
+        }
+
+        private float GetBeforePlayerTurnBannerDelay()
+        {
+            return turnPacingSettings != null ? turnPacingSettings.BeforePlayerTurnBannerDelay : 0f;
+        }
+
+        private float GetPlayerTurnBannerHoldDuration()
+        {
+            return turnPacingSettings != null ? turnPacingSettings.PlayerTurnBannerHoldDuration : 0f;
+        }
+
+        private float GetAfterPlayerTurnBannerDelay()
+        {
+            return turnPacingSettings != null ? turnPacingSettings.AfterPlayerTurnBannerDelay : 0f;
         }
 
         private void LogResult(EnemyAIResult result)

@@ -31,7 +31,7 @@ namespace BoneThrone.UI
 
             if (unit == null)
             {
-                statusText.text = "Hero: Unbound\nHP: -- / --\nLevel: --\nMoved: -- | Acted: --";
+                statusText.text = "角色：未绑定\n生命：-- / --\n等级：--\n移动：-- | 行动：--";
                 return;
             }
 
@@ -43,14 +43,14 @@ namespace BoneThrone.UI
             string moved = turnState != null ? turnState.HasMoved.ToString() : "--";
             string acted = turnState != null ? turnState.HasActed.ToString() : "--";
             string turnStatus = FormatTurnStatus(unit, selectedUnit, turnState);
-            string life = unit.IsAlive ? "Alive" : "Dead";
+            string life = unit.IsAlive ? "存活" : "死亡";
 
             statusText.text = displayName
-                + "\nHP: " + currentHp + " / " + maxHp
-                + "\nLevel: " + level
-                + "\nMoved: " + moved + " | Acted: " + acted
-                + "\nTurn: " + turnStatus
-                + "\nState: " + life;
+                + "\n生命：" + currentHp + " / " + maxHp
+                + "\n等级：" + level
+                + "\n移动：" + moved + " | 行动：" + acted
+                + "\n回合：" + turnStatus
+                + "\n状态：" + life;
         }
 
         private static string FormatTurnStatus(Unit unit, Unit selectedUnit, UnitTurnState turnState)
@@ -62,15 +62,15 @@ namespace BoneThrone.UI
 
             if (turnState.HasEnded)
             {
-                return "Ended";
+                return "已结束";
             }
 
             if (unit == selectedUnit || turnState.HasMoved || turnState.HasActed)
             {
-                return "Active";
+                return "进行中";
             }
 
-            return "Not Started";
+            return "未开始";
         }
     }
 }

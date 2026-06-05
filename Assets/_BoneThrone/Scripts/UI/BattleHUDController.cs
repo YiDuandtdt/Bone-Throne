@@ -47,6 +47,8 @@ namespace BoneThrone.UI
         [SerializeField] private SkillBarView skillBarView;
         [SerializeField] private CombatFeedbackView combatFeedbackView;
         [SerializeField] private PromptView promptView;
+        [SerializeField] private TurnTransitionPopupView turnTransitionPopupView;
+        [SerializeField] private TurnTransitionPopupView turnTransitionPopupPrefab;
 
         [Header("Runtime UI")]
         [SerializeField] private bool buildRuntimeLayoutIfMissing = true;
@@ -55,12 +57,16 @@ namespace BoneThrone.UI
         {
             NormalizeRectTransform();
 
-            if (buildRuntimeLayoutIfMissing)
+            RebindMissingViews();
+
+            if (buildRuntimeLayoutIfMissing || !HasRequiredHudViews())
             {
                 EnsureRuntimeLayout();
             }
 
+            ForceVisibleRuntimeViews();
             EnsureEndTurnButton();
+            EnsureTurnTransitionPopupView();
             EnsureActiveUnitProvider();
             EnsureDefendSystem();
             EnsurePotionSystem();
@@ -576,6 +582,121 @@ namespace BoneThrone.UI
             root.offsetMax = Vector2.zero;
         }
 
+        private void RebindMissingViews()
+        {
+            if (turnBannerView == null)
+            {
+                turnBannerView = GetComponentInChildren<TurnBannerView>(true);
+            }
+
+            if (skillBarView == null)
+            {
+                skillBarView = GetComponentInChildren<SkillBarView>(true);
+            }
+
+            if (combatFeedbackView == null)
+            {
+                combatFeedbackView = GetComponentInChildren<CombatFeedbackView>(true);
+            }
+
+            if (promptView == null)
+            {
+                promptView = GetComponentInChildren<PromptView>(true);
+            }
+
+            if (turnTransitionPopupView == null)
+            {
+                turnTransitionPopupView = GetComponentInChildren<TurnTransitionPopupView>(true);
+            }
+
+            if (!HasHeroPanels())
+            {
+                HeroPanelView[] discoveredPanels = GetComponentsInChildren<HeroPanelView>(true);
+                if (discoveredPanels != null && discoveredPanels.Length > 0)
+                {
+                    heroPanels = discoveredPanels;
+                }
+            }
+        }
+
+        private bool HasRequiredHudViews()
+        {
+            return turnBannerView != null
+                && skillBarView != null
+                && combatFeedbackView != null
+                && promptView != null
+                && HasHeroPanels();
+        }
+
+        private void ForceVisibleRuntimeViews()
+        {
+            ForceVisible(gameObject);
+            ForceVisible(turnBannerView != null ? turnBannerView.gameObject : null);
+            ForceVisible(skillBarView != null ? skillBarView.gameObject : null);
+            ForceVisible(combatFeedbackView != null ? combatFeedbackView.gameObject : null);
+            ForceVisible(promptView != null ? promptView.gameObject : null);
+            ForceVisible(turnTransitionPopupView != null ? turnTransitionPopupView.gameObject : null);
+
+            if (heroPanels == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < heroPanels.Length; i++)
+            {
+                if (heroPanels[i] != null)
+                {
+                    ForceVisible(heroPanels[i].gameObject);
+                }
+            }
+        }
+
+        private static void ForceVisible(GameObject viewObject)
+        {
+            if (viewObject == null)
+            {
+                return;
+            }
+
+            if (!viewObject.activeSelf)
+            {
+                viewObject.SetActive(true);
+            }
+
+            RectTransform rect = viewObject.GetComponent<RectTransform>();
+            if (rect == null)
+            {
+                return;
+            }
+
+            rect.localScale = Vector3.one;
+        }
+
+        private void EnsureTurnTransitionPopupView()
+        {
+            if (turnTransitionPopupView == null)
+            {
+                turnTransitionPopupView = GetComponentInChildren<TurnTransitionPopupView>(true);
+            }
+
+            if (turnTransitionPopupView == null && turnTransitionPopupPrefab != null)
+            {
+                turnTransitionPopupView = Instantiate(turnTransitionPopupPrefab, transform);
+                RectTransform popupRect = turnTransitionPopupView.GetComponent<RectTransform>();
+                if (popupRect != null)
+                {
+                    popupRect.localScale = Vector3.one;
+                }
+
+                turnTransitionPopupView.transform.SetAsLastSibling();
+            }
+
+            if (turnTransitionPopupView == null && buildRuntimeLayoutIfMissing)
+            {
+                turnTransitionPopupView = CreateTurnTransitionPopup();
+            }
+        }
+
         private void EnsureRuntimeLayout()
         {
             if (turnBannerView != null
@@ -602,6 +723,7 @@ namespace BoneThrone.UI
             turnBannerView = CreateView<TurnBannerView>("TurnBanner", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(920f, 52f), new Vector2(0f, -22f));
             turnBannerView.Bind(CreateText(turnBannerView.transform, "TurnText", "Turn: Unbound", 28, headerStyle));
 
+            turnTransitionPopupView = CreateTurnTransitionPopup();
             promptView = CreateView<PromptView>("Prompt", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(920f, 42f), new Vector2(0f, 20f));
             promptView.Bind(CreateText(promptView.transform, "PromptText", "Select a player unit.", 21, FontStyles.Normal));
 
@@ -690,6 +812,24 @@ namespace BoneThrone.UI
             TMP_Text text = textObject.AddComponent<TextMeshProUGUI>();
             ConfigureText(text, value, fontSize, style);
             return text;
+        }
+
+        private TurnTransitionPopupView CreateTurnTransitionPopup()
+        {
+            TurnTransitionPopupView popup = CreateView<TurnTransitionPopupView>(
+                "TurnTransitionPopup",
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f),
+                new Vector2(640f, 96f),
+                new Vector2(0f, 120f));
+
+            CanvasGroup canvasGroup = popup.gameObject.AddComponent<CanvasGroup>();
+            TMP_Text text = CreateText(popup.transform, "PopupText", "敌方回合", 34, FontStyles.Bold);
+            text.alignment = TextAlignmentOptions.Center;
+            popup.Bind(text, canvasGroup, popup.GetComponent<RectTransform>());
+            popup.HideImmediate();
+            return popup;
         }
 
         private static void ConfigureText(TMP_Text text, string value, int fontSize, FontStyles style)

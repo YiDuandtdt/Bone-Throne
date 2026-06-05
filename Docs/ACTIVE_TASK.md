@@ -18,10 +18,13 @@ Created:
 
 - `Docs/Phase16_ManualLevelProductionSupport.md`
 - `Docs/DevLogs/Phase16.0_ManualLevelProductionSupport.md`
+- `Docs/Unity_CSharp_AI_CodingRules.md`
+- `Docs/DevLogs/Phase16.1_UnityCSharpAIRulesIntegration.md`
 
 Updated:
 
 - `Docs/ACTIVE_TASK.md`
+- `AGENTS.md`
 
 The new support document provides:
 
@@ -36,6 +39,11 @@ The new support document provides:
 - Unity-Skills read-only review flow
 - Git checks before commit
 - rollback and risk notes
+
+Additional AI coding-rule integration:
+
+- `Docs/Unity_CSharp_AI_CodingRules.md` adapts the user's `unity-cs-rules.mdc` into BoneThrone-specific Unity C# guidance.
+- It should be read before work that touches C# scripts, Inspector fields, Unity lifecycle methods, UI listeners, events, runtime performance, or documentation handoff.
 
 ## Scene Boundary
 

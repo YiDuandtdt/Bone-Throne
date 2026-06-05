@@ -20,6 +20,7 @@ Keep changes small and phase-scoped.
 Prefer clear serialized fields over hard-coded scene lookups.
 Avoid changing Unity scenes or prefabs unless the task explicitly asks for it.
 Never edit Library, Temp, Obj, Logs, UserSettings, or generated IDE files.
+When a task touches C# scripts, Inspector fields, Unity lifecycle methods, UI listeners, events, or runtime performance, also read and follow `Docs/Unity_CSharp_AI_CodingRules.md`.
 
 ## Architecture rules
 Single-player should run without NetworkManager.

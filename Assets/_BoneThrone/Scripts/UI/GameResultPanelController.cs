@@ -16,10 +16,10 @@ namespace BoneThrone.UI
         [SerializeField] private TMP_Text reasonText;
         [SerializeField] private Button retryButton;
         [SerializeField] private Button closeButton;
-        [SerializeField] private string victoryTitle = "Victory";
-        [SerializeField] private string defeatTitle = "Defeat";
-        [SerializeField] private string defaultVictoryReason = "The party prevailed.";
-        [SerializeField] private string defaultDefeatReason = "The party has fallen.";
+        [SerializeField] private string victoryTitle = "胜利";
+        [SerializeField] private string defeatTitle = "失败";
+        [SerializeField] private string defaultVictoryReason = "队伍取得了胜利。";
+        [SerializeField] private string defaultDefeatReason = "队伍全灭了。";
         [SerializeField] private bool debugLogging;
 
         private bool missingOutcomeServiceWarningLogged;
