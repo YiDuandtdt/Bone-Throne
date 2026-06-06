@@ -1,3 +1,4 @@
+using BoneThrone.Audio;
 using BoneThrone.Units;
 using UnityEngine;
 
@@ -64,7 +65,8 @@ namespace BoneThrone.Combat
 
             if (target.RuntimeState.CurrentHp <= 0)
             {
-                target.MarkDeadAndReleaseTile();
+                BTAudioService.PlayDeathSfx(target);
+                target.MarkDeadAndReleaseTile(false);
                 return true;
             }
 

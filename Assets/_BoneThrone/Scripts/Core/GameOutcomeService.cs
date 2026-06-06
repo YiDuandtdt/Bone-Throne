@@ -1,4 +1,5 @@
 using System;
+using BoneThrone.Audio;
 using UnityEngine;
 
 namespace BoneThrone.Core
@@ -10,6 +11,8 @@ namespace BoneThrone.Core
     {
         [SerializeField] private GameOutcome currentOutcome = GameOutcome.None;
         [SerializeField] private string lastReason;
+        [SerializeField] private bool showVictoryPopup;
+        [SerializeField] private bool showDefeatPopup = true;
         [SerializeField] private bool debugLogging;
 
         public event Action<GameOutcome, string> OutcomeChanged;
@@ -44,6 +47,7 @@ namespace BoneThrone.Core
         {
             currentOutcome = GameOutcome.None;
             lastReason = null;
+            BTOutcomePopupService.HideOutcome();
             Log("Outcome cleared.");
             OutcomeChanged?.Invoke(currentOutcome, lastReason);
         }
@@ -64,9 +68,38 @@ namespace BoneThrone.Core
 
             currentOutcome = outcome;
             lastReason = reason;
+            if (currentOutcome == GameOutcome.Victory)
+            {
+                BTAudioService.PlayMusicOnce(BTAudioCueId.BgmVictory);
+            }
+            else if (currentOutcome == GameOutcome.Defeat)
+            {
+                BTAudioService.PlayMusicOnce(BTAudioCueId.BgmDefeat);
+            }
+
+            if (ShouldShowOutcomePopup(currentOutcome))
+            {
+                BTOutcomePopupService.ShowOutcome(currentOutcome);
+            }
+
             Log("Outcome set to " + currentOutcome + ".");
             OutcomeChanged?.Invoke(currentOutcome, lastReason);
             return true;
+        }
+
+        private bool ShouldShowOutcomePopup(GameOutcome outcome)
+        {
+            if (outcome == GameOutcome.Victory)
+            {
+                return showVictoryPopup;
+            }
+
+            if (outcome == GameOutcome.Defeat)
+            {
+                return showDefeatPopup;
+            }
+
+            return false;
         }
 
         private void Log(string message)

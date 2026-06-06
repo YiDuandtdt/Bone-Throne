@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using BoneThrone.Combat;
 using BoneThrone.Grid;
+using BoneThrone.Levels;
 using BoneThrone.Movement;
 using BoneThrone.Turns;
 using BoneThrone.UI;
@@ -29,8 +30,10 @@ namespace BoneThrone.AI
         [SerializeField] private TurnTransitionPopupView turnTransitionPopupView;
         [SerializeField] private TurnPacingSettings turnPacingSettings;
         [SerializeField] private float enemyActionDelay = 0.4f;
+        [SerializeField] [Min(0f)] private float enemyAttackRecoveryDelay = 1.05f;
 
         private readonly EnemyAIController enemyAIController = new EnemyAIController();
+        private readonly BossEnemyAIController bossEnemyAIController = new BossEnemyAIController();
         private readonly List<Unit> activeEnemies = new List<Unit>();
         private readonly List<Unit> activePlayers = new List<Unit>();
         private Coroutine runningRoutine;
@@ -122,6 +125,23 @@ namespace BoneThrone.AI
                         continue;
                     }
 
+                    if (BossEnemyAIController.IsBossLikeUnit(enemy))
+                    {
+                        yield return bossEnemyAIController.RunActionRoutine(
+                            enemy,
+                            activePlayers,
+                            gridManager,
+                            pathfinder,
+                            unitMover,
+                            damageResolver,
+                            combatLog,
+                            actionPermissionService,
+                            turnManager);
+
+                        yield return WaitForEnemyActionDelay();
+                        continue;
+                    }
+
                     EnemyAIResult result = enemyAIController.TryRunAction(
                         enemy,
                         activePlayers,
@@ -134,7 +154,9 @@ namespace BoneThrone.AI
                         turnManager);
 
                     LogResult(result);
-                    yield return WaitForEnemyActionDelay();
+                    yield return result.ActionType == EnemyAIActionType.Attack
+                        ? WaitForEnemyAttackRecoveryDelay()
+                        : WaitForEnemyActionDelay();
                 }
 
                 yield return WaitForDelay(GetAfterEnemyRoundDelay());
@@ -153,11 +175,13 @@ namespace BoneThrone.AI
             if (activeUnitProvider != null)
             {
                 activeUnitProvider.FillActiveAliveEnemies(activeEnemies);
+                RemoveBossEnemiesBeforeBossFight();
             }
 
             if (activeEnemies.Count == 0)
             {
                 FillFromFallback(enemyUnits, UnitFaction.Enemy, activeEnemies);
+                RemoveBossEnemiesBeforeBossFight();
             }
         }
 
@@ -213,6 +237,38 @@ namespace BoneThrone.AI
         private void SortActiveEnemies()
         {
             activeEnemies.Sort(CompareEnemiesForTurnOrder);
+        }
+
+        private void RemoveBossEnemiesBeforeBossFight()
+        {
+            bool hasBossCandidate = false;
+            for (int i = 0; i < activeEnemies.Count; i++)
+            {
+                if (BossEnemyAIController.IsBossLikeUnit(activeEnemies[i]))
+                {
+                    hasBossCandidate = true;
+                    break;
+                }
+            }
+
+            if (!hasBossCandidate || IsBossFightStarted())
+            {
+                return;
+            }
+
+            for (int i = activeEnemies.Count - 1; i >= 0; i--)
+            {
+                if (BossEnemyAIController.IsBossLikeUnit(activeEnemies[i]))
+                {
+                    activeEnemies.RemoveAt(i);
+                }
+            }
+        }
+
+        private static bool IsBossFightStarted()
+        {
+            BossGateProgressionState progressionState = BossGateProgressionState.GetOrCreateSceneState();
+            return progressionState != null && progressionState.ShouldExposeBossFightRuntime();
         }
 
         private static int CompareEnemiesForTurnOrder(Unit a, Unit b)
@@ -364,6 +420,11 @@ namespace BoneThrone.AI
         private WaitForSeconds WaitForEnemyActionDelay()
         {
             return new WaitForSeconds(Mathf.Max(0f, GetEnemyActionInterval()));
+        }
+
+        private WaitForSeconds WaitForEnemyAttackRecoveryDelay()
+        {
+            return new WaitForSeconds(Mathf.Max(GetEnemyActionInterval(), enemyAttackRecoveryDelay));
         }
 
         private IEnumerator PlayEnemyTurnIntro()

@@ -1,3 +1,4 @@
+using BoneThrone.Audio;
 using BoneThrone.Combat;
 using BoneThrone.Turns;
 using BoneThrone.Units;
@@ -103,12 +104,14 @@ namespace BoneThrone.Items
             UnitAnimationController animationController = unit.GetComponent<UnitAnimationController>();
             LogAnimationDebug(unit, animationController, "PlayUsePotion");
             animationController?.PlayUsePotion();
+            BTAudioService.PlaySfx(BTAudioCueId.MagicOne);
 
             if (combatLog != null)
             {
                 combatLog.LogPotionUsed(unit, actualHeal, unit.RuntimeState.CurrentHp, maxHp, potionState.CurrentPotionCount);
             }
 
+            turnManager.TryAutoEndPlayerUnitTurnIfNoAvailableActions(unit);
             Debug.Log("PotionSystem: unit " + unit.UnitId + " healed " + actualHeal + " HP.", unit);
             return true;
         }
@@ -142,6 +145,7 @@ namespace BoneThrone.Items
 
         private void LogRejected(string reason, Object context)
         {
+            BTAudioService.PlaySfx(BTAudioCueId.InvalidAction);
             if (combatLog != null)
             {
                 combatLog.LogPotionRejected(reason, context);

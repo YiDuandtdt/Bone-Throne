@@ -1,3 +1,4 @@
+using BoneThrone.Audio;
 using BoneThrone.Items;
 using BoneThrone.Skills;
 using BoneThrone.Turns;
@@ -321,41 +322,49 @@ namespace BoneThrone.UI
 
         private void HandleMoveClicked()
         {
+            BTAudioService.PlaySfx(BTAudioCueId.ButtonClick);
             MoveClicked?.Invoke();
         }
 
         private void HandleBasicAttackClicked()
         {
+            BTAudioService.PlaySfx(BTAudioCueId.ButtonClick);
             BasicAttackClicked?.Invoke();
         }
 
         private void HandleSkillSlot0Clicked()
         {
+            BTAudioService.PlaySfx(BTAudioCueId.ButtonClick);
             SkillSlot0Clicked?.Invoke();
         }
 
         private void HandleSkillSlot1Clicked()
         {
+            BTAudioService.PlaySfx(BTAudioCueId.ButtonClick);
             SkillSlot1Clicked?.Invoke();
         }
 
         private void HandleSkillSlot2Clicked()
         {
+            BTAudioService.PlaySfx(BTAudioCueId.ButtonClick);
             SkillSlot2Clicked?.Invoke();
         }
 
         private void HandleDefendClicked()
         {
+            BTAudioService.PlaySfx(BTAudioCueId.ButtonClick);
             DefendClicked?.Invoke();
         }
 
         private void HandlePotionClicked()
         {
+            BTAudioService.PlaySfx(BTAudioCueId.ButtonClick);
             PotionClicked?.Invoke();
         }
 
         private void HandleEndTurnClicked()
         {
+            BTAudioService.PlaySfx(BTAudioCueId.ButtonClick);
             EndTurnClicked?.Invoke();
         }
 

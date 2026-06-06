@@ -20,9 +20,12 @@ namespace BoneThrone.Turns
         [SerializeField] private DamageResolver damageResolver;
         [SerializeField] private CombatLog combatLog;
         [SerializeField] private Unit[] playerUnits;
+        [SerializeField] private bool autoEndPlayerUnitsWithNoAvailableActions = true;
         [SerializeField] private TurnPhase currentPhase = TurnPhase.None;
         [SerializeField] private RoleId currentRole = RoleId.None;
         [SerializeField] private int currentTurnIndex = -1;
+
+        public event System.Action EnemyTurnStarted;
 
         public TurnPhase CurrentPhase
         {
@@ -63,6 +66,7 @@ namespace BoneThrone.Turns
             currentRole = RoleId.None;
             currentTurnIndex = -1;
             Debug.Log("Player round started. Select any alive player unit that has not ended.", this);
+            AutoEndUnavailablePlayersForCurrentRound();
         }
 
         public void AdvanceTurn()
@@ -140,6 +144,7 @@ namespace BoneThrone.Turns
             }
 
             Debug.Log("Enemy turn started.", this);
+            EnemyTurnStarted?.Invoke();
             enemyTurnRunner.RunEnemyTurn(this);
         }
 
@@ -228,6 +233,54 @@ namespace BoneThrone.Turns
             currentRole = RoleId.None;
             currentTurnIndex = -1;
             Debug.Log("Player unit " + unit.UnitId + " ended its turn.", unit);
+
+            if (AreAllAlivePlayersEnded())
+            {
+                BeginEnemyTurn();
+            }
+            else
+            {
+                currentPhase = TurnPhase.PlayerTurn;
+            }
+
+            return true;
+        }
+
+        public bool TryAutoEndPlayerUnitTurnIfNoAvailableActions(Unit unit)
+        {
+            if (!autoEndPlayerUnitsWithNoAvailableActions)
+            {
+                return false;
+            }
+
+            if (currentPhase != TurnPhase.PlayerTurn || unit == null || unit.Faction != UnitFaction.Player || !unit.IsAlive)
+            {
+                return false;
+            }
+
+            UnitTurnState turnState = unit.GetComponent<UnitTurnState>();
+            if (turnState == null || turnState.HasEnded)
+            {
+                return false;
+            }
+
+            ConsumeStunIfItBlocksTheWholeTurn(unit);
+            if (turnState.HasEnded)
+            {
+                return true;
+            }
+
+            bool hasMoveOpportunity = HasMoveOpportunity(unit, turnState);
+            bool hasActionOpportunity = HasActionOpportunity(unit, turnState);
+            if (hasMoveOpportunity || hasActionOpportunity)
+            {
+                return false;
+            }
+
+            turnState.MarkEnded();
+            currentRole = RoleId.None;
+            currentTurnIndex = -1;
+            Debug.Log("TurnManager auto-ended player unit " + unit.UnitId + " because it has no move or action opportunity left.", unit);
 
             if (AreAllAlivePlayersEnded())
             {
@@ -426,6 +479,66 @@ namespace BoneThrone.Turns
             }
 
             return false;
+        }
+
+        private void AutoEndUnavailablePlayersForCurrentRound()
+        {
+            if (!autoEndPlayerUnitsWithNoAvailableActions || playerUnits == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < playerUnits.Length; i++)
+            {
+                if (currentPhase != TurnPhase.PlayerTurn)
+                {
+                    return;
+                }
+
+                TryAutoEndPlayerUnitTurnIfNoAvailableActions(playerUnits[i]);
+            }
+        }
+
+        private void ConsumeStunIfItBlocksTheWholeTurn(Unit unit)
+        {
+            UnitTurnState turnState = unit != null ? unit.GetComponent<UnitTurnState>() : null;
+            UnitStunState stunState = unit != null ? unit.GetComponent<UnitStunState>() : null;
+            if (turnState == null || stunState == null || !stunState.IsStunned)
+            {
+                return;
+            }
+
+            if (turnState.HasMoved || turnState.HasActed)
+            {
+                return;
+            }
+
+            if (actionPermissionService != null)
+            {
+                actionPermissionService.TryConsumeStunForAction(unit, this);
+            }
+        }
+
+        private static bool HasMoveOpportunity(Unit unit, UnitTurnState turnState)
+        {
+            if (unit == null || turnState == null || turnState.HasMoved)
+            {
+                return false;
+            }
+
+            UnitStunState stunState = unit.GetComponent<UnitStunState>();
+            return stunState == null || !stunState.IsStunned;
+        }
+
+        private static bool HasActionOpportunity(Unit unit, UnitTurnState turnState)
+        {
+            if (unit == null || turnState == null || turnState.HasActed)
+            {
+                return false;
+            }
+
+            UnitStunState stunState = unit.GetComponent<UnitStunState>();
+            return stunState == null || !stunState.IsStunned;
         }
 
         private void ResolveReferences()

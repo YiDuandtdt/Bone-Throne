@@ -1,3 +1,4 @@
+using BoneThrone.Audio;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -70,6 +71,7 @@ namespace BoneThrone.UI
 
         private void HandleReturnToMenuClicked()
         {
+            BTAudioService.PlaySfx(BTAudioCueId.ButtonClick);
             if (!Application.CanStreamedLevelBeLoaded(startMenuSceneName))
             {
                 Debug.LogWarning("EndMenuController cannot load scene '" + startMenuSceneName + "' because it is not in Build Settings.", this);
@@ -82,6 +84,7 @@ namespace BoneThrone.UI
 
         private void HandleQuitClicked()
         {
+            BTAudioService.PlaySfx(BTAudioCueId.ButtonClick);
             Log("Quit requested.");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;

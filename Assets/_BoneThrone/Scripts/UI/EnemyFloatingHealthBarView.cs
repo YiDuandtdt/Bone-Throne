@@ -9,6 +9,8 @@ namespace BoneThrone.UI
     /// </summary>
     public sealed class EnemyFloatingHealthBarView : MonoBehaviour
     {
+        private static readonly Color HealthFillColor = new Color(0.9f, 0.03f, 0.02f, 1f);
+
         [SerializeField] private Unit unit;
         [SerializeField] private Camera targetCamera;
         [SerializeField] private Canvas worldCanvas;
@@ -131,6 +133,7 @@ namespace BoneThrone.UI
 
             if (fillImage != null)
             {
+                fillImage.color = HealthFillColor;
                 fillImage.raycastTarget = false;
                 fillImage.type = Image.Type.Simple;
             }

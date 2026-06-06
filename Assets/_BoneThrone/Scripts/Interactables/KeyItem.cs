@@ -1,3 +1,4 @@
+using BoneThrone.Audio;
 using BoneThrone.Levels;
 using BoneThrone.Movement;
 using BoneThrone.Units;
@@ -85,6 +86,8 @@ namespace BoneThrone.Interactables
 
             collected = true;
             progressionService.CollectSharedKey(this);
+            BTAudioService.PlaySfx(BTAudioCueId.KeyPickup);
+            BTInteractionVfxService.PlayKeyPickup(transform.position);
 
             if (consumeOnCollect)
             {

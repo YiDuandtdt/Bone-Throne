@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using BoneThrone.Audio;
 using BoneThrone.Grid;
 using BoneThrone.Units;
 using UnityEngine;
@@ -15,12 +16,23 @@ namespace BoneThrone.Movement
 
         [SerializeField] private Vector3 worldPositionOffset = Vector3.zero;
         [SerializeField] private float moveSpeed = 4f;
+        [SerializeField] [Range(0.1f, 1f)] private float bossMoveSpeedMultiplier = 0.42f;
         [SerializeField] private float turnDuration = 0.12f;
 
         private readonly Dictionary<Unit, Coroutine> activeMoveRoutines = new Dictionary<Unit, Coroutine>();
 
+        public event System.Action<Unit> MoveVisualCompleted;
+
         private void OnDisable()
         {
+            foreach (KeyValuePair<Unit, Coroutine> pair in activeMoveRoutines)
+            {
+                if (pair.Key != null)
+                {
+                    BTAudioService.StopLoop(pair.Key);
+                }
+            }
+
             StopAllCoroutines();
             activeMoveRoutines.Clear();
         }
@@ -128,6 +140,9 @@ namespace BoneThrone.Movement
 
             LogAnimationDebug(unit, animationController, "SetMoveSpeed(1)");
             animationController?.SetMoveSpeed(1f);
+            Object audioOwner = unit;
+            BTAudioService.PlayLoop(BTAudioService.GetFootstepCue(unit), audioOwner);
+            float resolvedMoveSpeed = GetMoveSpeed(unit);
 
             if (visualPath == null || visualPath.Count == 0)
             {
@@ -138,18 +153,23 @@ namespace BoneThrone.Movement
             {
                 Vector3 segmentTarget = visualPath[i];
                 yield return RotateTowardSegment(unit, segmentTarget);
-                yield return MoveSegment(unit, segmentTarget);
+                yield return MoveSegment(unit, segmentTarget, resolvedMoveSpeed);
             }
 
-            unit.transform.position = finalPosition;
-            animationController?.SetMoveSpeed(0f);
-            Unit nearestOpponent = FindNearestAliveOpponent(unit);
-            if (nearestOpponent != null)
+            if (unit != null)
             {
-                yield return RotateTowardSegment(unit, nearestOpponent.transform.position);
+                unit.transform.position = finalPosition;
+                animationController?.SetMoveSpeed(0f);
+                Unit nearestOpponent = FindNearestAliveOpponent(unit);
+                if (nearestOpponent != null)
+                {
+                    yield return RotateTowardSegment(unit, nearestOpponent.transform.position);
+                }
             }
 
+            BTAudioService.StopLoop(audioOwner);
             activeMoveRoutines.Remove(unit);
+            MoveVisualCompleted?.Invoke(unit);
         }
 
         private IEnumerator RotateTowardSegment(Unit unit, Vector3 segmentTarget)
@@ -192,14 +212,14 @@ namespace BoneThrone.Movement
             unit.transform.rotation = targetRotation;
         }
 
-        private IEnumerator MoveSegment(Unit unit, Vector3 segmentTarget)
+        private IEnumerator MoveSegment(Unit unit, Vector3 segmentTarget, float resolvedMoveSpeed)
         {
             if (unit == null)
             {
                 yield break;
             }
 
-            float speed = Mathf.Max(0.01f, moveSpeed);
+            float speed = Mathf.Max(0.01f, resolvedMoveSpeed);
             while (unit != null && Vector3.Distance(unit.transform.position, segmentTarget) > 0.01f)
             {
                 unit.transform.position = Vector3.MoveTowards(unit.transform.position, segmentTarget, speed * Time.deltaTime);
@@ -210,6 +230,34 @@ namespace BoneThrone.Movement
             {
                 unit.transform.position = segmentTarget;
             }
+        }
+
+        private float GetMoveSpeed(Unit unit)
+        {
+            float speed = Mathf.Max(0.01f, moveSpeed);
+            if (IsBossLikeUnit(unit))
+            {
+                return speed * Mathf.Clamp(bossMoveSpeedMultiplier, 0.1f, 1f);
+            }
+
+            return speed;
+        }
+
+        private static bool IsBossLikeUnit(Unit unit)
+        {
+            if (unit == null)
+            {
+                return false;
+            }
+
+            string objectName = unit.name != null ? unit.name.ToLowerInvariant() : string.Empty;
+            string displayName = unit.DisplayName != null ? unit.DisplayName.ToLowerInvariant() : string.Empty;
+            return objectName.Contains("boss")
+                || objectName.Contains("golem")
+                || objectName.Contains("large")
+                || displayName.Contains("boss")
+                || displayName.Contains("golem")
+                || displayName.Contains("large");
         }
 
         private Vector3 GetCardinalDirection(Vector3 worldDelta)

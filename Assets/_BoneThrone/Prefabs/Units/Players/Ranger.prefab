@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 110004}
   - component: {fileID: 110005}
   - component: {fileID: 110006}
+  - component: {fileID: 730000210502338}
   - component: {fileID: 730000210502337}
   m_Layer: 0
   m_Name: Ranger
@@ -149,6 +150,45 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -6556381072186657201, guid: bcbe34929ca3a8c4ea71ebd20a5e21fd, type: 3}
+--- !u!114 &730000210502338
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 110000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e31d1db6c2ac49c9af93c6588d44c88f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Units.RangerHitPresentationConfig
+  allowAnyUnitWithThisComponent: 0
+  basicAttackArrowPrefab: {fileID: 919132149155446097, guid: 219d8dcf69184d4cb988f4e3b94cfe97, type: 3}
+  skillArrowPrefab: {fileID: 919132149155446097, guid: 219d8dcf69184d4cb988f4e3b94cfe97, type: 3}
+  arrowStartDistanceFromTarget: 0.7281883
+  arrowFlightDuration: 0.12
+  arrowRotationOffsetEuler: {x: 0, y: 0, z: 0}
+  arrowWorldScale: {x: 1.211101, y: 1.2111008, z: 1.211101}
+  embeddedArrowLocalOffset: {x: 0, y: 1.05, z: 0}
+  embeddedArrowLifetimeEnemyTurns: 2
+  fallbackArrowLifetimeSeconds: 5
+  precisionShotEffectPrefab: {fileID: 102696, guid: 3b1acf9a9d804951a992804803b23218, type: 3}
+  precisionShotLocalOffset: {x: -9.313226e-10, y: 0.72, z: -0.009999991}
+  precisionShotLocalEulerAngles: {x: 0, y: 0, z: 0}
+  precisionShotLocalScale: {x: 2.26251, y: 2.0362585, z: 2.036259}
+  precisionShotTint: {r: 0.95, g: 0.28, b: 0.06, a: 1}
+  quickShotEffectPrefab: {fileID: 115120, guid: 58b60a35896b4a859020336d5729d867, type: 3}
+  quickShotLocalOffset: {x: 0.09700003, y: 1.05, z: 0.10399997}
+  quickShotLocalEulerAngles: {x: 0, y: 0, z: 0}
+  quickShotLocalScale: {x: 1.0000002, y: 1, z: 1.0000002}
+  quickShotTint: {r: 0.85, g: 0.08, b: 0.95, a: 1}
+  piercingArrowEffectPrefab: {fileID: 180954, guid: 500a14e86aa54dd0ad3a7e63b8c3fea8, type: 3}
+  piercingArrowLocalOffset: {x: 0.28000006, y: 1.05, z: 0.20000005}
+  piercingArrowLocalEulerAngles: {x: 0, y: 0, z: 0}
+  piercingArrowLocalScale: {x: 1.0000002, y: 1, z: 1.0000002}
+  piercingArrowTint: {r: 0.05, g: 0.42, b: 1, a: 1}
+  defaultSkillEffectLifetimeSeconds: 2.5
+  skillEffectEmissionMultiplier: 1.8
 --- !u!114 &730000210502337
 MonoBehaviour:
   m_ObjectHideFlags: 0

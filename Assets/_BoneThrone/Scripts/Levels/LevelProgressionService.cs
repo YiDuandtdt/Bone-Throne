@@ -1,3 +1,4 @@
+using BoneThrone.Audio;
 using BoneThrone.Rooms;
 using BoneThrone.Units;
 using UnityEngine;
@@ -165,7 +166,13 @@ namespace BoneThrone.Levels
                 }
 
                 leveledCount++;
+                BTInteractionVfxService.PlayLevelUp(unit.transform.position);
                 Debug.Log("Unit " + unit.UnitId + " leveled up to " + unit.Stats.Level + " and HP was refilled.", unit);
+            }
+
+            if (leveledCount > 0)
+            {
+                BTAudioService.PlaySfx(BTAudioCueId.LevelUp);
             }
 
             Debug.Log("LevelProgressionService leveled up " + leveledCount + " living player units.", this);

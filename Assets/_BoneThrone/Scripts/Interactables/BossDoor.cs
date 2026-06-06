@@ -1,4 +1,7 @@
+using BoneThrone.Audio;
+using BoneThrone.Grid;
 using BoneThrone.Levels;
+using BoneThrone.Units;
 using UnityEngine;
 
 namespace BoneThrone.Interactables
@@ -13,9 +16,23 @@ namespace BoneThrone.Interactables
         [SerializeField] private GameObject lockedVisual;
         [SerializeField] private GameObject openedVisual;
         [SerializeField] private bool opened;
+        [Header("Visual Fallback")]
+        [SerializeField] private bool hideFallbackClosedVisualWhenOpened = true;
+        [SerializeField] private GameObject fallbackClosedVisual;
+        [Header("Grid Blocking")]
+        [SerializeField] private bool autoDetectBlockedTiles = true;
+        [SerializeField] [Min(0.1f)] private float blockedTileDetectionRadius = 1.25f;
+        [SerializeField] private Tile[] blockedTiles;
+        [Header("Auto Open")]
+        [SerializeField] private bool autoOpenWhenPlayerWithKeyNearby = true;
+        [SerializeField] [Min(0.1f)] private float autoOpenRadius = 3.25f;
+        [SerializeField] [Min(0.05f)] private float autoOpenCheckInterval = 0.2f;
         [SerializeField] private bool debugLogging;
 
         private bool missingProgressionWarningLogged;
+        private Tile[] runtimeBlockedTiles;
+        private bool[] runtimeBlockedTileInitialWalkable;
+        private float nextAutoOpenCheckTime;
 
         public bool IsOpened
         {
@@ -24,7 +41,20 @@ namespace BoneThrone.Interactables
 
         private void Awake()
         {
+            ResolveFallbackClosedVisual();
+            ResolveBlockedTiles();
             SetOpenedVisual(opened);
+        }
+
+        private void Update()
+        {
+            if (opened)
+            {
+                return;
+            }
+
+            SetBlockedTilesWalkable(false);
+            TryAutoOpenForNearbyPlayer();
         }
 
         private void OnMouseDown()
@@ -41,7 +71,7 @@ namespace BoneThrone.Interactables
                 return false;
             }
 
-            return progressionState.HasBossKey;
+            return progressionState.CanOpenBossDoor();
         }
 
         public bool TryOpen()
@@ -55,6 +85,7 @@ namespace BoneThrone.Interactables
             if (!CanOpen())
             {
                 Log("Open rejected because boss key requirements are not met.");
+                BTAudioService.PlaySfx(BTAudioCueId.InvalidAction);
                 return false;
             }
 
@@ -65,6 +96,7 @@ namespace BoneThrone.Interactables
 
             opened = true;
             SetOpenedVisual(true);
+            BTAudioService.PlaySfx(BTAudioCueId.KeyPickup);
             Log("Boss door opened.");
             return true;
         }
@@ -76,6 +108,8 @@ namespace BoneThrone.Interactables
                 doorBlocker.enabled = !isOpened;
             }
 
+            SetBlockedTilesWalkable(isOpened);
+
             if (lockedVisual != null)
             {
                 lockedVisual.SetActive(!isOpened);
@@ -85,14 +119,228 @@ namespace BoneThrone.Interactables
             {
                 openedVisual.SetActive(isOpened);
             }
+
+            if (lockedVisual == null
+                && openedVisual == null
+                && hideFallbackClosedVisualWhenOpened
+                && ResolveFallbackClosedVisual() != null)
+            {
+                fallbackClosedVisual.SetActive(!isOpened);
+            }
+        }
+
+        private void ResolveBlockedTiles()
+        {
+            if (HasAnyTile(blockedTiles))
+            {
+                runtimeBlockedTiles = blockedTiles;
+                CacheRuntimeBlockedTileInitialWalkable();
+                return;
+            }
+
+            if (!autoDetectBlockedTiles)
+            {
+                runtimeBlockedTiles = null;
+                runtimeBlockedTileInitialWalkable = null;
+                return;
+            }
+
+            Tile[] allTiles = Object.FindObjectsByType<Tile>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            if (allTiles == null || allTiles.Length == 0)
+            {
+                runtimeBlockedTiles = null;
+                runtimeBlockedTileInitialWalkable = null;
+                return;
+            }
+
+            int count = 0;
+            float radiusSqr = blockedTileDetectionRadius * blockedTileDetectionRadius;
+            Vector3 doorPosition = transform.position;
+            for (int i = 0; i < allTiles.Length; i++)
+            {
+                Tile tile = allTiles[i];
+                if (tile == null)
+                {
+                    continue;
+                }
+
+                Vector3 delta = tile.transform.position - doorPosition;
+                delta.y = 0f;
+                if (delta.sqrMagnitude <= radiusSqr)
+                {
+                    count++;
+                }
+            }
+
+            if (count == 0)
+            {
+                runtimeBlockedTiles = null;
+                runtimeBlockedTileInitialWalkable = null;
+                return;
+            }
+
+            runtimeBlockedTiles = new Tile[count];
+            int writeIndex = 0;
+            for (int i = 0; i < allTiles.Length; i++)
+            {
+                Tile tile = allTiles[i];
+                if (tile == null)
+                {
+                    continue;
+                }
+
+                Vector3 delta = tile.transform.position - doorPosition;
+                delta.y = 0f;
+                if (delta.sqrMagnitude <= radiusSqr)
+                {
+                    runtimeBlockedTiles[writeIndex] = tile;
+                    writeIndex++;
+                }
+            }
+
+            CacheRuntimeBlockedTileInitialWalkable();
+        }
+
+        private void SetBlockedTilesWalkable(bool walkable)
+        {
+            Tile[] tiles = runtimeBlockedTiles;
+            if (tiles == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < tiles.Length; i++)
+            {
+                Tile tile = tiles[i];
+                if (tile != null)
+                {
+                    tile.SetWalkable(walkable ? GetInitialWalkableState(i) : false);
+                }
+            }
+        }
+
+        private void CacheRuntimeBlockedTileInitialWalkable()
+        {
+            if (runtimeBlockedTiles == null)
+            {
+                runtimeBlockedTileInitialWalkable = null;
+                return;
+            }
+
+            runtimeBlockedTileInitialWalkable = new bool[runtimeBlockedTiles.Length];
+            for (int i = 0; i < runtimeBlockedTiles.Length; i++)
+            {
+                Tile tile = runtimeBlockedTiles[i];
+                runtimeBlockedTileInitialWalkable[i] = tile != null && tile.IsWalkable;
+            }
+        }
+
+        private bool GetInitialWalkableState(int index)
+        {
+            if (runtimeBlockedTileInitialWalkable == null
+                || index < 0
+                || index >= runtimeBlockedTileInitialWalkable.Length)
+            {
+                return true;
+            }
+
+            return runtimeBlockedTileInitialWalkable[index];
         }
 
         private void ResolveProgressionState()
         {
             if (progressionState == null)
             {
-                progressionState = Object.FindFirstObjectByType<BossGateProgressionState>();
+                progressionState = BossGateProgressionState.GetOrCreateSceneState();
             }
+        }
+
+        private GameObject ResolveFallbackClosedVisual()
+        {
+            if (fallbackClosedVisual != null)
+            {
+                return fallbackClosedVisual;
+            }
+
+            Transform visualChild = transform.Find("Visual");
+            if (visualChild != null)
+            {
+                fallbackClosedVisual = visualChild.gameObject;
+                return fallbackClosedVisual;
+            }
+
+            if (transform.childCount == 1)
+            {
+                fallbackClosedVisual = transform.GetChild(0).gameObject;
+            }
+
+            return fallbackClosedVisual;
+        }
+
+        private void TryAutoOpenForNearbyPlayer()
+        {
+            if (!autoOpenWhenPlayerWithKeyNearby || Time.time < nextAutoOpenCheckTime)
+            {
+                return;
+            }
+
+            nextAutoOpenCheckTime = Time.time + Mathf.Max(0.05f, autoOpenCheckInterval);
+            ResolveProgressionState();
+            if (progressionState == null || !progressionState.CanOpenBossDoor())
+            {
+                return;
+            }
+
+            Unit nearbyPlayer = FindNearbyLivingPlayer();
+            if (nearbyPlayer != null)
+            {
+                TryOpen();
+            }
+        }
+
+        private Unit FindNearbyLivingPlayer()
+        {
+            Unit[] units = Object.FindObjectsByType<Unit>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            float radiusSqr = autoOpenRadius * autoOpenRadius;
+            Vector3 doorPosition = transform.position;
+            for (int i = 0; i < units.Length; i++)
+            {
+                Unit unit = units[i];
+                if (unit == null
+                    || !unit.gameObject.activeInHierarchy
+                    || unit.Faction != UnitFaction.Player
+                    || !unit.IsAlive)
+                {
+                    continue;
+                }
+
+                Vector3 delta = unit.transform.position - doorPosition;
+                delta.y = 0f;
+                if (delta.sqrMagnitude <= radiusSqr)
+                {
+                    return unit;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool HasAnyTile(Tile[] tiles)
+        {
+            if (tiles == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < tiles.Length; i++)
+            {
+                if (tiles[i] != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void LogMissingProgressionWarning()

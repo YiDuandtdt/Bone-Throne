@@ -333,16 +333,16 @@ namespace BoneThrone.UI
 
         private void HandleTargetClick()
         {
-            Unit clickedUnit = RaycastUnitUnderCursor();
-            if (IsCurrentSelectedUnit(clickedUnit))
-            {
-                ClearSelectionAndExitModes();
-                return;
-            }
-
             if (currentMode == ActionMode.MoveTargeting)
             {
                 HandleMoveTargetClick(RaycastTileUnderCursor());
+                return;
+            }
+
+            Unit clickedUnit = RaycastTargetUnitUnderCursor();
+            if (IsCurrentSelectedUnit(clickedUnit))
+            {
+                ClearSelectionAndExitModes();
                 return;
             }
 
@@ -465,6 +465,7 @@ namespace BoneThrone.UI
                 return;
             }
 
+            List<Tile> rangeTiles = BuildManhattanRangeTiles(attacker, GetBasicAttackRange(attacker));
             List<Tile> targetTiles = new List<Tile>();
             for (int i = 0; i < enemies.Length; i++)
             {
@@ -480,7 +481,7 @@ namespace BoneThrone.UI
                 }
             }
 
-            highlighter.ShowAttackTargets(targetTiles);
+            highlighter.ShowAttackRangeAndTargets(rangeTiles, targetTiles);
         }
 
         private void ShowSkillTargets(int slotIndex)
@@ -498,6 +499,7 @@ namespace BoneThrone.UI
                 return;
             }
 
+            List<Tile> rangeTiles = BuildManhattanRangeTiles(caster, GetSkillRange(caster, slotIndex));
             List<Tile> targetTiles = new List<Tile>();
             for (int i = 0; i < enemies.Length; i++)
             {
@@ -513,7 +515,50 @@ namespace BoneThrone.UI
                 }
             }
 
-            highlighter.ShowSkillTargets(targetTiles);
+            highlighter.ShowSkillRangeAndTargets(rangeTiles, targetTiles);
+        }
+
+        private List<Tile> BuildManhattanRangeTiles(Unit originUnit, int range)
+        {
+            List<Tile> rangeTiles = new List<Tile>();
+            if (gridManager == null || originUnit == null || originUnit.CurrentTile == null)
+            {
+                return rangeTiles;
+            }
+
+            int clampedRange = Mathf.Max(0, range);
+            List<Tile> registeredTiles = new List<Tile>();
+            gridManager.FillRegisteredTiles(registeredTiles);
+            GridPosition origin = originUnit.CurrentTile.Position;
+            for (int i = 0; i < registeredTiles.Count; i++)
+            {
+                Tile tile = registeredTiles[i];
+                if (tile == null || tile == originUnit.CurrentTile)
+                {
+                    continue;
+                }
+
+                GridPosition position = tile.Position;
+                int distance = Mathf.Abs(position.X - origin.X) + Mathf.Abs(position.Y - origin.Y);
+                if (distance <= clampedRange)
+                {
+                    rangeTiles.Add(tile);
+                }
+            }
+
+            return rangeTiles;
+        }
+
+        private static int GetBasicAttackRange(Unit attacker)
+        {
+            return attacker != null && attacker.Stats != null ? attacker.Stats.BasicAttackRange : 1;
+        }
+
+        private static int GetSkillRange(Unit caster, int slotIndex)
+        {
+            SkillRuntime runtime = caster != null ? caster.GetComponent<SkillRuntime>() : null;
+            SkillData skill = runtime != null ? runtime.GetSkill(slotIndex) : null;
+            return skill != null ? skill.Range : 0;
         }
 
         private Unit[] GetEnemyTargetsForPreview()
@@ -569,13 +614,30 @@ namespace BoneThrone.UI
             }
 
             Ray ray = cameraToUse.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hit;
-            if (!Physics.Raycast(ray, out hit, maxRayDistance, targetLayerMask, QueryTriggerInteraction.Ignore))
+            RaycastHit[] hits = Physics.RaycastAll(ray, maxRayDistance, targetLayerMask, QueryTriggerInteraction.Ignore);
+            SortHitsByDistance(hits);
+            for (int i = 0; i < hits.Length; i++)
             {
-                return null;
+                Unit unit = hits[i].collider != null ? hits[i].collider.GetComponentInParent<Unit>() : null;
+                if (unit != null)
+                {
+                    return unit;
+                }
             }
 
-            return hit.collider.GetComponentInParent<Unit>();
+            return null;
+        }
+
+        private Unit RaycastTargetUnitUnderCursor()
+        {
+            Tile tile = RaycastTileUnderCursor();
+            Unit unitOnTile = FindUnitOnTile(tile);
+            if (unitOnTile != null)
+            {
+                return unitOnTile;
+            }
+
+            return RaycastUnitUnderCursor();
         }
 
         private Tile RaycastTileUnderCursor()
@@ -588,13 +650,71 @@ namespace BoneThrone.UI
             }
 
             Ray ray = cameraToUse.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hit;
-            if (!Physics.Raycast(ray, out hit, maxRayDistance, targetLayerMask, QueryTriggerInteraction.Ignore))
+            RaycastHit[] hits = Physics.RaycastAll(ray, maxRayDistance, targetLayerMask, QueryTriggerInteraction.Ignore);
+            SortHitsByDistance(hits);
+            for (int i = 0; i < hits.Length; i++)
+            {
+                Tile tile = hits[i].collider != null ? hits[i].collider.GetComponentInParent<Tile>() : null;
+                if (tile != null)
+                {
+                    return tile;
+                }
+            }
+
+            return null;
+        }
+
+        private Unit FindUnitOnTile(Tile tile)
+        {
+            if (tile == null)
             {
                 return null;
             }
 
-            return hit.collider.GetComponentInParent<Tile>();
+            ActiveUnitProvider provider = ResolveActiveUnitProvider();
+            Unit[] activeUnits = provider != null ? provider.GetActiveAliveUnits() : null;
+            Unit found = FindUnitOnTile(tile, activeUnits);
+            if (found != null)
+            {
+                return found;
+            }
+
+            Unit[] units = Object.FindObjectsByType<Unit>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            return FindUnitOnTile(tile, units);
+        }
+
+        private static Unit FindUnitOnTile(Tile tile, Unit[] units)
+        {
+            if (tile == null || units == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < units.Length; i++)
+            {
+                Unit unit = units[i];
+                if (unit != null && unit.IsAlive && unit.CurrentTile == tile)
+                {
+                    return unit;
+                }
+            }
+
+            return null;
+        }
+
+        private static void SortHitsByDistance(RaycastHit[] hits)
+        {
+            if (hits == null || hits.Length < 2)
+            {
+                return;
+            }
+
+            System.Array.Sort(hits, CompareRaycastHitsByDistance);
+        }
+
+        private static int CompareRaycastHitsByDistance(RaycastHit a, RaycastHit b)
+        {
+            return a.distance.CompareTo(b.distance);
         }
 
         private void CancelTargeting()

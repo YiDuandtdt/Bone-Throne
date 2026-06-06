@@ -1,3 +1,5 @@
+using BoneThrone.Interactables;
+using BoneThrone.Levels;
 using BoneThrone.Units;
 using UnityEngine;
 
@@ -10,6 +12,8 @@ namespace BoneThrone.Rooms
     public sealed class RoomTrigger : MonoBehaviour
     {
         [SerializeField] private RoomController roomController;
+        [SerializeField] private bool requireOpenedBossDoorEntryForBossRooms = true;
+        [SerializeField] [Min(0.1f)] private float openedBossDoorEntryRadius = 4f;
 
         private void OnTriggerEnter(Collider other)
         {
@@ -46,7 +50,42 @@ namespace BoneThrone.Rooms
                 return;
             }
 
+            if (requireOpenedBossDoorEntryForBossRooms && !CanEnterThroughBossDoor(unit))
+            {
+                Debug.Log("RoomTrigger ignored boss-room entry because the unit did not enter from an opened BossDoor.", this);
+                return;
+            }
+
             roomController.EnterRoom(unit);
+        }
+
+        private bool CanEnterThroughBossDoor(Unit unit)
+        {
+            BossGateProgressionState progressionState = BossGateProgressionState.GetOrCreateSceneState();
+            if (progressionState == null || !progressionState.IsBossRoom(roomController))
+            {
+                return true;
+            }
+
+            BossDoor[] doors = Object.FindObjectsByType<BossDoor>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            float radiusSqr = openedBossDoorEntryRadius * openedBossDoorEntryRadius;
+            for (int i = 0; i < doors.Length; i++)
+            {
+                BossDoor door = doors[i];
+                if (door == null || !door.IsOpened)
+                {
+                    continue;
+                }
+
+                Vector3 delta = unit.transform.position - door.transform.position;
+                delta.y = 0f;
+                if (delta.sqrMagnitude <= radiusSqr)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

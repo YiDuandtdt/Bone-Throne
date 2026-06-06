@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 120005}
   - component: {fileID: 120006}
   - component: {fileID: 730000466353756}
+  - component: {fileID: 5025725659324339285}
   m_Layer: 0
   m_Name: Mage
   m_TagString: Untagged
@@ -167,6 +168,39 @@ MonoBehaviour:
   playStatesDirectly: 1
   directCrossFadeDuration: 0.03
   faceTurnDuration: 0.12
+--- !u!114 &5025725659324339285
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 120000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49d77a724a2a70643ae07558873c30df, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Units.MageHitPresentationConfig
+  basicAttackImpactEffectPrefab: {fileID: 193442, guid: 0c5d7b37735c40709f251b999a005b0a, type: 3}
+  basicAttackLocalOffset: {x: 0.000000014901161, y: 0.5, z: 0.13999988}
+  basicAttackLocalEulerAngles: {x: 270, y: 90, z: 0}
+  basicAttackLocalScale: {x: 2.2374, y: 2.2374005, z: 2.2374005}
+  fireballImpactEffectPrefab: {fileID: 130848, guid: 7af2f74ce3264a09aa03307cf131d450, type: 3}
+  fireballLocalOffset: {x: 0, y: 1.05, z: 0}
+  fireballLocalEulerAngles: {x: 270, y: 90, z: 0}
+  fireballLocalScale: {x: 1, y: 1.0000002, z: 1.0000002}
+  frostBoltImpactEffectPrefab: {fileID: 153912, guid: d4728024dc4c46c7a72662ba882790b2, type: 3}
+  frostBoltLocalOffset: {x: 0.000000029802322, y: 0.492, z: 0.1950002}
+  frostBoltLocalEulerAngles: {x: 270, y: 90, z: 0}
+  frostBoltLocalScale: {x: 1, y: 1.0000002, z: 1.0000002}
+  arcaneBurstImpactEffectPrefab: {fileID: 150606, guid: 782de442f2d74005ac3fba01bb26ca4c, type: 3}
+  arcaneBurstLocalOffset: {x: -0.028000005, y: 1.05, z: 0.0000000037252903}
+  arcaneBurstLocalEulerAngles: {x: 270, y: 90, z: 0}
+  arcaneBurstLocalScale: {x: 1, y: 1.0000002, z: 1.0000002}
+  arcaneBurstAreaEffectPrefab: {fileID: 0}
+  arcaneBurstAreaLocalOffset: {x: -0.028000005, y: 1.05, z: 0.0000000037252903}
+  arcaneBurstAreaLocalEulerAngles: {x: 270, y: 90, z: 0}
+  arcaneBurstAreaLocalScale: {x: 1, y: 1.0000002, z: 1.0000002}
+  defaultEffectLifetimeSeconds: 2.5
 --- !u!1001 &120009
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -1,5 +1,9 @@
+using System.Collections;
 using System.Collections.Generic;
+using BoneThrone.AI;
+using BoneThrone.Audio;
 using BoneThrone.Combat;
+using BoneThrone.Core;
 using BoneThrone.Grid;
 using BoneThrone.Interactables;
 using BoneThrone.Items;
@@ -10,6 +14,7 @@ using BoneThrone.Turns;
 using BoneThrone.Units;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace BoneThrone.UI
@@ -19,6 +24,9 @@ namespace BoneThrone.UI
     /// </summary>
     public sealed class BattleHUDController : MonoBehaviour
     {
+        private static readonly Color HealthFillColor = new Color(0.9f, 0.03f, 0.02f, 1f);
+        private const float BossHealthLookupInterval = 1f;
+
         [Header("Gameplay References")]
         [SerializeField] private TurnManager turnManager;
         [SerializeField] private SelectionManager selectionManager;
@@ -30,6 +38,8 @@ namespace BoneThrone.UI
         [SerializeField] private SkillSystem skillSystem;
         [SerializeField] private DefendSystem defendSystem;
         [SerializeField] private PotionSystem potionSystem;
+        [SerializeField] private GameOutcomeService outcomeService;
+        [SerializeField] private BattleOutcomeAutoEvaluator outcomeAutoEvaluator;
         [SerializeField] private Unit[] playerUnits = new Unit[4];
         [SerializeField] private Unit[] enemyUnits;
         [SerializeField] private ActiveUnitProvider activeUnitProvider;
@@ -50,8 +60,40 @@ namespace BoneThrone.UI
         [SerializeField] private TurnTransitionPopupView turnTransitionPopupView;
         [SerializeField] private TurnTransitionPopupView turnTransitionPopupPrefab;
 
+        [Header("Boss Health Bar")]
+        [SerializeField] private GameObject bossHealthRoot;
+        [SerializeField] private Image bossHealthFillImage;
+        [SerializeField] private RectTransform bossHealthFillRect;
+        [SerializeField] private TMP_Text bossHealthNameText;
+        [SerializeField] private TMP_Text bossHealthValueText;
+        [SerializeField] private string bossHealthNameContains = "Boss";
+        [SerializeField] private bool showBossIntentDuringPlayerTurn = true;
+        [SerializeField] private bool switchToBossBgmOnHealthIntro = true;
+        [SerializeField] private bool lockActionsDuringBossHealthIntro = true;
+        [SerializeField] [Min(0f)] private float bossHealthIntroFillDuration = 1.2f;
+
         [Header("Runtime UI")]
         [SerializeField] private bool buildRuntimeLayoutIfMissing = true;
+
+        [Header("Boss Test Demo")]
+        [SerializeField] private bool showBossTestDefeatButton = true;
+        [SerializeField] private string bossTestSceneName = "boss_test";
+        [SerializeField] [Min(0f)] private float bossTestOutcomeDelaySeconds = 1.2f;
+
+        private Unit bossHealthUnit;
+        private Unit bossHealthIntroUnit;
+        private Coroutine bossHealthIntroRoutine;
+        private bool bossHealthIntroInProgress;
+        private bool restoreMovementControllerAfterBossIntro;
+        private float nextBossHealthLookupTime;
+        private float nextBossIntentLookupTime;
+        private readonly List<Unit> activeBossLookupBuffer = new List<Unit>();
+        private readonly List<Unit> bossIntentEnemyBuffer = new List<Unit>();
+        private readonly List<Unit> bossIntentPlayerBuffer = new List<Unit>();
+        private readonly List<Unit> demoDefeatPlayerBuffer = new List<Unit>();
+        private readonly BossEnemyAIController bossEnemyAIController = new BossEnemyAIController();
+        private Button bossTestDefeatButton;
+        private Coroutine pendingBossTestDefeatRoutine;
 
         private void Awake()
         {
@@ -64,6 +106,7 @@ namespace BoneThrone.UI
                 EnsureRuntimeLayout();
             }
 
+            EnsureBossHealthBar();
             ForceVisibleRuntimeViews();
             EnsureEndTurnButton();
             EnsureTurnTransitionPopupView();
@@ -72,6 +115,8 @@ namespace BoneThrone.UI
             EnsurePotionSystem();
             EnsureActionModeController();
             ConfigureActionModeController();
+            EnsureBossTestDefeatButton();
+            EnsureBossTestOutcomeEvaluator();
         }
 
         private void OnEnable()
@@ -96,6 +141,16 @@ namespace BoneThrone.UI
             }
 
             UnsubscribeSkillBar();
+            if (bossTestDefeatButton != null)
+            {
+                bossTestDefeatButton.onClick.RemoveListener(HandleBossTestDefeatClicked);
+            }
+
+            if (pendingBossTestDefeatRoutine != null)
+            {
+                StopCoroutine(pendingBossTestDefeatRoutine);
+                pendingBossTestDefeatRoutine = null;
+            }
         }
 
         private void Update()
@@ -112,14 +167,18 @@ namespace BoneThrone.UI
             if (skillBarView != null)
             {
                 bool isPlayerTurn = turnManager != null && turnManager.CurrentPhase == TurnPhase.PlayerTurn;
-                skillBarView.Refresh(selectedUnit, isPlayerTurn);
-                skillBarView.SetEndTurnInteractable(turnManager != null && turnManager.CurrentPhase == TurnPhase.PlayerTurn);
+                bool canUseBattleActions = isPlayerTurn && (!lockActionsDuringBossHealthIntro || !bossHealthIntroInProgress);
+                skillBarView.Refresh(selectedUnit, canUseBattleActions);
+                skillBarView.SetEndTurnInteractable(canUseBattleActions);
             }
 
             if (promptView != null)
             {
                 promptView.Refresh(selectedUnit, progressionService, stairs);
             }
+
+            RefreshBossHealthBar();
+            RefreshBossIntentPreview();
         }
 
         private void SubscribeSkillBar()
@@ -370,6 +429,46 @@ namespace BoneThrone.UI
             }
         }
 
+        private void HandleBossTestDefeatClicked()
+        {
+            if (!IsBossTestScene())
+            {
+                return;
+            }
+
+            if (actionModeController != null)
+            {
+                actionModeController.CancelTargetingForExternalAction();
+            }
+
+            FillDemoDefeatPlayers();
+            for (int i = 0; i < demoDefeatPlayerBuffer.Count; i++)
+            {
+                Unit player = demoDefeatPlayerBuffer[i];
+                if (player != null && player.IsAlive)
+                {
+                    player.MarkDeadAndReleaseTile();
+                }
+            }
+
+            if (movementHighlighter != null)
+            {
+                movementHighlighter.RefreshPlayerFootTiles();
+            }
+
+            if (promptView != null)
+            {
+                promptView.ShowOverride("Demo defeat.", 1.5f);
+            }
+
+            if (pendingBossTestDefeatRoutine != null)
+            {
+                StopCoroutine(pendingBossTestDefeatRoutine);
+            }
+
+            pendingBossTestDefeatRoutine = StartCoroutine(TriggerBossTestDefeatAfterDelay());
+        }
+
         private void EnsureActionModeController()
         {
             if (actionModeController == null)
@@ -442,6 +541,156 @@ namespace BoneThrone.UI
                 movementControllerToSuspend,
                 movementHighlighter,
                 activeUnitProvider);
+        }
+
+        private void EnsureBossTestDefeatButton()
+        {
+            Transform existing = FindChildByName(transform, "BossTestDefeatButton");
+            if (existing != null)
+            {
+                bossTestDefeatButton = existing.GetComponent<Button>();
+                existing.gameObject.SetActive(IsBossTestScene() && showBossTestDefeatButton);
+            }
+
+            if (!showBossTestDefeatButton || !IsBossTestScene())
+            {
+                return;
+            }
+
+            if (bossTestDefeatButton == null)
+            {
+                GameObject buttonObject = new GameObject("BossTestDefeatButton", typeof(RectTransform));
+                buttonObject.transform.SetParent(transform, false);
+                buttonObject.layer = gameObject.layer;
+
+                RectTransform rect = buttonObject.GetComponent<RectTransform>();
+                rect.localScale = Vector3.one;
+                rect.anchorMin = new Vector2(1f, 0f);
+                rect.anchorMax = new Vector2(1f, 0f);
+                rect.pivot = new Vector2(1f, 0f);
+                rect.sizeDelta = new Vector2(116f, 34f);
+                rect.anchoredPosition = new Vector2(-18f, 118f);
+
+                Image image = buttonObject.AddComponent<Image>();
+                image.color = new Color(0.58f, 0.05f, 0.04f, 0.82f);
+                image.raycastTarget = true;
+
+                bossTestDefeatButton = buttonObject.AddComponent<Button>();
+                TMP_Text label = CreateText(buttonObject.transform, "BossTestDefeatButtonText", "演示失败", 15, FontStyles.Bold);
+                label.alignment = TextAlignmentOptions.Center;
+            }
+
+            bossTestDefeatButton.onClick.RemoveListener(HandleBossTestDefeatClicked);
+            bossTestDefeatButton.onClick.AddListener(HandleBossTestDefeatClicked);
+            bossTestDefeatButton.gameObject.SetActive(true);
+            bossTestDefeatButton.transform.SetAsLastSibling();
+        }
+
+        private bool IsBossTestScene()
+        {
+            string sceneName = SceneManager.GetActiveScene().name;
+            string expectedName = string.IsNullOrEmpty(bossTestSceneName) ? "boss_test" : bossTestSceneName;
+            return string.Equals(sceneName, expectedName, System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void FillDemoDefeatPlayers()
+        {
+            demoDefeatPlayerBuffer.Clear();
+
+            ActiveUnitProvider provider = activeUnitProvider != null ? activeUnitProvider : Object.FindFirstObjectByType<ActiveUnitProvider>();
+            if (provider != null)
+            {
+                provider.FillActiveAliveUnits(demoDefeatPlayerBuffer);
+                for (int i = demoDefeatPlayerBuffer.Count - 1; i >= 0; i--)
+                {
+                    if (demoDefeatPlayerBuffer[i] == null || demoDefeatPlayerBuffer[i].Faction != UnitFaction.Player)
+                    {
+                        demoDefeatPlayerBuffer.RemoveAt(i);
+                    }
+                }
+            }
+
+            if (demoDefeatPlayerBuffer.Count == 0)
+            {
+                FillUnitBufferFromArray(playerUnits, UnitFaction.Player, demoDefeatPlayerBuffer);
+            }
+
+            if (demoDefeatPlayerBuffer.Count == 0)
+            {
+                Unit[] units = Object.FindObjectsByType<Unit>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+                for (int i = 0; i < units.Length; i++)
+                {
+                    Unit unit = units[i];
+                    if (unit != null && unit.Faction == UnitFaction.Player && unit.IsAlive)
+                    {
+                        demoDefeatPlayerBuffer.Add(unit);
+                    }
+                }
+            }
+        }
+
+        private IEnumerator TriggerBossTestDefeatAfterDelay()
+        {
+            float delay = Mathf.Max(0f, bossTestOutcomeDelaySeconds);
+            if (delay > 0f)
+            {
+                yield return new WaitForSeconds(delay);
+            }
+
+            pendingBossTestDefeatRoutine = null;
+            ResolveOutcomeService();
+            if (outcomeService == null && IsBossTestScene())
+            {
+                outcomeService = gameObject.AddComponent<GameOutcomeService>();
+            }
+
+            if (outcomeService != null && !outcomeService.HasOutcome)
+            {
+                outcomeService.SetDefeat("Demo defeat.");
+            }
+        }
+
+        private void ResolveOutcomeService()
+        {
+            if (outcomeService == null)
+            {
+                outcomeService = Object.FindFirstObjectByType<GameOutcomeService>();
+            }
+        }
+
+        private void EnsureBossTestOutcomeEvaluator()
+        {
+            if (!IsBossTestScene())
+            {
+                return;
+            }
+
+            ResolveOutcomeService();
+            if (outcomeService == null)
+            {
+                outcomeService = gameObject.AddComponent<GameOutcomeService>();
+            }
+
+            if (outcomeAutoEvaluator == null)
+            {
+                outcomeAutoEvaluator = GetComponentInChildren<BattleOutcomeAutoEvaluator>(true);
+            }
+
+            if (outcomeAutoEvaluator == null)
+            {
+                outcomeAutoEvaluator = Object.FindFirstObjectByType<BattleOutcomeAutoEvaluator>();
+            }
+
+            if (outcomeAutoEvaluator == null)
+            {
+                outcomeAutoEvaluator = gameObject.AddComponent<BattleOutcomeAutoEvaluator>();
+            }
+
+            outcomeAutoEvaluator.ConfigureBossTest(
+                outcomeService,
+                playerUnits,
+                enemyUnits,
+                bossTestOutcomeDelaySeconds);
         }
 
         private void EnsureEndTurnButton()
@@ -609,6 +858,8 @@ namespace BoneThrone.UI
                 turnTransitionPopupView = GetComponentInChildren<TurnTransitionPopupView>(true);
             }
 
+            RebindBossHealthViews();
+
             if (!HasHeroPanels())
             {
                 HeroPanelView[] discoveredPanels = GetComponentsInChildren<HeroPanelView>(true);
@@ -636,6 +887,7 @@ namespace BoneThrone.UI
             ForceVisible(combatFeedbackView != null ? combatFeedbackView.gameObject : null);
             ForceVisible(promptView != null ? promptView.gameObject : null);
             ForceVisible(turnTransitionPopupView != null ? turnTransitionPopupView.gameObject : null);
+            ForceVisible(bossHealthRoot);
 
             if (heroPanels == null)
             {
@@ -722,6 +974,7 @@ namespace BoneThrone.UI
             FontStyles headerStyle = FontStyles.Bold;
             turnBannerView = CreateView<TurnBannerView>("TurnBanner", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(920f, 52f), new Vector2(0f, -22f));
             turnBannerView.Bind(CreateText(turnBannerView.transform, "TurnText", "Turn: Unbound", 28, headerStyle));
+            CreateBossHealthBar();
 
             turnTransitionPopupView = CreateTurnTransitionPopup();
             promptView = CreateView<PromptView>("Prompt", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(920f, 42f), new Vector2(0f, 20f));
@@ -731,7 +984,11 @@ namespace BoneThrone.UI
             for (int i = 0; i < heroPanels.Length; i++)
             {
                 HeroPanelView panel = CreateView<HeroPanelView>("HeroPanel_" + i, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(310f, 132f), new Vector2(18f, 230f - i * 142f));
-                panel.Bind(CreateText(panel.transform, "HeroText", "Hero: Unbound", 18, FontStyles.Normal));
+                Image healthFill = CreateHealthBar(panel.transform, "BloodBar", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(-32f, 24f), new Vector2(0f, -18f), out RectTransform healthFillRect);
+                TMP_Text heroText = CreateText(panel.transform, "HeroText", "Hero: Unbound", 18, FontStyles.Normal);
+                RectTransform textRect = heroText.rectTransform;
+                textRect.offsetMax = new Vector2(-8f, -38f);
+                panel.Bind(heroText, healthFill, healthFillRect);
                 heroPanels[i] = panel;
             }
 
@@ -763,6 +1020,561 @@ namespace BoneThrone.UI
             TMP_Text endTurn = CreateActionButton(bar.transform, "EndTurn", "End\nTurn", buttons);
             bar.Bind(move, basic, slot0, slot1, slot2, defend, potion, endTurn, buttons.ToArray());
             return bar;
+        }
+
+        private void EnsureBossHealthBar()
+        {
+            RebindBossHealthViews();
+
+            if (bossHealthRoot == null && buildRuntimeLayoutIfMissing)
+            {
+                CreateBossHealthBar();
+            }
+
+            ConfigureBossHealthFill();
+        }
+
+        private void RebindBossHealthViews()
+        {
+            if (bossHealthRoot == null)
+            {
+                Transform root = FindChildByName(transform, "BossHealthPanel");
+                if (root != null)
+                {
+                    bossHealthRoot = root.gameObject;
+                }
+            }
+
+            if (bossHealthFillImage == null)
+            {
+                Transform fill = FindChildByName(transform, "BossHealthFill");
+                if (fill != null)
+                {
+                    bossHealthFillImage = fill.GetComponent<Image>();
+                }
+            }
+
+            if (bossHealthFillRect == null && bossHealthFillImage != null)
+            {
+                bossHealthFillRect = bossHealthFillImage.rectTransform;
+            }
+
+            if (bossHealthNameText == null)
+            {
+                Transform nameText = FindChildByName(transform, "BossHealthNameText");
+                if (nameText != null)
+                {
+                    bossHealthNameText = nameText.GetComponent<TMP_Text>();
+                }
+            }
+
+            if (bossHealthValueText == null)
+            {
+                Transform valueText = FindChildByName(transform, "BossHealthValueText");
+                if (valueText != null)
+                {
+                    bossHealthValueText = valueText.GetComponent<TMP_Text>();
+                }
+            }
+        }
+
+        private void CreateBossHealthBar()
+        {
+            if (bossHealthRoot != null)
+            {
+                return;
+            }
+
+            GameObject rootObject = new GameObject("BossHealthPanel", typeof(RectTransform));
+            rootObject.transform.SetParent(transform, false);
+            rootObject.layer = gameObject.layer;
+            bossHealthRoot = rootObject;
+
+            RectTransform rootRect = rootObject.GetComponent<RectTransform>();
+            rootRect.localScale = Vector3.one;
+            rootRect.anchorMin = new Vector2(0.5f, 1f);
+            rootRect.anchorMax = new Vector2(0.5f, 1f);
+            rootRect.pivot = new Vector2(0.5f, 1f);
+            rootRect.sizeDelta = new Vector2(720f, 54f);
+            rootRect.anchoredPosition = new Vector2(0f, -92f);
+
+            Image background = rootObject.AddComponent<Image>();
+            background.color = new Color(0.08f, 0.03f, 0.02f, 0.86f);
+            background.raycastTarget = false;
+
+            TMP_Text nameText = CreateText(rootObject.transform, "BossHealthNameText", "Boss", 20, FontStyles.Bold);
+            RectTransform nameRect = nameText.rectTransform;
+            nameRect.anchorMin = new Vector2(0f, 0.5f);
+            nameRect.anchorMax = new Vector2(0.45f, 1f);
+            nameRect.offsetMin = new Vector2(18f, -2f);
+            nameRect.offsetMax = new Vector2(-8f, -4f);
+            bossHealthNameText = nameText;
+
+            TMP_Text valueText = CreateText(rootObject.transform, "BossHealthValueText", "-- / --", 18, FontStyles.Bold);
+            valueText.alignment = TextAlignmentOptions.Right;
+            RectTransform valueRect = valueText.rectTransform;
+            valueRect.anchorMin = new Vector2(0.55f, 0.5f);
+            valueRect.anchorMax = new Vector2(1f, 1f);
+            valueRect.offsetMin = new Vector2(8f, -2f);
+            valueRect.offsetMax = new Vector2(-18f, -4f);
+            bossHealthValueText = valueText;
+
+            CreateHealthBar(rootObject.transform, "BossHealthBar", new Vector2(0f, 0f), new Vector2(1f, 0.5f), new Vector2(0.5f, 0f), new Vector2(-32f, 22f), new Vector2(0f, 8f), out bossHealthFillRect, "BossHealthFill");
+            ConfigureBossHealthFill();
+        }
+
+        private Image CreateHealthBar(
+            Transform parent,
+            string name,
+            Vector2 anchorMin,
+            Vector2 anchorMax,
+            Vector2 pivot,
+            Vector2 size,
+            Vector2 position,
+            out RectTransform fillRect,
+            string fillName = "Fill")
+        {
+            GameObject barObject = new GameObject(name, typeof(RectTransform));
+            barObject.transform.SetParent(parent, false);
+            barObject.layer = parent.gameObject.layer;
+            RectTransform barRect = barObject.GetComponent<RectTransform>();
+            barRect.localScale = Vector3.one;
+            barRect.anchorMin = anchorMin;
+            barRect.anchorMax = anchorMax;
+            barRect.pivot = pivot;
+            barRect.sizeDelta = size;
+            barRect.anchoredPosition = position;
+
+            Image background = barObject.AddComponent<Image>();
+            background.color = new Color(1f, 1f, 1f, 0.28f);
+            background.raycastTarget = false;
+
+            GameObject fillObject = new GameObject(fillName, typeof(RectTransform));
+            fillObject.transform.SetParent(barObject.transform, false);
+            fillObject.layer = barObject.layer;
+            fillRect = fillObject.GetComponent<RectTransform>();
+            fillRect.localScale = Vector3.one;
+            fillRect.anchorMin = Vector2.zero;
+            fillRect.anchorMax = Vector2.one;
+            fillRect.pivot = new Vector2(0f, 0.5f);
+            fillRect.offsetMin = new Vector2(4f, 4f);
+            fillRect.offsetMax = new Vector2(-4f, -4f);
+
+            Image fillImage = fillObject.AddComponent<Image>();
+            fillImage.color = HealthFillColor;
+            fillImage.raycastTarget = false;
+            return fillImage;
+        }
+
+        private void ConfigureBossHealthFill()
+        {
+            if (bossHealthFillImage != null)
+            {
+                bossHealthFillImage.color = HealthFillColor;
+                bossHealthFillImage.raycastTarget = false;
+            }
+
+            if (bossHealthFillRect == null)
+            {
+                return;
+            }
+
+            bossHealthFillRect.anchorMin = new Vector2(0f, 0f);
+            bossHealthFillRect.pivot = new Vector2(0f, 0.5f);
+            bossHealthFillRect.anchoredPosition = Vector2.zero;
+            bossHealthFillRect.sizeDelta = Vector2.zero;
+        }
+
+        private void RefreshBossHealthBar()
+        {
+            if (bossHealthRoot == null)
+            {
+                return;
+            }
+
+            if (!ShouldExposeBossFightRuntime())
+            {
+                ResetBossHealthIntroState();
+                bossHealthUnit = null;
+                SetBossHealthVisible(false);
+                return;
+            }
+
+            Unit boss = ResolveBossHealthUnit();
+            if (boss == null || boss.RuntimeState == null || boss.Stats == null || !boss.IsAlive)
+            {
+                ResetBossHealthIntroState();
+                bossHealthUnit = null;
+                SetBossHealthVisible(false);
+                return;
+            }
+
+            int hp = Mathf.Max(0, boss.RuntimeState.CurrentHp);
+            int maxHp = Mathf.Max(1, boss.Stats.GetClampedMaxHp());
+
+            if (bossHealthIntroUnit != boss)
+            {
+                StartBossHealthIntro(boss, hp, maxHp);
+                return;
+            }
+
+            SetBossHealthVisible(true);
+            ConfigureBossHealthFill();
+            RefreshBossHealthText(boss, hp, maxHp);
+
+            if (bossHealthIntroInProgress)
+            {
+                return;
+            }
+
+            if (bossHealthFillRect != null)
+            {
+                bossHealthFillRect.anchorMax = new Vector2(Mathf.Clamp01((float)hp / maxHp), 1f);
+            }
+        }
+
+        private void StartBossHealthIntro(Unit boss, int hp, int maxHp)
+        {
+            if (boss == null)
+            {
+                return;
+            }
+
+            bossHealthIntroUnit = boss;
+            bossHealthIntroInProgress = true;
+            SetBossHealthVisible(true);
+            ConfigureBossHealthFill();
+            RefreshBossHealthText(boss, hp, maxHp);
+            SetBossHealthFill(0f);
+
+            if (actionModeController != null)
+            {
+                actionModeController.CancelTargetingForExternalAction();
+            }
+
+            if (lockActionsDuringBossHealthIntro
+                && movementControllerToSuspend != null
+                && movementControllerToSuspend.enabled)
+            {
+                movementControllerToSuspend.enabled = false;
+                restoreMovementControllerAfterBossIntro = true;
+            }
+
+            if (switchToBossBgmOnHealthIntro)
+            {
+                BTAudioService.PlayBgm(BTAudioCueId.BgmBoss);
+            }
+
+            if (bossHealthIntroRoutine != null)
+            {
+                StopCoroutine(bossHealthIntroRoutine);
+            }
+
+            bossHealthIntroRoutine = StartCoroutine(PlayBossHealthIntroRoutine(boss));
+        }
+
+        private IEnumerator PlayBossHealthIntroRoutine(Unit boss)
+        {
+            float duration = Mathf.Max(0f, bossHealthIntroFillDuration);
+            float elapsed = 0f;
+
+            while (boss != null
+                && boss == bossHealthIntroUnit
+                && boss.RuntimeState != null
+                && boss.Stats != null
+                && boss.IsAlive
+                && elapsed < duration)
+            {
+                int hp = Mathf.Max(0, boss.RuntimeState.CurrentHp);
+                int maxHp = Mathf.Max(1, boss.Stats.GetClampedMaxHp());
+                RefreshBossHealthText(boss, hp, maxHp);
+                float target = Mathf.Clamp01((float)hp / maxHp);
+                float t = duration <= 0f ? 1f : Mathf.Clamp01(elapsed / duration);
+                SetBossHealthFill(Mathf.Lerp(0f, target, t));
+                elapsed += Time.unscaledDeltaTime;
+                yield return null;
+            }
+
+            if (boss != null && boss == bossHealthIntroUnit && boss.RuntimeState != null && boss.Stats != null)
+            {
+                int hp = Mathf.Max(0, boss.RuntimeState.CurrentHp);
+                int maxHp = Mathf.Max(1, boss.Stats.GetClampedMaxHp());
+                RefreshBossHealthText(boss, hp, maxHp);
+                SetBossHealthFill(Mathf.Clamp01((float)hp / maxHp));
+            }
+
+            bossHealthIntroInProgress = false;
+            bossHealthIntroRoutine = null;
+            RestoreMovementControllerAfterBossIntro();
+        }
+
+        private void RefreshBossHealthText(Unit boss, int hp, int maxHp)
+        {
+            if (bossHealthNameText != null)
+            {
+                bossHealthNameText.text = string.IsNullOrEmpty(boss.DisplayName) ? boss.gameObject.name : boss.DisplayName;
+            }
+
+            if (bossHealthValueText != null)
+            {
+                bossHealthValueText.text = hp + " / " + maxHp;
+            }
+        }
+
+        private void SetBossHealthFill(float normalizedValue)
+        {
+            if (bossHealthFillRect != null)
+            {
+                bossHealthFillRect.anchorMax = new Vector2(Mathf.Clamp01(normalizedValue), 1f);
+            }
+        }
+
+        private void ResetBossHealthIntroState()
+        {
+            if (bossHealthIntroRoutine != null)
+            {
+                StopCoroutine(bossHealthIntroRoutine);
+                bossHealthIntroRoutine = null;
+            }
+
+            bossHealthIntroUnit = null;
+            bossHealthIntroInProgress = false;
+            RestoreMovementControllerAfterBossIntro();
+        }
+
+        private void RestoreMovementControllerAfterBossIntro()
+        {
+            if (restoreMovementControllerAfterBossIntro && movementControllerToSuspend != null)
+            {
+                movementControllerToSuspend.enabled = true;
+            }
+
+            restoreMovementControllerAfterBossIntro = false;
+        }
+
+        private void RefreshBossIntentPreview()
+        {
+            if (!showBossIntentDuringPlayerTurn || movementHighlighter == null)
+            {
+                return;
+            }
+
+            if (!ShouldExposeBossFightRuntime())
+            {
+                movementHighlighter.ClearBossIntentHighlights();
+                return;
+            }
+
+            if (turnManager == null || turnManager.CurrentPhase != TurnPhase.PlayerTurn)
+            {
+                movementHighlighter.ClearBossIntentHighlights();
+                return;
+            }
+
+            if (Time.unscaledTime < nextBossIntentLookupTime)
+            {
+                return;
+            }
+
+            nextBossIntentLookupTime = Time.unscaledTime + 0.18f;
+            Unit boss = ResolveBossIntentUnit();
+            if (boss == null)
+            {
+                movementHighlighter.ClearBossIntentHighlights();
+                return;
+            }
+
+            BossAttackIntent intent;
+            if (BossEnemyAIController.TryGetPreviewIntent(boss, out intent))
+            {
+                movementHighlighter.ShowBossIntent(intent.AffectedTiles);
+                return;
+            }
+
+            FillBossIntentPlayers();
+            if (!bossEnemyAIController.TryBuildPreviewIntent(boss, bossIntentPlayerBuffer, gridManager, out intent))
+            {
+                movementHighlighter.ClearBossIntentHighlights();
+                return;
+            }
+
+            BossEnemyAIController.CachePreviewIntent(boss, intent);
+            movementHighlighter.ShowBossIntent(intent.AffectedTiles);
+        }
+
+        private Unit ResolveBossIntentUnit()
+        {
+            FillBossIntentEnemies();
+            return FindBossUnit(bossIntentEnemyBuffer);
+        }
+
+        private void FillBossIntentEnemies()
+        {
+            bossIntentEnemyBuffer.Clear();
+            ActiveUnitProvider provider = ResolveActiveUnitProviderForBossIntent();
+            if (provider != null)
+            {
+                provider.FillActiveAliveEnemies(bossIntentEnemyBuffer);
+            }
+
+            if (bossIntentEnemyBuffer.Count > 0)
+            {
+                return;
+            }
+
+            FillUnitBufferFromArray(enemyUnits, UnitFaction.Enemy, bossIntentEnemyBuffer);
+        }
+
+        private void FillBossIntentPlayers()
+        {
+            bossIntentPlayerBuffer.Clear();
+            ActiveUnitProvider provider = ResolveActiveUnitProviderForBossIntent();
+            if (provider != null)
+            {
+                provider.FillActiveAliveUnits(bossIntentPlayerBuffer);
+                for (int i = bossIntentPlayerBuffer.Count - 1; i >= 0; i--)
+                {
+                    if (bossIntentPlayerBuffer[i] == null || bossIntentPlayerBuffer[i].Faction != UnitFaction.Player)
+                    {
+                        bossIntentPlayerBuffer.RemoveAt(i);
+                    }
+                }
+            }
+
+            if (bossIntentPlayerBuffer.Count > 0)
+            {
+                return;
+            }
+
+            FillUnitBufferFromArray(playerUnits, UnitFaction.Player, bossIntentPlayerBuffer);
+        }
+
+        private ActiveUnitProvider ResolveActiveUnitProviderForBossIntent()
+        {
+            if (activeUnitProvider == null)
+            {
+                activeUnitProvider = Object.FindFirstObjectByType<ActiveUnitProvider>();
+            }
+
+            return activeUnitProvider;
+        }
+
+        private static void FillUnitBufferFromArray(Unit[] units, UnitFaction faction, List<Unit> results)
+        {
+            if (units == null || results == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < units.Length; i++)
+            {
+                Unit unit = units[i];
+                if (unit != null
+                    && unit.gameObject.activeInHierarchy
+                    && unit.IsAlive
+                    && unit.Faction == faction)
+                {
+                    results.Add(unit);
+                }
+            }
+        }
+
+        private Unit ResolveBossHealthUnit()
+        {
+            if (bossHealthUnit != null && IsBossLikeUnit(bossHealthUnit))
+            {
+                return bossHealthUnit;
+            }
+
+            if (Time.unscaledTime < nextBossHealthLookupTime)
+            {
+                return null;
+            }
+
+            nextBossHealthLookupTime = Time.unscaledTime + BossHealthLookupInterval;
+            bossHealthUnit = FindBossUnit(enemyUnits);
+
+            if (bossHealthUnit == null && activeUnitProvider != null)
+            {
+                activeBossLookupBuffer.Clear();
+                activeUnitProvider.FillActiveAliveEnemies(activeBossLookupBuffer);
+                bossHealthUnit = FindBossUnit(activeBossLookupBuffer);
+            }
+
+            return bossHealthUnit;
+        }
+
+        private Unit FindBossUnit(IList<Unit> units)
+        {
+            if (units == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < units.Count; i++)
+            {
+                Unit unit = units[i];
+                if (IsBossLikeUnit(unit))
+                {
+                    return unit;
+                }
+            }
+
+            return null;
+        }
+
+        private bool IsBossLikeUnit(Unit unit)
+        {
+            if (unit == null || unit.Faction != UnitFaction.Enemy || !unit.gameObject.activeInHierarchy || !unit.IsAlive)
+            {
+                return false;
+            }
+
+            string needle = string.IsNullOrEmpty(bossHealthNameContains) ? "boss" : bossHealthNameContains.ToLowerInvariant();
+            string objectName = unit.gameObject.name.ToLowerInvariant();
+            string displayName = string.IsNullOrEmpty(unit.DisplayName) ? string.Empty : unit.DisplayName.ToLowerInvariant();
+            return objectName.Contains(needle)
+                || displayName.Contains(needle)
+                || objectName.Contains("golem")
+                || displayName.Contains("golem");
+        }
+
+        private void SetBossHealthVisible(bool visible)
+        {
+            if (bossHealthRoot != null && bossHealthRoot.activeSelf != visible)
+            {
+                bossHealthRoot.SetActive(visible);
+            }
+        }
+
+        private bool ShouldExposeBossFightRuntime()
+        {
+            BossGateProgressionState progressionState = Object.FindFirstObjectByType<BossGateProgressionState>();
+            return progressionState != null && progressionState.ShouldExposeBossFightRuntime();
+        }
+
+        private static Transform FindChildByName(Transform root, string childName)
+        {
+            if (root == null || string.IsNullOrEmpty(childName))
+            {
+                return null;
+            }
+
+            if (root.name == childName)
+            {
+                return root;
+            }
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform result = FindChildByName(root.GetChild(i), childName);
+                if (result != null)
+                {
+                    return result;
+                }
+            }
+
+            return null;
         }
 
         private TMP_Text CreateActionButton(Transform parent, string name, string text, List<Button> buttons)

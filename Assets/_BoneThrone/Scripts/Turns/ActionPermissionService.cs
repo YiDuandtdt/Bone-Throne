@@ -93,6 +93,7 @@ namespace BoneThrone.Turns
                 combatLog.LogStunConsumed(unit);
             }
 
+            turnManager.TryAutoEndPlayerUnitTurnIfNoAvailableActions(unit);
             Debug.LogWarning("Turn opportunity blocked because unit " + unit.UnitId + " is stunned.", unit);
             return true;
         }

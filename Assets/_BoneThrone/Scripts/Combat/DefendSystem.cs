@@ -1,3 +1,4 @@
+using BoneThrone.Audio;
 using BoneThrone.Turns;
 using BoneThrone.Units;
 using UnityEngine;
@@ -71,12 +72,14 @@ namespace BoneThrone.Combat
                 animationController.SetDefending(true);
                 animationController.PlayDefend();
             }
+            BTAudioService.PlaySfx(BTAudioCueId.HeavyHit);
 
             if (combatLog != null)
             {
                 combatLog.LogDefend(unit, defendReduction);
             }
 
+            turnManager.TryAutoEndPlayerUnitTurnIfNoAvailableActions(unit);
             Debug.Log("DefendSystem: unit " + unit.UnitId + " is defending with reduction " + defendReduction + ".", unit);
             return true;
         }
@@ -110,6 +113,7 @@ namespace BoneThrone.Combat
 
         private void LogRejected(string reason, Object context)
         {
+            BTAudioService.PlaySfx(BTAudioCueId.InvalidAction);
             if (combatLog != null)
             {
                 combatLog.LogDefendRejected(reason, context);

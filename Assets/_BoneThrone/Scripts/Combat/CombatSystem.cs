@@ -1,3 +1,6 @@
+using System.Collections;
+using BoneThrone.Audio;
+using BoneThrone.Core;
 using BoneThrone.Turns;
 using BoneThrone.Units;
 using UnityEngine;
@@ -18,6 +21,9 @@ namespace BoneThrone.Combat
         [SerializeField] private CombatLog combatLog;
         [SerializeField] private TurnManager turnManager;
         [SerializeField] private ActionPermissionService actionPermissionService;
+        [Header("Presentation Timing")]
+        [SerializeField] [Min(0f)] private float basicAttackImpactDelay = 0.18f;
+        [SerializeField] [Min(0f)] private float meleeBasicAttackImpactDelay = 0.65f;
 
         public bool CanBasicAttack(Unit attacker, Unit target, out string reason)
         {
@@ -85,8 +91,9 @@ namespace BoneThrone.Combat
             if (attackerAnimation != null)
             {
                 attackerAnimation.FaceTowards(target.transform.position);
-                attackerAnimation.PlayBasicAttack();
+                attackerAnimation.PlayBasicAttack(GetBasicAttackAnimationSpeed(attacker), GetBasicAttackAnimationRestoreDelay(attacker));
             }
+            BTAudioService.PlaySfx(BTAudioService.GetBasicAttackCue(attacker));
 
             int roll = d20Roller.RollD20();
             int attackModifier = attacker.Stats != null ? attacker.Stats.AttackModifier : 0;
@@ -100,28 +107,116 @@ namespace BoneThrone.Combat
             }
 
             bool hit = attackTotal >= defense;
-            if (hit)
-            {
-                int damage = attacker.Stats != null ? attacker.Stats.BaseDamage : 0;
-                bool targetDied = damageResolver.ApplyDamage(target, damage);
-                int remainingHp = target.RuntimeState != null ? target.RuntimeState.CurrentHp : 0;
+            MarkAttackerActed(attacker);
+            StartCoroutine(ResolveBasicAttackImpact(attacker, target, hit));
+            return true;
+        }
 
-                if (combatLog != null)
+        private IEnumerator ResolveBasicAttackImpact(Unit attacker, Unit target, bool hit)
+        {
+            float delay = GetBasicAttackImpactDelay(attacker);
+            if (delay > 0f)
+            {
+                yield return new WaitForSeconds(delay);
+            }
+
+            if (!hit)
+            {
+                if (combatLog != null && attacker != null && target != null)
                 {
-                    combatLog.LogHit(attacker, target, Mathf.Max(0, damage), remainingHp);
-                    if (targetDied)
-                    {
-                        combatLog.LogDeath(target);
-                    }
+                    combatLog.LogMiss(attacker, target);
+                }
+
+                TryAutoEndAttackerTurn(attacker);
+                yield break;
+            }
+
+            if (target == null || !target.IsAlive)
+            {
+                TryAutoEndAttackerTurn(attacker);
+                yield break;
+            }
+
+            RangerHitPresentationConfig rangerPresentation = attacker != null ? attacker.GetComponent<RangerHitPresentationConfig>() : null;
+            if (rangerPresentation != null)
+            {
+                float arrowFlightDelay = rangerPresentation.TryPlayBasicAttackArrow(attacker, target, turnManager);
+                if (arrowFlightDelay > 0f)
+                {
+                    yield return new WaitForSeconds(arrowFlightDelay);
                 }
             }
-            else if (combatLog != null)
+
+            if (target == null || !target.IsAlive)
             {
-                combatLog.LogMiss(attacker, target);
+                TryAutoEndAttackerTurn(attacker);
+                yield break;
             }
 
-            MarkAttackerActed(attacker);
-            return true;
+            int damage = attacker != null && attacker.Stats != null ? attacker.Stats.BaseDamage : 0;
+            bool targetDied = damageResolver.ApplyDamage(target, damage);
+            MageHitPresentationConfig magePresentation = attacker != null ? attacker.GetComponent<MageHitPresentationConfig>() : null;
+            if (magePresentation != null)
+            {
+                magePresentation.TryPlayBasicAttackImpactEffect(attacker, target);
+            }
+
+            int remainingHp = target.RuntimeState != null ? target.RuntimeState.CurrentHp : 0;
+
+            if (combatLog != null && attacker != null)
+            {
+                combatLog.LogHit(attacker, target, Mathf.Max(0, damage), remainingHp);
+                if (targetDied)
+                {
+                    combatLog.LogDeath(target);
+                }
+            }
+
+            TryAutoEndAttackerTurn(attacker);
+        }
+
+        private float GetBasicAttackImpactDelay(Unit attacker)
+        {
+            if (IsMeleePresentation(attacker))
+            {
+                return meleeBasicAttackImpactDelay > 0f ? meleeBasicAttackImpactDelay : 0.65f;
+            }
+
+            return basicAttackImpactDelay > 0f ? basicAttackImpactDelay : 0.18f;
+        }
+
+        private float GetBasicAttackAnimationSpeed(Unit attacker)
+        {
+            return attacker != null && attacker.Faction == UnitFaction.Enemy ? 0.75f : 1f;
+        }
+
+        private float GetBasicAttackAnimationRestoreDelay(Unit attacker)
+        {
+            if (attacker == null || attacker.Faction != UnitFaction.Enemy)
+            {
+                return 0f;
+            }
+
+            return Mathf.Max(0.9f, GetBasicAttackImpactDelay(attacker) + 0.35f);
+        }
+
+        private static bool IsMeleePresentation(Unit attacker)
+        {
+            if (attacker == null)
+            {
+                return true;
+            }
+
+            if (attacker.GetComponent<RangerHitPresentationConfig>() != null
+                || attacker.GetComponent<MageHitPresentationConfig>() != null)
+            {
+                return false;
+            }
+
+            return attacker.RoleId == RoleId.Fighter
+                || attacker.RoleId == RoleId.Barbarian
+                || attacker.RoleId == RoleId.Enemy
+                || attacker.RoleId == RoleId.None;
         }
 
         private bool CanBasicParticipantsAttack(Unit attacker, Unit target, out string reason)
@@ -326,10 +421,19 @@ namespace BoneThrone.Combat
 
             if (actionPermissionService.TryConsumeStunForAction(attacker, turnManager))
             {
+                TryAutoEndAttackerTurn(attacker);
                 return false;
             }
 
             return actionPermissionService.CanAct(attacker, turnManager);
+        }
+
+        private void TryAutoEndAttackerTurn(Unit attacker)
+        {
+            if (turnManager != null)
+            {
+                turnManager.TryAutoEndPlayerUnitTurnIfNoAvailableActions(attacker);
+            }
         }
 
         private bool HasCombatServices()
@@ -366,6 +470,7 @@ namespace BoneThrone.Combat
 
         private void LogRejected(string reason, Object context)
         {
+            BTAudioService.PlaySfx(BTAudioCueId.InvalidAction);
             if (combatLog != null)
             {
                 combatLog.LogRejected(reason, context);

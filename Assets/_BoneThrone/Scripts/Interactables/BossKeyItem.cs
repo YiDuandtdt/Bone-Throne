@@ -1,4 +1,6 @@
+using BoneThrone.Audio;
 using BoneThrone.Levels;
+using BoneThrone.Units;
 using UnityEngine;
 
 namespace BoneThrone.Interactables
@@ -10,10 +12,14 @@ namespace BoneThrone.Interactables
     {
         [SerializeField] private BossGateProgressionState progressionState;
         [SerializeField] private bool consumeOnCollect = true;
+        [SerializeField] private bool autoCollectWhenPlayerNearby = true;
+        [SerializeField] [Min(0.1f)] private float pickupRadius = 1.6f;
+        [SerializeField] [Min(0.05f)] private float pickupCheckInterval = 0.2f;
         [SerializeField] private bool collected;
         [SerializeField] private bool debugLogging;
 
         private bool missingProgressionWarningLogged;
+        private float nextPickupCheckTime;
 
         public bool IsCollected
         {
@@ -22,10 +28,51 @@ namespace BoneThrone.Interactables
 
         private void OnMouseDown()
         {
-            TryCollect();
+            TryCollect(true);
         }
 
         public bool TryCollect()
+        {
+            return TryCollect(false);
+        }
+
+        private void Update()
+        {
+            if (!autoCollectWhenPlayerNearby || collected || Time.time < nextPickupCheckTime)
+            {
+                return;
+            }
+
+            nextPickupCheckTime = Time.time + Mathf.Max(0.05f, pickupCheckInterval);
+            if (!CanAttemptCollectNow())
+            {
+                return;
+            }
+
+            Unit nearbyPlayer = FindNearbyLivingPlayer();
+            if (nearbyPlayer != null)
+            {
+                TryCollect(false);
+            }
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (other == null || collected)
+            {
+                return;
+            }
+
+            Unit collector = other.GetComponentInParent<Unit>();
+            if (collector == null || collector.Faction != UnitFaction.Player || !collector.IsAlive)
+            {
+                return;
+            }
+
+            TryCollect(false);
+        }
+
+        private bool TryCollect(bool playRejectedAudio)
         {
             if (collected)
             {
@@ -37,6 +84,22 @@ namespace BoneThrone.Interactables
             if (progressionState == null)
             {
                 LogMissingProgressionWarning();
+                if (playRejectedAudio)
+                {
+                    BTAudioService.PlaySfx(BTAudioCueId.InvalidAction);
+                }
+
+                return false;
+            }
+
+            if (!progressionState.CanCollectBossKey())
+            {
+                Log("Collection rejected because boss gate requirements are not met.");
+                if (playRejectedAudio)
+                {
+                    BTAudioService.PlaySfx(BTAudioCueId.InvalidAction);
+                }
+
                 return false;
             }
 
@@ -48,6 +111,8 @@ namespace BoneThrone.Interactables
 
             collected = true;
             Log("Boss key collected.");
+            BTAudioService.PlaySfx(BTAudioCueId.KeyPickup);
+            BTInteractionVfxService.PlayKeyPickup(transform.position);
 
             if (consumeOnCollect)
             {
@@ -57,11 +122,44 @@ namespace BoneThrone.Interactables
             return true;
         }
 
+        private bool CanAttemptCollectNow()
+        {
+            ResolveProgressionState();
+            return progressionState != null && progressionState.CanCollectBossKey();
+        }
+
+        private Unit FindNearbyLivingPlayer()
+        {
+            Unit[] units = Object.FindObjectsByType<Unit>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            float radiusSqr = pickupRadius * pickupRadius;
+            Vector3 keyPosition = transform.position;
+            for (int i = 0; i < units.Length; i++)
+            {
+                Unit unit = units[i];
+                if (unit == null
+                    || !unit.gameObject.activeInHierarchy
+                    || unit.Faction != UnitFaction.Player
+                    || !unit.IsAlive)
+                {
+                    continue;
+                }
+
+                Vector3 delta = unit.transform.position - keyPosition;
+                delta.y = 0f;
+                if (delta.sqrMagnitude <= radiusSqr)
+                {
+                    return unit;
+                }
+            }
+
+            return null;
+        }
+
         private void ResolveProgressionState()
         {
             if (progressionState == null)
             {
-                progressionState = Object.FindFirstObjectByType<BossGateProgressionState>();
+                progressionState = BossGateProgressionState.GetOrCreateSceneState();
             }
         }
 

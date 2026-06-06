@@ -1,4 +1,7 @@
+using System.Collections;
+using BoneThrone.Audio;
 using BoneThrone.Combat;
+using BoneThrone.Core;
 using BoneThrone.Turns;
 using BoneThrone.Units;
 using UnityEngine;
@@ -19,6 +22,12 @@ namespace BoneThrone.Skills
         [SerializeField] private TurnManager turnManager;
         [SerializeField] private ActionPermissionService actionPermissionService;
         [SerializeField] private CombatLog combatLog;
+        [Header("Presentation Timing")]
+        [SerializeField] [Min(0f)] private float skillImpactDelay = 0.2f;
+        [SerializeField] [Min(0f)] private float meleeSkillImpactDelay = 0.65f;
+        [SerializeField] [Min(0f)] private float barbarianSkillSfxDelay = 0.5f;
+        [SerializeField] [Min(0f)] private float fighterFirstSkillSfxDelay = 0.3f;
+        [SerializeField] [Min(0f)] private float fighterFirstSkillSfxVolumeScale = 2f;
 
         public bool CanUseSkillOnTarget(Unit caster, Unit target, int slotIndex, out string reason)
         {
@@ -107,6 +116,111 @@ namespace BoneThrone.Skills
             }
 
             SkillData skill = runtime.GetSkill(slotIndex);
+            UnitAnimationController casterAnimation = caster.GetComponent<UnitAnimationController>();
+            LogAnimationDebug(caster, casterAnimation, "PlaySkill");
+            if (casterAnimation != null)
+            {
+                if (target != null)
+                {
+                    casterAnimation.FaceTowards(target.transform.position);
+                }
+
+                casterAnimation.PlaySkill();
+            }
+            PlaySkillSfx(caster, skill, slotIndex);
+
+            runtime.StartCooldown(slotIndex);
+            MarkCasterActed(caster);
+            StartCoroutine(ResolveSkillImpact(caster, target, skill));
+
+            int cooldown = runtime.GetCooldown(slotIndex);
+            if (combatLog != null && cooldown > 0)
+            {
+                combatLog.LogSkillCooldown(caster, skill, cooldown);
+            }
+
+            return true;
+        }
+
+        private IEnumerator ResolveSkillImpact(Unit caster, Unit target, SkillData skill)
+        {
+            float delay = GetSkillImpactDelay(caster);
+            if (delay > 0f)
+            {
+                yield return new WaitForSeconds(delay);
+            }
+
+            if (caster == null || target == null || skill == null)
+            {
+                TryAutoEndCasterTurn(caster);
+                yield break;
+            }
+
+            if (!caster.IsAlive || !target.IsAlive)
+            {
+                TryAutoEndCasterTurn(caster);
+                yield break;
+            }
+
+            RangerHitPresentationConfig rangerPresentation = caster.GetComponent<RangerHitPresentationConfig>();
+            if (rangerPresentation != null)
+            {
+                float arrowFlightDelay = rangerPresentation.TryPlaySkillArrow(caster, target, turnManager);
+                if (arrowFlightDelay > 0f)
+                {
+                    yield return new WaitForSeconds(arrowFlightDelay);
+                }
+            }
+
+            if (!caster.IsAlive || !target.IsAlive)
+            {
+                TryAutoEndCasterTurn(caster);
+                yield break;
+            }
+
+            if (rangerPresentation != null)
+            {
+                rangerPresentation.TryPlaySkillImpactEffect(caster, target, skill);
+            }
+
+            MageHitPresentationConfig magePresentation = caster.GetComponent<MageHitPresentationConfig>();
+            if (magePresentation != null)
+            {
+                magePresentation.TryPlaySkillImpactEffect(caster, target, skill);
+            }
+
+            SkillImpactResolution resolution = ExecuteSkillImpact(caster, target, skill);
+            if (combatLog != null && resolution.EffectResult != null)
+            {
+                for (int i = 0; i < resolution.EffectResult.DamageEntries.Count; i++)
+                {
+                    SkillDamageLogEntry damageEntry = resolution.EffectResult.DamageEntries[i];
+                    combatLog.LogSkillDamage(caster, damageEntry.Target, skill, damageEntry.Damage, damageEntry.RemainingHp, damageEntry.IsPrimaryTarget);
+                    if (damageEntry.TargetDied)
+                    {
+                        combatLog.LogDeath(damageEntry.Target);
+                    }
+                }
+            }
+
+            Debug.Log(
+                "SkillSystem: unit "
+                + caster.UnitId
+                + " used skill "
+                + skill.DisplayName
+                + " on unit "
+                + target.UnitId
+                + ". "
+                + resolution.EffectResult.Summary
+                + ". TargetDied="
+                + resolution.TargetDied
+                + ".",
+                this);
+            TryAutoEndCasterTurn(caster);
+        }
+
+        private SkillImpactResolution ExecuteSkillImpact(Unit caster, Unit target, SkillData skill)
+        {
             SkillEffectResult effectResult;
             bool targetDied;
             if (effectExecutor != null)
@@ -121,57 +235,114 @@ namespace BoneThrone.Skills
                 effectResult.AddDamage(target, skill.GuaranteedDamage, fallbackRemainingHp, targetDied, true);
             }
 
-            UnitAnimationController casterAnimation = caster.GetComponent<UnitAnimationController>();
-            LogAnimationDebug(caster, casterAnimation, "PlaySkill");
-            if (casterAnimation != null)
+            return new SkillImpactResolution
             {
-                if (target != null)
-                {
-                    casterAnimation.FaceTowards(target.transform.position);
-                }
+                TargetDied = targetDied,
+                EffectResult = effectResult
+            };
+        }
 
-                casterAnimation.PlaySkill();
+        private float GetSkillImpactDelay(Unit caster)
+        {
+            if (IsMeleePresentation(caster))
+            {
+                return meleeSkillImpactDelay > 0f ? meleeSkillImpactDelay : 0.65f;
             }
 
-            runtime.StartCooldown(slotIndex);
-            MarkCasterActed(caster);
+            return skillImpactDelay > 0f ? skillImpactDelay : 0.2f;
+        }
 
-            int cooldown = runtime.GetCooldown(slotIndex);
-            if (combatLog != null)
+        private void PlaySkillSfx(Unit caster, SkillData skill, int slotIndex)
+        {
+            BTAudioCueId cue = BTAudioService.GetSkillCue(skill != null ? skill.DisplayName : null);
+            float delay = GetSkillSfxDelay(caster, skill, slotIndex);
+            float volumeScale = GetSkillSfxVolumeScale(caster, skill, slotIndex);
+
+            if (delay <= 0f)
             {
-                for (int i = 0; i < effectResult.DamageEntries.Count; i++)
-                {
-                    SkillDamageLogEntry damageEntry = effectResult.DamageEntries[i];
-                    combatLog.LogSkillDamage(caster, damageEntry.Target, skill, damageEntry.Damage, damageEntry.RemainingHp, damageEntry.IsPrimaryTarget);
-                    if (damageEntry.TargetDied)
-                    {
-                        combatLog.LogDeath(damageEntry.Target);
-                    }
-                }
-
-                if (cooldown > 0)
-                {
-                    combatLog.LogSkillCooldown(caster, skill, cooldown);
-                }
+                PlaySkillSfxNow(cue, volumeScale);
+                return;
             }
 
-            Debug.Log(
-                "SkillSystem: unit "
-                + caster.UnitId
-                + " used skill "
-                + skill.DisplayName
-                + " on unit "
-                + target.UnitId
-                + ". "
-                + effectResult.Summary
-                + ". TargetDied="
-                + targetDied
-                + " Cooldown="
-                + cooldown
-                + ".",
-                this);
+            StartCoroutine(PlaySkillSfxAfterDelay(cue, volumeScale, delay));
+        }
 
-            return true;
+        private IEnumerator PlaySkillSfxAfterDelay(BTAudioCueId cue, float volumeScale, float delay)
+        {
+            yield return new WaitForSeconds(Mathf.Max(0f, delay));
+            PlaySkillSfxNow(cue, volumeScale);
+        }
+
+        private static void PlaySkillSfxNow(BTAudioCueId cue, float volumeScale)
+        {
+            if (volumeScale > 1.001f)
+            {
+                BTAudioService.PlaySfx(cue, volumeScale, 1f);
+                return;
+            }
+
+            BTAudioService.PlaySfx(cue);
+        }
+
+        private float GetSkillSfxDelay(Unit caster, SkillData skill, int slotIndex)
+        {
+            if (caster == null)
+            {
+                return 0f;
+            }
+
+            if (caster.RoleId == RoleId.Barbarian)
+            {
+                return Mathf.Max(0f, barbarianSkillSfxDelay);
+            }
+
+            if (IsFighterFirstSkill(caster, skill, slotIndex))
+            {
+                return Mathf.Max(0f, fighterFirstSkillSfxDelay);
+            }
+
+            return 0f;
+        }
+
+        private float GetSkillSfxVolumeScale(Unit caster, SkillData skill, int slotIndex)
+        {
+            return IsFighterFirstSkill(caster, skill, slotIndex)
+                ? Mathf.Max(0f, fighterFirstSkillSfxVolumeScale)
+                : 1f;
+        }
+
+        private static bool IsFighterFirstSkill(Unit caster, SkillData skill, int slotIndex)
+        {
+            if (caster == null || caster.RoleId != RoleId.Fighter)
+            {
+                return false;
+            }
+
+            if (slotIndex == 0)
+            {
+                return true;
+            }
+
+            return skill != null && skill.DisplayName == "fighter_shield_bash";
+        }
+
+        private static bool IsMeleePresentation(Unit caster)
+        {
+            if (caster == null)
+            {
+                return true;
+            }
+
+            if (caster.GetComponent<RangerHitPresentationConfig>() != null
+                || caster.GetComponent<MageHitPresentationConfig>() != null)
+            {
+                return false;
+            }
+
+            return caster.RoleId == RoleId.Fighter
+                || caster.RoleId == RoleId.Barbarian
+                || caster.RoleId == RoleId.Enemy
+                || caster.RoleId == RoleId.None;
         }
 
         public void TickCooldownsForUnit(Unit unit)
@@ -284,10 +455,19 @@ namespace BoneThrone.Skills
 
             if (actionPermissionService.TryConsumeStunForAction(caster, turnManager))
             {
+                TryAutoEndCasterTurn(caster);
                 return false;
             }
 
             return actionPermissionService.CanAct(caster, turnManager);
+        }
+
+        private void TryAutoEndCasterTurn(Unit caster)
+        {
+            if (turnManager != null)
+            {
+                turnManager.TryAutoEndPlayerUnitTurnIfNoAvailableActions(caster);
+            }
         }
 
         private static void MarkCasterActed(Unit caster)
@@ -301,6 +481,7 @@ namespace BoneThrone.Skills
 
         private void LogRejected(string reason, Object context)
         {
+            BTAudioService.PlaySfx(BTAudioCueId.InvalidAction);
             if (combatLog != null)
             {
                 combatLog.LogSkillRejected(reason, context);

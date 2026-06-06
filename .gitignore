@@ -34,12 +34,15 @@ Desktop.ini
 
 # Local personal notes / AI handoff docs. Keep out of shared history.
 chenhetian_ignore/
+Docs/
 
 # Large third-party asset packages / local staging content.
 Assets/Epic Toon FX/
 Assets/Epic Toon FX.meta
 Assets/_Recovery/
 Assets/_Recovery.meta
+Assets/_BoneThrone/Art/VFX_CandidatePack_2026-06-06/
+Assets/_BoneThrone/Art/VFX_CandidatePack_2026-06-06.meta
 Assets/_BoneThrone/Art/U3D卡通粒子AAA级特效包 含2D版 Unity3d游戏素材资源包插件包/
 Assets/_BoneThrone/Art/U3D卡通粒子AAA级特效包 含2D版 Unity3d游戏素材资源包插件包.meta
 
