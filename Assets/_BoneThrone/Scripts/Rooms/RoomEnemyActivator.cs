@@ -15,6 +15,10 @@ namespace BoneThrone.Rooms
         [SerializeField] private Tile[] spawnTiles;
         [SerializeField] private Transform spawnedEnemyParent;
         [SerializeField] private bool deactivateEnemiesAtStart = true;
+        [Header("Scene-Deployed Boss")]
+        [SerializeField] private bool keepBossLikeAssignedEnemiesActiveAtStart = true;
+        [SerializeField] private string bossNameContains = "boss";
+        [SerializeField] private string golemNameContains = "golem";
 
         private Unit[] spawnedEnemies;
         private bool hasSpawnedEnemies;
@@ -32,8 +36,25 @@ namespace BoneThrone.Rooms
             }
         }
 
+        public Unit[] EnemyPrefabs
+        {
+            get { return enemyPrefabs; }
+        }
+
+        public bool HasConfiguredEnemies
+        {
+            get
+            {
+                return HasAnyUnit(enemyPrefabs)
+                    || HasAnyUnit(assignedEnemies)
+                    || HasAnyUnit(spawnedEnemies);
+            }
+        }
+
         private void Start()
         {
+            EnsureActiveAssignedEnemyTileOccupancyAtStart();
+
             if (deactivateEnemiesAtStart)
             {
                 DeactivateEnemiesAtStart();
@@ -52,6 +73,12 @@ namespace BoneThrone.Rooms
                 Unit enemy = assignedEnemies[i];
                 if (enemy == null)
                 {
+                    continue;
+                }
+
+                if (keepBossLikeAssignedEnemiesActiveAtStart && IsBossLikeAssignedEnemy(enemy))
+                {
+                    EnsureCurrentTileOccupancy(enemy);
                     continue;
                 }
 
@@ -215,6 +242,7 @@ namespace BoneThrone.Rooms
 
             if (enemy.CurrentTile != null)
             {
+                EnsureCurrentTileOccupancy(enemy);
                 return true;
             }
 
@@ -244,6 +272,37 @@ namespace BoneThrone.Rooms
             return true;
         }
 
+        private void EnsureCurrentTileOccupancy(Unit enemy)
+        {
+            if (enemy == null || enemy.CurrentTile == null)
+            {
+                return;
+            }
+
+            Tile tile = enemy.CurrentTile;
+            if (!tile.IsOccupied || tile.OccupantId == enemy.UnitId)
+            {
+                tile.SetOccupant(enemy.UnitId);
+            }
+        }
+
+        private void EnsureActiveAssignedEnemyTileOccupancyAtStart()
+        {
+            if (assignedEnemies == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < assignedEnemies.Length; i++)
+            {
+                Unit enemy = assignedEnemies[i];
+                if (enemy != null && enemy.gameObject.activeInHierarchy)
+                {
+                    EnsureCurrentTileOccupancy(enemy);
+                }
+            }
+        }
+
         private Tile GetSpawnTile(int index)
         {
             if (spawnTiles == null || index < 0 || index >= spawnTiles.Length)
@@ -256,14 +315,19 @@ namespace BoneThrone.Rooms
 
         private bool HasEnemyPrefabs()
         {
-            if (enemyPrefabs == null || enemyPrefabs.Length == 0)
+            return HasAnyUnit(enemyPrefabs);
+        }
+
+        private static bool HasAnyUnit(Unit[] units)
+        {
+            if (units == null || units.Length == 0)
             {
                 return false;
             }
 
-            for (int i = 0; i < enemyPrefabs.Length; i++)
+            for (int i = 0; i < units.Length; i++)
             {
-                if (enemyPrefabs[i] != null)
+                if (units[i] != null)
                 {
                     return true;
                 }
@@ -290,6 +354,29 @@ namespace BoneThrone.Rooms
             }
 
             return aliveEnemyCount;
+        }
+
+        private bool IsBossLikeAssignedEnemy(Unit enemy)
+        {
+            if (enemy == null)
+            {
+                return false;
+            }
+
+            return ContainsBossNeedle(enemy.gameObject.name) || ContainsBossNeedle(enemy.DisplayName);
+        }
+
+        private bool ContainsBossNeedle(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return false;
+            }
+
+            string normalized = value.ToLowerInvariant();
+            string bossNeedle = string.IsNullOrEmpty(bossNameContains) ? "boss" : bossNameContains.ToLowerInvariant();
+            string golemNeedle = string.IsNullOrEmpty(golemNameContains) ? "golem" : golemNameContains.ToLowerInvariant();
+            return normalized.Contains(bossNeedle) || normalized.Contains(golemNeedle);
         }
     }
 }

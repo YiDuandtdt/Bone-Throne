@@ -1,3 +1,5 @@
+using BoneThrone.Audio;
+using BoneThrone.Core;
 using BoneThrone.Items;
 using BoneThrone.Skills;
 using BoneThrone.Turns;
@@ -9,10 +11,39 @@ using UnityEngine.UI;
 namespace BoneThrone.UI
 {
     /// <summary>
-    /// Displays the first prototype action bar. Move, Basic Attack, and skill slots emit UI intent events.
+    /// Displays the battle action bar and emits UI intent events for movement, attacks, skills, defense, items, and ending the turn.
     /// </summary>
     public sealed class SkillBarView : MonoBehaviour
     {
+        [System.Serializable]
+        private sealed class RoleSkillIconSet
+        {
+            [SerializeField] private RoleId roleId = RoleId.None;
+            [SerializeField] private Sprite slot0Sprite;
+            [SerializeField] private Sprite slot1Sprite;
+            [SerializeField] private Sprite slot2Sprite;
+
+            public RoleId RoleId
+            {
+                get { return roleId; }
+            }
+
+            public Sprite GetSprite(int slotIndex)
+            {
+                switch (slotIndex)
+                {
+                    case 0:
+                        return slot0Sprite;
+                    case 1:
+                        return slot1Sprite;
+                    case 2:
+                        return slot2Sprite;
+                    default:
+                        return null;
+                }
+            }
+        }
+
         [SerializeField] private TMP_Text moveText;
         [SerializeField] private TMP_Text basicAttackText;
         [SerializeField] private TMP_Text slot0Text;
@@ -22,6 +53,22 @@ namespace BoneThrone.UI
         [SerializeField] private TMP_Text potionText;
         [SerializeField] private TMP_Text endTurnText;
         [SerializeField] private Button[] actionButtons;
+
+        [Header("Replaceable Icon Sprites")]
+        [SerializeField] private bool hideIconText = true;
+        [SerializeField] private RoleId previewRoleWhenNoSelection = RoleId.Fighter;
+        [SerializeField] private Sprite moveSprite;
+        [SerializeField] private Sprite basicAttackSprite;
+        [SerializeField] private Sprite defendSprite;
+        [SerializeField] private Sprite potionSprite;
+        [SerializeField] private Sprite endTurnSprite;
+        [SerializeField] private RoleSkillIconSet[] roleSkillIconSets;
+
+        [Header("Icon State Colors")]
+        [SerializeField] private Color enabledIconColor = Color.white;
+        [SerializeField] private Color disabledIconColor = new Color(1f, 1f, 1f, 0.42f);
+        [SerializeField] private Color cooldownIconColor = new Color(0.65f, 0.75f, 1f, 0.72f);
+
         [SerializeField] private Color enabledTextColor = Color.white;
         [SerializeField] private Color disabledTextColor = Color.gray;
         [SerializeField] private Color cooldownTextColor = new Color(0.65f, 0.75f, 1f, 1f);
@@ -34,6 +81,7 @@ namespace BoneThrone.UI
         private Button defendButton;
         private Button potionButton;
         private Button endTurnButton;
+        private readonly bool[] invalidSkillSlotClickEnabled = new bool[3];
 
         public event System.Action MoveClicked;
         public event System.Action BasicAttackClicked;
@@ -43,6 +91,16 @@ namespace BoneThrone.UI
         public event System.Action DefendClicked;
         public event System.Action PotionClicked;
         public event System.Action EndTurnClicked;
+
+        private void Awake()
+        {
+            InitializeButtonsFromSerializedState();
+        }
+
+        private void OnEnable()
+        {
+            InitializeButtonsFromSerializedState();
+        }
 
         public void Bind(
             TMP_Text move,
@@ -64,21 +122,7 @@ namespace BoneThrone.UI
             potionText = potion;
             endTurnText = endTurn;
             actionButtons = buttons;
-            moveButton = actionButtons != null && actionButtons.Length > 0 ? actionButtons[0] : null;
-            basicAttackButton = actionButtons != null && actionButtons.Length > 1 ? actionButtons[1] : null;
-            slot0Button = actionButtons != null && actionButtons.Length > 2 ? actionButtons[2] : null;
-            slot1Button = actionButtons != null && actionButtons.Length > 3 ? actionButtons[3] : null;
-            slot2Button = actionButtons != null && actionButtons.Length > 4 ? actionButtons[4] : null;
-            defendButton = actionButtons != null && actionButtons.Length > 5 ? actionButtons[5] : null;
-            potionButton = actionButtons != null && actionButtons.Length > 6 ? actionButtons[6] : null;
-            endTurnButton = actionButtons != null && actionButtons.Length > 7 ? actionButtons[7] : null;
-            ConfigureMoveButton();
-            ConfigureBasicAttackButton();
-            ConfigureSkillSlotButtons();
-            ConfigureDefendButton();
-            ConfigurePotionButton();
-            ConfigureEndTurnButton();
-            DisablePlaceholderButtons();
+            InitializeButtonsFromSerializedState();
         }
 
         public void Refresh(Unit selectedUnit)
@@ -89,21 +133,25 @@ namespace BoneThrone.UI
         public void Refresh(Unit selectedUnit, bool isPlayerTurn)
         {
             DisablePlaceholderButtons();
-            SetMoveInteractable(isPlayerTurn && selectedUnit != null);
+            ApplyIconTextVisibility();
+            ApplyActionIconSprites(selectedUnit);
+            SetMoveInteractable(isPlayerTurn && CanSelectedUnitMove(selectedUnit));
             SetBasicAttackInteractable(isPlayerTurn && CanSelectedUnitAct(selectedUnit));
 
-            SetText(moveText, selectedUnit != null ? "Move\nTarget" : "Move\nSelect Unit");
-            SetText(basicAttackText, selectedUnit != null ? "Basic Attack\nTarget" : "Basic Attack\nSelect Unit");
+            SetText(moveText, selectedUnit != null ? "移动\n选择目标" : "移动\n选择角色");
+            SetText(basicAttackText, selectedUnit != null ? "普通攻击\n选择目标" : "普通攻击\n选择角色");
             RefreshSkillSlot(selectedUnit, 0, slot0Text, isPlayerTurn);
             RefreshSkillSlot(selectedUnit, 1, slot1Text, isPlayerTurn);
             RefreshSkillSlot(selectedUnit, 2, slot2Text, isPlayerTurn);
             RefreshDefend(selectedUnit, isPlayerTurn);
             RefreshPotion(selectedUnit, isPlayerTurn);
-            SetText(endTurnText, "End\nTurn");
+            SetText(endTurnText, "结束\n回合");
         }
 
         public void EnsureEndTurnButton()
         {
+            InitializeButtonsFromSerializedState();
+
             if (endTurnButton != null)
             {
                 ConfigureEndTurnButton();
@@ -114,29 +162,8 @@ namespace BoneThrone.UI
             {
                 endTurnButton = actionButtons[7];
                 ConfigureEndTurnButton();
-                return;
+                DisablePlaceholderButtons();
             }
-
-            Button createdButton = CreateRuntimeEndTurnButton();
-            if (createdButton == null)
-            {
-                return;
-            }
-
-            Button[] expandedButtons = new Button[8];
-            if (actionButtons != null)
-            {
-                for (int i = 0; i < actionButtons.Length && i < expandedButtons.Length; i++)
-                {
-                    expandedButtons[i] = actionButtons[i];
-                }
-            }
-
-            expandedButtons[7] = createdButton;
-            actionButtons = expandedButtons;
-            endTurnButton = createdButton;
-            ConfigureEndTurnButton();
-            DisablePlaceholderButtons();
         }
 
         public void SetEndTurnInteractable(bool interactable)
@@ -156,45 +183,47 @@ namespace BoneThrone.UI
             {
                 endTurnButton.targetGraphic.raycastTarget = interactable;
             }
+
+            ApplyButtonIconColor(endTurnButton, interactable ? enabledIconColor : disabledIconColor);
         }
 
         private void RefreshSkillSlot(Unit selectedUnit, int slotIndex, TMP_Text text, bool isPlayerTurn)
         {
-            if (text == null)
-            {
-                return;
-            }
-
             if (selectedUnit == null)
             {
-                text.text = "Skill " + slotIndex + "\nNo Unit";
-                SetSkillSlotVisual(slotIndex, text, false, disabledTextColor);
+                SetText(text, "技能" + (slotIndex + 1) + "\n未选择角色");
+                SetInvalidSkillSlotClickEnabled(slotIndex, false);
+                SetSkillSlotVisual(slotIndex, text, false, disabledTextColor, disabledIconColor);
                 return;
             }
 
             SkillRuntime runtime = selectedUnit.GetComponent<SkillRuntime>();
             if (runtime == null || !runtime.HasSkill(slotIndex))
             {
-                text.text = "Skill " + slotIndex + "\nEmpty";
-                SetSkillSlotVisual(slotIndex, text, false, disabledTextColor);
+                SetText(text, "技能" + (slotIndex + 1) + "\n未装备");
+                SetInvalidSkillSlotClickEnabled(slotIndex, false);
+                SetSkillSlotVisual(slotIndex, text, false, disabledTextColor, disabledIconColor);
                 return;
             }
 
             SkillData skill = runtime.GetSkill(slotIndex);
             bool unlocked = runtime.IsUnlocked(selectedUnit, slotIndex);
             int cooldown = runtime.GetCooldown(slotIndex);
-            string state = !unlocked ? "Locked" : cooldown > 0 ? "Cooldown " + cooldown : "Ready";
-            text.text = skill.DisplayName + "\n" + state;
+            string state = !unlocked ? "未解锁" : cooldown > 0 ? "冷却 " + cooldown : "可用";
+            SetText(text, GetSkillDisplayName(skill) + "\n" + state);
             bool canUse = isPlayerTurn && unlocked && cooldown <= 0 && CanSelectedUnitAct(selectedUnit);
+            bool canClickForInvalidFeedback = !unlocked;
+            SetInvalidSkillSlotClickEnabled(slotIndex, canClickForInvalidFeedback);
             Color textColor = canUse ? enabledTextColor : cooldown > 0 ? cooldownTextColor : disabledTextColor;
-            SetSkillSlotVisual(slotIndex, text, canUse, textColor);
+            Color iconColor = canUse ? enabledIconColor : cooldown > 0 ? cooldownIconColor : disabledIconColor;
+            SetSkillSlotVisual(slotIndex, text, canUse || canClickForInvalidFeedback, textColor, iconColor);
         }
 
         private void RefreshDefend(Unit selectedUnit, bool isPlayerTurn)
         {
             bool canAct = isPlayerTurn && CanSelectedUnitAct(selectedUnit);
-            string state = selectedUnit == null ? "Unavailable" : canAct ? "Ready" : "Used";
-            SetText(defendText, "Defend\n" + state);
+            string state = selectedUnit == null ? "不可用" : canAct ? "可用" : "已使用";
+            SetText(defendText, "防御\n" + state);
             SetTextColor(defendText, canAct ? enabledTextColor : disabledTextColor);
             SetDefendInteractable(canAct);
         }
@@ -206,11 +235,42 @@ namespace BoneThrone.UI
             bool fullHp = IsFullHp(selectedUnit);
             bool canUse = canAct && potionCount > 0 && !fullHp;
             string state = selectedUnit == null
-                ? "Unavailable"
-                : potionCount <= 0 ? "Empty" : fullHp ? "Full HP" : "x" + potionCount;
-            SetText(potionText, "Potion\n" + state);
+                ? "不可用"
+                : potionCount <= 0 ? "已用尽" : fullHp ? "生命已满" : "剩余 " + potionCount;
+            SetText(potionText, "药水\n" + state);
             SetTextColor(potionText, canUse ? enabledTextColor : disabledTextColor);
             SetPotionInteractable(canUse);
+        }
+
+        private void InitializeButtonsFromSerializedState()
+        {
+            CacheActionButtons();
+            ApplyIconTextVisibility();
+            ApplyActionIconSprites(null);
+            ConfigureMoveButton();
+            ConfigureBasicAttackButton();
+            ConfigureSkillSlotButtons();
+            ConfigureDefendButton();
+            ConfigurePotionButton();
+            ConfigureEndTurnButton();
+            DisablePlaceholderButtons();
+        }
+
+        private void CacheActionButtons()
+        {
+            if (actionButtons == null || actionButtons.Length == 0)
+            {
+                actionButtons = GetComponentsInChildren<Button>(true);
+            }
+
+            moveButton = GetActionButton(0);
+            basicAttackButton = GetActionButton(1);
+            slot0Button = GetActionButton(2);
+            slot1Button = GetActionButton(3);
+            slot2Button = GetActionButton(4);
+            defendButton = GetActionButton(5);
+            potionButton = GetActionButton(6);
+            endTurnButton = GetActionButton(7);
         }
 
         private void ConfigureMoveButton()
@@ -294,66 +354,50 @@ namespace BoneThrone.UI
 
         private void HandleMoveClicked()
         {
-            if (MoveClicked != null)
-            {
-                MoveClicked();
-            }
+            BTAudioService.PlaySfx(BTAudioCueId.ButtonClick);
+            MoveClicked?.Invoke();
         }
 
         private void HandleBasicAttackClicked()
         {
-            if (BasicAttackClicked != null)
-            {
-                BasicAttackClicked();
-            }
+            BTAudioService.PlaySfx(BTAudioCueId.ButtonClick);
+            BasicAttackClicked?.Invoke();
         }
 
         private void HandleSkillSlot0Clicked()
         {
-            if (SkillSlot0Clicked != null)
-            {
-                SkillSlot0Clicked();
-            }
+            PlaySkillSlotClickSfx(0);
+            SkillSlot0Clicked?.Invoke();
         }
 
         private void HandleSkillSlot1Clicked()
         {
-            if (SkillSlot1Clicked != null)
-            {
-                SkillSlot1Clicked();
-            }
+            PlaySkillSlotClickSfx(1);
+            SkillSlot1Clicked?.Invoke();
         }
 
         private void HandleSkillSlot2Clicked()
         {
-            if (SkillSlot2Clicked != null)
-            {
-                SkillSlot2Clicked();
-            }
+            PlaySkillSlotClickSfx(2);
+            SkillSlot2Clicked?.Invoke();
         }
 
         private void HandleDefendClicked()
         {
-            if (DefendClicked != null)
-            {
-                DefendClicked();
-            }
+            BTAudioService.PlaySfx(BTAudioCueId.ButtonClick);
+            DefendClicked?.Invoke();
         }
 
         private void HandlePotionClicked()
         {
-            if (PotionClicked != null)
-            {
-                PotionClicked();
-            }
+            BTAudioService.PlaySfx(BTAudioCueId.ButtonClick);
+            PotionClicked?.Invoke();
         }
 
         private void HandleEndTurnClicked()
         {
-            if (EndTurnClicked != null)
-            {
-                EndTurnClicked();
-            }
+            BTAudioService.PlaySfx(BTAudioCueId.ButtonClick);
+            EndTurnClicked?.Invoke();
         }
 
         private void SetMoveInteractable(bool interactable)
@@ -368,6 +412,8 @@ namespace BoneThrone.UI
             {
                 moveButton.targetGraphic.raycastTarget = interactable;
             }
+
+            ApplyButtonIconColor(moveButton, interactable ? enabledIconColor : disabledIconColor);
         }
 
         private void SetBasicAttackInteractable(bool interactable)
@@ -382,6 +428,8 @@ namespace BoneThrone.UI
             {
                 basicAttackButton.targetGraphic.raycastTarget = interactable;
             }
+
+            ApplyButtonIconColor(basicAttackButton, interactable ? enabledIconColor : disabledIconColor);
         }
 
         private void SetSkillSlotInteractable(int slotIndex, bool interactable)
@@ -397,6 +445,30 @@ namespace BoneThrone.UI
             {
                 button.targetGraphic.raycastTarget = interactable;
             }
+
+            ApplyButtonIconColor(button, interactable ? enabledIconColor : disabledIconColor);
+        }
+
+        private void SetInvalidSkillSlotClickEnabled(int slotIndex, bool enabled)
+        {
+            if (slotIndex >= 0 && slotIndex < invalidSkillSlotClickEnabled.Length)
+            {
+                invalidSkillSlotClickEnabled[slotIndex] = enabled;
+            }
+        }
+
+        private bool IsInvalidSkillSlotClickEnabled(int slotIndex)
+        {
+            return slotIndex >= 0
+                && slotIndex < invalidSkillSlotClickEnabled.Length
+                && invalidSkillSlotClickEnabled[slotIndex];
+        }
+
+        private void PlaySkillSlotClickSfx(int slotIndex)
+        {
+            BTAudioService.PlaySfx(IsInvalidSkillSlotClickEnabled(slotIndex)
+                ? BTAudioCueId.InvalidAction
+                : BTAudioCueId.ButtonClick);
         }
 
         private Button GetSkillSlotButton(int slotIndex)
@@ -414,6 +486,13 @@ namespace BoneThrone.UI
             }
         }
 
+        private Button GetActionButton(int index)
+        {
+            return actionButtons != null && index >= 0 && index < actionButtons.Length
+                ? actionButtons[index]
+                : null;
+        }
+
         private void SetDefendInteractable(bool interactable)
         {
             SetButtonInteractable(defendButton, interactable);
@@ -424,13 +503,14 @@ namespace BoneThrone.UI
             SetButtonInteractable(potionButton, interactable);
         }
 
-        private void SetSkillSlotVisual(int slotIndex, TMP_Text text, bool interactable, Color color)
+        private void SetSkillSlotVisual(int slotIndex, TMP_Text text, bool interactable, Color textColor, Color iconColor)
         {
             SetSkillSlotInteractable(slotIndex, interactable);
-            SetTextColor(text, color);
+            SetTextColor(text, textColor);
+            ApplyButtonIconColor(GetSkillSlotButton(slotIndex), iconColor);
         }
 
-        private static void SetButtonInteractable(Button button, bool interactable)
+        private void SetButtonInteractable(Button button, bool interactable)
         {
             if (button == null)
             {
@@ -442,6 +522,8 @@ namespace BoneThrone.UI
             {
                 button.targetGraphic.raycastTarget = interactable;
             }
+
+            ApplyButtonIconColor(button, interactable ? enabledIconColor : disabledIconColor);
         }
 
         private void DisablePlaceholderButtons()
@@ -455,13 +537,166 @@ namespace BoneThrone.UI
             {
                 if (actionButtons[i] != null)
                 {
-                    bool isSupportedAction = (i >= 0 && i <= 7);
+                    bool isSupportedAction = i >= 0 && i <= 7;
                     actionButtons[i].interactable = isSupportedAction;
                     if (actionButtons[i].targetGraphic != null)
                     {
                         actionButtons[i].targetGraphic.raycastTarget = isSupportedAction;
                     }
                 }
+            }
+        }
+
+        private void ApplyActionIconSprites(Unit selectedUnit)
+        {
+            SetButtonSprite(moveButton, moveSprite, false);
+            SetButtonSprite(basicAttackButton, basicAttackSprite, false);
+            SetButtonSprite(defendButton, defendSprite, false);
+            SetButtonSprite(potionButton, potionSprite, false);
+            SetButtonSprite(endTurnButton, endTurnSprite, false);
+            SetButtonSprite(slot0Button, GetSkillSprite(selectedUnit, 0), true);
+            SetButtonSprite(slot1Button, GetSkillSprite(selectedUnit, 1), true);
+            SetButtonSprite(slot2Button, GetSkillSprite(selectedUnit, 2), true);
+        }
+
+        private void ApplyIconTextVisibility()
+        {
+            bool visible = !hideIconText;
+            SetTextVisible(moveText, visible);
+            SetTextVisible(basicAttackText, visible);
+            SetTextVisible(slot0Text, visible);
+            SetTextVisible(slot1Text, visible);
+            SetTextVisible(slot2Text, visible);
+            SetTextVisible(defendText, visible);
+            SetTextVisible(potionText, visible);
+            SetTextVisible(endTurnText, visible);
+        }
+
+        private Sprite GetSkillSprite(Unit selectedUnit, int slotIndex)
+        {
+            if (roleSkillIconSets == null)
+            {
+                return null;
+            }
+
+            RoleId roleId = selectedUnit != null ? selectedUnit.RoleId : previewRoleWhenNoSelection;
+            if (roleId == RoleId.None)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < roleSkillIconSets.Length; i++)
+            {
+                RoleSkillIconSet iconSet = roleSkillIconSets[i];
+                if (iconSet != null && iconSet.RoleId == roleId)
+                {
+                    return iconSet.GetSprite(slotIndex);
+                }
+            }
+
+            return null;
+        }
+
+        private static string GetSkillDisplayName(SkillData skill)
+        {
+            if (skill == null)
+            {
+                return "技能";
+            }
+
+            string key = NormalizeSkillKey(skill.DisplayName);
+            switch (key)
+            {
+                case "fightershieldbash":
+                    return "战士·盾击";
+                case "fighterguardstrike":
+                    return "战士·守备突刺";
+                case "fightercrushingchallenge":
+                    return "战士·重压嘲讽";
+                case "rangerprecisionshot":
+                    return "游侠·精准射击";
+                case "rangerquickshot":
+                    return "游侠·速射";
+                case "rangerpiercingarrow":
+                    return "游侠·穿透箭矢";
+                case "magefireball":
+                    return "法师·火球术";
+                case "magefrostbolt":
+                    return "法师·冰霜箭";
+                case "magearcaneburst":
+                    return "法师·奥术爆发";
+                case "barbarianheavycleave":
+                    return "野蛮人·重击斩";
+                case "barbarianragestrike":
+                    return "野蛮人·狂怒打击";
+                case "barbarianbloodfuryslash":
+                    return "野蛮人·血怒斩击";
+                default:
+                    return string.IsNullOrWhiteSpace(skill.DisplayName) ? "技能" : skill.DisplayName;
+            }
+        }
+
+        private static string NormalizeSkillKey(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            char[] buffer = new char[value.Length];
+            int count = 0;
+            for (int i = 0; i < value.Length; i++)
+            {
+                char c = value[i];
+                if (char.IsLetterOrDigit(c))
+                {
+                    buffer[count] = char.ToLowerInvariant(c);
+                    count++;
+                }
+            }
+
+            return new string(buffer, 0, count);
+        }
+
+        private static void SetButtonSprite(Button button, Sprite sprite, bool clearWhenMissing)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            Image image = button.targetGraphic as Image;
+            if (image == null)
+            {
+                return;
+            }
+
+            if (sprite == null)
+            {
+                if (clearWhenMissing)
+                {
+                    image.sprite = null;
+                }
+
+                return;
+            }
+
+            image.sprite = sprite;
+        }
+
+        private static void ApplyButtonIconColor(Button button, Color color)
+        {
+            if (button != null && button.targetGraphic != null)
+            {
+                button.targetGraphic.color = color;
+            }
+        }
+
+        private static void SetTextVisible(TMP_Text text, bool visible)
+        {
+            if (text != null && text.gameObject.activeSelf != visible)
+            {
+                text.gameObject.SetActive(visible);
             }
         }
 
@@ -492,6 +727,20 @@ namespace BoneThrone.UI
             return turnState != null && !turnState.HasActed && !turnState.HasEnded;
         }
 
+        private static bool CanSelectedUnitMove(Unit selectedUnit)
+        {
+            if (selectedUnit == null || !selectedUnit.IsAlive)
+            {
+                return false;
+            }
+
+            UnitTurnState turnState = selectedUnit.GetComponent<UnitTurnState>();
+            return turnState != null
+                && !turnState.HasMoved
+                && !turnState.HasActed
+                && !turnState.HasEnded;
+        }
+
         private static int GetPotionCount(Unit selectedUnit)
         {
             if (selectedUnit == null)
@@ -513,37 +762,5 @@ namespace BoneThrone.UI
             return selectedUnit.RuntimeState.CurrentHp >= selectedUnit.Stats.GetClampedMaxHp();
         }
 
-        private Button CreateRuntimeEndTurnButton()
-        {
-            GameObject buttonObject = new GameObject("EndTurn", typeof(RectTransform));
-            buttonObject.transform.SetParent(transform, false);
-            Image image = buttonObject.AddComponent<Image>();
-            image.color = new Color(0.12f, 0.12f, 0.12f, 0.72f);
-            image.raycastTarget = false;
-            Button button = buttonObject.AddComponent<Button>();
-            button.interactable = false;
-
-            GameObject textObject = new GameObject("EndTurnText", typeof(RectTransform));
-            textObject.transform.SetParent(buttonObject.transform, false);
-            RectTransform rect = textObject.GetComponent<RectTransform>();
-            rect.localScale = Vector3.one;
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = new Vector2(8f, 6f);
-            rect.offsetMax = new Vector2(-8f, -6f);
-            TMP_Text label = textObject.AddComponent<TextMeshProUGUI>();
-            label.text = "End\nTurn";
-            label.fontSize = 16;
-            label.enableAutoSizing = false;
-            label.richText = true;
-            label.fontStyle = FontStyles.Bold;
-            label.color = Color.white;
-            label.alignment = TextAlignmentOptions.Center;
-            label.raycastTarget = false;
-            label.textWrappingMode = TextWrappingModes.Normal;
-            label.extraPadding = true;
-            endTurnText = label;
-            return button;
-        }
     }
 }

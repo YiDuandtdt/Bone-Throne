@@ -46,6 +46,13 @@ namespace BoneThrone.Units
         private bool warnedMissingIsDefending;
         private bool presentationIsDead;
         private Coroutine faceRoutine;
+        private Coroutine temporaryAnimatorSpeedRoutine;
+        private float animatorSpeedBeforeTemporaryOverride = 1f;
+
+        private void OnDisable()
+        {
+            RestoreTemporaryAnimatorSpeed();
+        }
 
         private void Awake()
         {
@@ -99,9 +106,19 @@ namespace BoneThrone.Units
             SetTrigger("BasicAttack", BasicAttackHash, BasicAttackStateHash, "BasicAttack", ref warnedMissingBasicAttack);
         }
 
+        public void PlayBasicAttack(float speedMultiplier, float restoreAfterSeconds)
+        {
+            SetTrigger("BasicAttack", BasicAttackHash, BasicAttackStateHash, "BasicAttack", ref warnedMissingBasicAttack, speedMultiplier, restoreAfterSeconds);
+        }
+
         public void PlaySkill()
         {
             SetTrigger("Skill", SkillHash, SkillCastStateHash, "SkillCast", ref warnedMissingSkill);
+        }
+
+        public void PlaySkill(float speedMultiplier, float restoreAfterSeconds)
+        {
+            SetTrigger("Skill", SkillHash, SkillCastStateHash, "SkillCast", ref warnedMissingSkill, speedMultiplier, restoreAfterSeconds);
         }
 
         public void PlayHit()
@@ -253,6 +270,18 @@ namespace BoneThrone.Units
 
         private void SetTrigger(string parameterName, int parameterHash, int stateHash, string stateName, ref bool warnedMissingParameter)
         {
+            SetTrigger(parameterName, parameterHash, stateHash, stateName, ref warnedMissingParameter, 1f, 0f);
+        }
+
+        private void SetTrigger(
+            string parameterName,
+            int parameterHash,
+            int stateHash,
+            string stateName,
+            ref bool warnedMissingParameter,
+            float speedMultiplier,
+            float restoreAfterSeconds)
+        {
             LogMethodStart("SetTrigger", parameterName);
             if (presentationIsDead)
             {
@@ -271,11 +300,51 @@ namespace BoneThrone.Units
             }
 
             animator.SetTrigger(parameterHash);
+            ApplyTemporaryAnimatorSpeed(speedMultiplier, restoreAfterSeconds);
             LogDebug("Set trigger " + parameterName + ".");
 
             if (ShouldPlayStatesDirectly())
             {
                 PlayState(stateHash, stateName);
+            }
+        }
+
+        private void ApplyTemporaryAnimatorSpeed(float speedMultiplier, float restoreAfterSeconds)
+        {
+            if (animator == null || restoreAfterSeconds <= 0f || Mathf.Approximately(speedMultiplier, 1f))
+            {
+                return;
+            }
+
+            RestoreTemporaryAnimatorSpeed();
+            animatorSpeedBeforeTemporaryOverride = animator.speed;
+            animator.speed = Mathf.Clamp(speedMultiplier, 0.25f, 2f);
+            temporaryAnimatorSpeedRoutine = StartCoroutine(RestoreAnimatorSpeedAfterDelay(restoreAfterSeconds));
+        }
+
+        private IEnumerator RestoreAnimatorSpeedAfterDelay(float delay)
+        {
+            yield return new WaitForSeconds(Mathf.Max(0f, delay));
+            temporaryAnimatorSpeedRoutine = null;
+            RestoreAnimatorSpeedValue();
+        }
+
+        private void RestoreTemporaryAnimatorSpeed()
+        {
+            if (temporaryAnimatorSpeedRoutine != null)
+            {
+                StopCoroutine(temporaryAnimatorSpeedRoutine);
+                temporaryAnimatorSpeedRoutine = null;
+            }
+
+            RestoreAnimatorSpeedValue();
+        }
+
+        private void RestoreAnimatorSpeedValue()
+        {
+            if (animator != null)
+            {
+                animator.speed = Mathf.Max(0.01f, animatorSpeedBeforeTemporaryOverride);
             }
         }
 

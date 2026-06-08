@@ -20,13 +20,13 @@ namespace BoneThrone.Skills
 
             if (!runtime.IsUnlocked(caster, slotIndex))
             {
-                reason = "Skill slot " + slotIndex + " is locked for unit level " + caster.Stats.Level + ". Required level=" + skill.UnlockLevel + ".";
+                reason = "技能尚未解锁。";
                 return false;
             }
 
             if (runtime.IsOnCooldown(slotIndex))
             {
-                reason = "Skill slot " + slotIndex + " is on cooldown. Remaining=" + runtime.GetCooldown(slotIndex) + ".";
+                reason = "技能正在冷却。";
                 return false;
             }
 
@@ -37,11 +37,11 @@ namespace BoneThrone.Skills
 
             if (!IsInRange(caster, target, skill))
             {
-                reason = "Target is out of skill range. Distance=" + GetManhattanDistance(caster, target) + " Range=" + skill.Range + ".";
+                reason = "目标超出技能范围。";
                 return false;
             }
 
-            reason = "Skill target is valid.";
+            reason = "技能目标有效。";
             return true;
         }
 
@@ -49,19 +49,19 @@ namespace BoneThrone.Skills
         {
             if (caster == null)
             {
-                reason = "Caster is missing.";
+                reason = "施法者不存在。";
                 return false;
             }
 
             if (target == null)
             {
-                reason = "Target is missing.";
+                reason = "目标不存在。";
                 return false;
             }
 
             if (skill == null)
             {
-                reason = "SkillData is missing.";
+                reason = "技能数据缺失。";
                 return false;
             }
 
@@ -70,13 +70,13 @@ namespace BoneThrone.Skills
                 case SkillTargetType.Enemy:
                     if (caster == target)
                     {
-                        reason = "Enemy skill cannot target the caster.";
+                        reason = "敌方技能不能以自己为目标。";
                         return false;
                     }
 
                     if (caster.Faction == target.Faction)
                     {
-                        reason = "Enemy skill cannot target a unit with the same faction.";
+                        reason = "敌方技能不能选择同阵营目标。";
                         return false;
                     }
 
@@ -85,7 +85,7 @@ namespace BoneThrone.Skills
                 case SkillTargetType.Ally:
                     if (caster.Faction != target.Faction)
                     {
-                        reason = "Ally skill cannot target an enemy faction.";
+                        reason = "友方技能不能选择敌方目标。";
                         return false;
                     }
 
@@ -94,7 +94,7 @@ namespace BoneThrone.Skills
                 case SkillTargetType.Self:
                     if (caster != target)
                     {
-                        reason = "Self skill can only target the caster.";
+                        reason = "自身技能只能以自己为目标。";
                         return false;
                     }
 
@@ -104,11 +104,11 @@ namespace BoneThrone.Skills
                     break;
 
                 default:
-                    reason = "Unsupported skill target type: " + skill.TargetType + ".";
+                    reason = "不支持的技能目标类型。";
                     return false;
             }
 
-            reason = "Target type is valid.";
+            reason = "技能目标类型有效。";
             return true;
         }
 
@@ -138,65 +138,65 @@ namespace BoneThrone.Skills
         {
             if (caster == null)
             {
-                reason = "Caster is missing.";
+                reason = "施法者不存在。";
                 return false;
             }
 
             if (target == null)
             {
-                reason = "Target is missing.";
+                reason = "目标不存在。";
                 return false;
             }
 
             if (runtime == null)
             {
-                reason = "SkillRuntime is missing on caster.";
+                reason = "当前角色没有技能组件。";
                 return false;
             }
 
             if (slotIndex < 0 || slotIndex >= runtime.SlotCount)
             {
-                reason = "Skill slot index " + slotIndex + " is outside runtime slot count " + runtime.SlotCount + ".";
+                reason = "技能槽位无效。";
                 return false;
             }
 
             if (skill == null)
             {
-                reason = "Skill slot " + slotIndex + " has no SkillData.";
+                reason = "该技能槽没有技能。";
                 return false;
             }
 
             if (caster.Stats == null)
             {
-                reason = "Caster UnitStats is missing.";
+                reason = "施法者属性缺失。";
                 return false;
             }
 
             if (!caster.IsAlive)
             {
-                reason = "Caster is dead.";
+                reason = "施法者已倒下。";
                 return false;
             }
 
             if (!target.IsAlive)
             {
-                reason = "Target is dead.";
+                reason = "目标已倒下。";
                 return false;
             }
 
             if (caster.CurrentTile == null)
             {
-                reason = "Caster has no current tile.";
+                reason = "施法者没有所在格。";
                 return false;
             }
 
             if (target.CurrentTile == null)
             {
-                reason = "Target has no current tile.";
+                reason = "目标没有所在格。";
                 return false;
             }
 
-            reason = "Base skill validation passed.";
+            reason = "技能基础校验通过。";
             return true;
         }
     }

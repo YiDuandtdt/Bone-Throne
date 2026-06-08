@@ -48,6 +48,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Interactables.BossKeyItem
   progressionState: {fileID: 0}
   consumeOnCollect: 1
+  autoCollectWhenPlayerNearby: 1
+  pickupRadius: 1.6
+  pickupCheckInterval: 0.2
   collected: 0
   debugLogging: 0
 --- !u!64 &600003

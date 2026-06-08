@@ -1,7 +1,10 @@
+using System.Collections;
+using BoneThrone.Audio;
 using BoneThrone.Levels;
 using BoneThrone.Movement;
 using BoneThrone.Units;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace BoneThrone.Interactables
 {
@@ -87,10 +90,30 @@ namespace BoneThrone.Interactables
                 return false;
             }
 
+            string sceneBefore = SceneManager.GetActiveScene().name;
+            BTAudioService.PlayLoop(BTAudioCueId.StairsLoop, this);
             bool entered = progressionService.TryEnterNextLevel();
             confirmationPending = false;
+            if (!entered)
+            {
+                BTAudioService.StopLoop(this);
+            }
+            else
+            {
+                StartCoroutine(StopStairsLoopIfSceneDidNotChange(sceneBefore));
+            }
+
             Debug.Log("Stairs confirm result: " + entered + ".", this);
             return entered;
+        }
+
+        private IEnumerator StopStairsLoopIfSceneDidNotChange(string sceneBefore)
+        {
+            yield return new WaitForSeconds(1f);
+            if (SceneManager.GetActiveScene().name == sceneBefore)
+            {
+                BTAudioService.StopLoop(this);
+            }
         }
 
         [ContextMenu("Phase 10/Cancel Pending Confirmation")]

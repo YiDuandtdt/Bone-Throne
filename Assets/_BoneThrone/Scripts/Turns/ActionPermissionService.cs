@@ -26,6 +26,12 @@ namespace BoneThrone.Turns
                 return false;
             }
 
+            if (turnState.HasActed)
+            {
+                Debug.LogWarning("Move denied because unit " + unit.UnitId + " has already acted this round.", unit);
+                return false;
+            }
+
             if (turnState.HasMoved)
             {
                 Debug.LogWarning("Move denied because unit " + unit.UnitId + " has already moved this round.", unit);
@@ -93,6 +99,7 @@ namespace BoneThrone.Turns
                 combatLog.LogStunConsumed(unit);
             }
 
+            turnManager.TryAutoEndPlayerUnitTurnIfNoAvailableActions(unit);
             Debug.LogWarning("Turn opportunity blocked because unit " + unit.UnitId + " is stunned.", unit);
             return true;
         }

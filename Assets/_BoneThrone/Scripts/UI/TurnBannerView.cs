@@ -27,7 +27,7 @@ namespace BoneThrone.UI
 
             if (turnManager == null)
             {
-                turnText.text = "Turn: Unbound";
+                turnText.text = "回合：未绑定";
                 return;
             }
 
@@ -38,23 +38,20 @@ namespace BoneThrone.UI
         {
             if (phase == TurnPhase.EnemyTurn)
             {
-                return "Turn: Enemy Turn";
+                return "回合：敌方回合";
             }
 
             if (phase == TurnPhase.PlayerTurn)
             {
                 if (selectedUnit != null)
                 {
-                    string displayName = string.IsNullOrEmpty(selectedUnit.DisplayName)
-                        ? selectedUnit.RoleId.ToString()
-                        : selectedUnit.DisplayName;
-                    return "Turn: Player Turn | Selected: " + displayName;
+                    return "回合：玩家回合 - 当前选择：" + BoneThroneTextUtility.GetUnitDisplayName(selectedUnit);
                 }
 
-                return "Turn: Player Turn - Select a unit";
+                return "回合：玩家回合 - 请选择角色";
             }
 
-            return "Turn: -- | Actor: --";
+            return "回合：未开始 - 行动者：" + BoneThroneTextUtility.GetRoleDisplayName(role);
         }
     }
 }

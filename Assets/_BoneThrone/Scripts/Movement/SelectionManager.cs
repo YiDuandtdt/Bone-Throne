@@ -9,6 +9,8 @@ namespace BoneThrone.Movement
     /// </summary>
     public sealed class SelectionManager : MonoBehaviour
     {
+        [SerializeField] private TurnManager turnManager;
+
         private Unit selectedUnit;
 
         public Unit SelectedUnit
@@ -41,6 +43,11 @@ namespace BoneThrone.Movement
                 return false;
             }
 
+            if (!TryAutoEndMovedUnitBeforeSwitch(unit))
+            {
+                return false;
+            }
+
             UnitTurnState turnState = unit.GetComponent<UnitTurnState>();
             if (turnState != null && turnState.HasEnded)
             {
@@ -56,6 +63,44 @@ namespace BoneThrone.Movement
         public void ClearSelection()
         {
             selectedUnit = null;
+        }
+
+        private bool TryAutoEndMovedUnitBeforeSwitch(Unit nextUnit)
+        {
+            if (selectedUnit == null || selectedUnit == nextUnit)
+            {
+                return true;
+            }
+
+            UnitTurnState previousTurnState = selectedUnit.GetComponent<UnitTurnState>();
+            if (previousTurnState == null
+                || previousTurnState.HasEnded
+                || !previousTurnState.HasMoved
+                || previousTurnState.HasActed)
+            {
+                return true;
+            }
+
+            if (turnManager == null)
+            {
+                turnManager = Object.FindFirstObjectByType<TurnManager>();
+            }
+
+            if (turnManager == null || turnManager.CurrentPhase != TurnPhase.PlayerTurn)
+            {
+                Debug.LogWarning("Selection switch could not auto-end the previous unit because TurnManager is missing or not in PlayerTurn.", this);
+                return false;
+            }
+
+            Unit previousUnit = selectedUnit;
+            if (!turnManager.TryEndPlayerUnitTurn(previousUnit))
+            {
+                Debug.LogWarning("Selection switch could not auto-end unit " + previousUnit.UnitId + ".", previousUnit);
+                return false;
+            }
+
+            selectedUnit = null;
+            return true;
         }
     }
 }

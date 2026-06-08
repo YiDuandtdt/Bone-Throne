@@ -12,7 +12,7 @@ namespace BoneThrone.UI
     {
         [SerializeField] private TMP_Text logText;
         [SerializeField] private int maxVisibleEntries = 10;
-        [SerializeField] private float lineSpacing = 8f;
+        [SerializeField] [Min(0f)] private float lineSpacing = 16f;
 
         private readonly List<string> visibleEntries = new List<string>();
 
@@ -26,7 +26,7 @@ namespace BoneThrone.UI
         public void ShowUnbound()
         {
             visibleEntries.Clear();
-            visibleEntries.Add("Combat Log: Unbound");
+            visibleEntries.Add("战斗日志：未绑定");
             Render();
         }
 
@@ -47,7 +47,7 @@ namespace BoneThrone.UI
 
             if (visibleEntries.Count == 0)
             {
-                visibleEntries.Add("Combat Log: No combat yet");
+                visibleEntries.Add("战斗日志：暂无记录");
             }
 
             Trim();
@@ -61,14 +61,9 @@ namespace BoneThrone.UI
             Render();
         }
 
-        private string Format(CombatLog.Entry entry)
+        private static string Format(CombatLog.Entry entry)
         {
-            if (entry == null)
-            {
-                return "Combat: N/A";
-            }
-
-            return entry.Message;
+            return entry == null ? "战斗记录不可用。" : entry.Message;
         }
 
         private void Trim()
@@ -88,7 +83,9 @@ namespace BoneThrone.UI
             }
 
             ConfigureText();
+            EnsureEntriesFit();
             logText.text = string.Join("\n", visibleEntries);
+            logText.ForceMeshUpdate();
         }
 
         private void ConfigureText()
@@ -98,9 +95,40 @@ namespace BoneThrone.UI
                 return;
             }
 
+            logText.raycastTarget = false;
+            logText.textWrappingMode = TextWrappingModes.Normal;
+            logText.overflowMode = TextOverflowModes.Truncate;
             logText.richText = true;
             logText.lineSpacing = lineSpacing;
-            logText.raycastTarget = false;
+            logText.verticalAlignment = VerticalAlignmentOptions.Bottom;
+        }
+
+        private void EnsureEntriesFit()
+        {
+            RectTransform rectTransform = logText.rectTransform;
+            if (rectTransform == null)
+            {
+                return;
+            }
+
+            Rect rect = rectTransform.rect;
+            float width = rect.width;
+            float height = rect.height;
+            if (width <= 0f || height <= 0f)
+            {
+                return;
+            }
+
+            while (visibleEntries.Count > 1 && IsTextTooTall(string.Join("\n", visibleEntries), width, height))
+            {
+                visibleEntries.RemoveAt(0);
+            }
+        }
+
+        private bool IsTextTooTall(string text, float width, float height)
+        {
+            Vector2 preferred = logText.GetPreferredValues(text, width, 0f);
+            return preferred.y > height + 0.5f;
         }
     }
 }

@@ -9,12 +9,16 @@ namespace BoneThrone.UI
     /// </summary>
     public sealed class EnemyFloatingHealthBarView : MonoBehaviour
     {
+        private static readonly Color HealthFillColor = new Color(0.9f, 0.03f, 0.02f, 1f);
+
         [SerializeField] private Unit unit;
         [SerializeField] private Camera targetCamera;
         [SerializeField] private Canvas worldCanvas;
         [SerializeField] private Image backgroundImage;
         [SerializeField] private Image fillImage;
         [SerializeField] private RectTransform fillRect;
+        [SerializeField] private Image missingFillImage;
+        [SerializeField] private RectTransform missingFillRect;
         [SerializeField] private GameObject barRoot;
         [SerializeField] private Vector3 worldOffset = new Vector3(0f, 2.1f, 0f);
 
@@ -111,6 +115,23 @@ namespace BoneThrone.UI
                 fillRect = fillImage.rectTransform;
             }
 
+            if (missingFillImage == null)
+            {
+                Image[] images = GetComponentsInChildren<Image>(true);
+                for (int i = 0; i < images.Length; i++)
+                {
+                    if (images[i] != null && (images[i].gameObject.name == "MissingFill" || images[i].gameObject.name == "FillBackground"))
+                    {
+                        missingFillImage = images[i];
+                        break;
+                    }
+                }
+            }
+
+            if (missingFillRect == null && missingFillImage != null)
+            {
+                missingFillRect = missingFillImage.rectTransform;
+            }
         }
 
         private void DisableRaycastTargets()
@@ -131,8 +152,15 @@ namespace BoneThrone.UI
 
             if (fillImage != null)
             {
+                fillImage.color = HealthFillColor;
                 fillImage.raycastTarget = false;
                 fillImage.type = Image.Type.Simple;
+            }
+
+            if (missingFillImage != null)
+            {
+                missingFillImage.raycastTarget = false;
+                missingFillImage.type = Image.Type.Simple;
             }
 
             ConfigureFillRect();
@@ -149,6 +177,13 @@ namespace BoneThrone.UI
             fillRect.pivot = new Vector2(0f, 0.5f);
             fillRect.anchoredPosition = Vector2.zero;
             fillRect.sizeDelta = Vector2.zero;
+
+            if (missingFillRect != null)
+            {
+                missingFillRect.pivot = new Vector2(0f, 0.5f);
+                missingFillRect.anchoredPosition = Vector2.zero;
+                missingFillRect.sizeDelta = Vector2.zero;
+            }
         }
 
         private void ForceRefresh()
@@ -198,12 +233,18 @@ namespace BoneThrone.UI
 
         private void ApplyFill(float ratio)
         {
-            if (fillRect == null)
+            float clampedRatio = Mathf.Clamp01(ratio);
+
+            if (fillRect != null)
             {
-                return;
+                fillRect.anchorMax = new Vector2(clampedRatio, 1f);
             }
 
-            fillRect.anchorMax = new Vector2(Mathf.Clamp01(ratio), 1f);
+            if (missingFillRect != null)
+            {
+                missingFillRect.anchorMin = new Vector2(clampedRatio, 0f);
+                missingFillRect.anchorMax = Vector2.one;
+            }
         }
 
         private void SetBarVisible(bool visible)

@@ -98,7 +98,7 @@ namespace BoneThrone.UI
             if (currentMode != ActionMode.None && (selectionManager == null || selectionManager.SelectedUnit == null))
             {
                 ExitTargetingMode();
-                ShowPrompt("Select a unit first.", 1.5f);
+                ShowPrompt("请先选择一名玩家角色。", 1.5f);
                 return;
             }
 
@@ -137,38 +137,38 @@ namespace BoneThrone.UI
             Unit selectedUnit = selectionManager != null ? selectionManager.SelectedUnit : null;
             if (selectedUnit == null)
             {
-                ShowPrompt("Select a unit first.");
+                ShowPrompt("请先选择一名玩家角色。");
                 return;
             }
 
             if (!selectedUnit.IsAlive)
             {
-                ShowPrompt("Selected unit is dead.");
+                ShowPrompt("当前角色已经倒下。");
                 return;
             }
 
             UnitTurnState turnState = selectedUnit.GetComponent<UnitTurnState>();
             if (turnState != null && turnState.HasEnded)
             {
-                ShowPrompt("Selected unit has already ended.");
+                ShowPrompt("当前角色本回合已经结束。");
                 return;
             }
 
             if (turnState != null && turnState.HasMoved)
             {
-                ShowPrompt("Selected unit has already moved.");
+                ShowPrompt("当前角色本回合已经移动过。");
                 return;
             }
 
             if (movementControllerToSuspend == null)
             {
-                ShowPrompt("Move unavailable: movement controller unbound.");
+                ShowPrompt("移动暂不可用：移动控制器未绑定。");
                 return;
             }
 
             if (gridManager == null)
             {
-                ShowPrompt("Move unavailable: GridManager unbound.");
+                ShowPrompt("移动暂不可用：网格系统未绑定。");
                 return;
             }
 
@@ -186,32 +186,32 @@ namespace BoneThrone.UI
             Unit selectedUnit = selectionManager != null ? selectionManager.SelectedUnit : null;
             if (selectedUnit == null)
             {
-                ShowPrompt("Select a unit first.");
+                ShowPrompt("请先选择一名玩家角色。");
                 return;
             }
 
             if (!selectedUnit.IsAlive)
             {
-                ShowPrompt("Selected unit is dead.");
+                ShowPrompt("当前角色已经倒下。");
                 return;
             }
 
             UnitTurnState turnState = selectedUnit.GetComponent<UnitTurnState>();
             if (turnState != null && turnState.HasEnded)
             {
-                ShowPrompt("Selected unit has already ended.");
+                ShowPrompt("当前角色本回合已经结束。");
                 return;
             }
 
             if (turnState != null && turnState.HasActed)
             {
-                ShowPrompt("Selected unit has already acted.");
+                ShowPrompt("当前角色本回合已经行动过。");
                 return;
             }
 
             if (combatSystem == null)
             {
-                ShowPrompt("Basic attack unavailable: CombatSystem unbound.");
+                ShowPrompt("普通攻击暂不可用：战斗系统未绑定。");
                 return;
             }
 
@@ -234,57 +234,57 @@ namespace BoneThrone.UI
             Unit selectedUnit = selectionManager != null ? selectionManager.SelectedUnit : null;
             if (selectedUnit == null)
             {
-                ShowPrompt("Select a unit first.");
+                ShowPrompt("请先选择一名玩家角色。");
                 return;
             }
 
             if (!selectedUnit.IsAlive)
             {
-                ShowPrompt("Selected unit is dead.");
+                ShowPrompt("当前角色已经倒下。");
                 return;
             }
 
             UnitTurnState turnState = selectedUnit.GetComponent<UnitTurnState>();
             if (turnState != null && turnState.HasEnded)
             {
-                ShowPrompt("Selected unit has already ended.");
+                ShowPrompt("当前角色本回合已经结束。");
                 return;
             }
 
             if (turnState != null && turnState.HasActed)
             {
-                ShowPrompt("Selected unit has already acted.");
+                ShowPrompt("当前角色本回合已经行动过。");
                 return;
             }
 
             SkillRuntime runtime = selectedUnit.GetComponent<SkillRuntime>();
             if (runtime == null)
             {
-                ShowPrompt("No SkillRuntime on selected unit.");
+                ShowPrompt("当前角色没有技能组件。");
                 return;
             }
 
             if (!runtime.HasSkill(slotIndex))
             {
-                ShowPrompt("No skill in slot " + slotIndex + ".");
+                ShowPrompt("第 " + (slotIndex + 1) + " 个技能槽没有技能。");
                 return;
             }
 
             if (!runtime.IsUnlocked(selectedUnit, slotIndex))
             {
-                ShowPrompt("Skill locked.");
+                ShowPrompt("技能尚未解锁。");
                 return;
             }
 
             if (runtime.IsOnCooldown(slotIndex))
             {
-                ShowPrompt("Skill on cooldown.");
+                ShowPrompt("技能正在冷却。");
                 return;
             }
 
             if (skillSystem == null)
             {
-                ShowPrompt("Skill unavailable: SkillSystem unbound.");
+                ShowPrompt("技能暂不可用：技能系统未绑定。");
                 return;
             }
 
@@ -309,7 +309,7 @@ namespace BoneThrone.UI
             }
 
             SuspendMovementInput();
-            ShowPrompt("Select a move tile.");
+            ShowPrompt("请选择一个移动目标格。");
         }
 
         private void EnterBasicAttackTargeting()
@@ -318,7 +318,7 @@ namespace BoneThrone.UI
             currentMode = ActionMode.BasicAttackTargeting;
             ShowBasicAttackTargets();
             SuspendMovementInput();
-            ShowPrompt("Select an enemy target.");
+            ShowPrompt("请选择一个敌方目标。");
         }
 
         private void EnterSkillTargeting(int slotIndex)
@@ -328,21 +328,21 @@ namespace BoneThrone.UI
             pendingSkillSlotIndex = slotIndex;
             ShowSkillTargets(slotIndex);
             SuspendMovementInput();
-            ShowPrompt("Select a skill target.");
+            ShowPrompt("请选择一个技能目标。");
         }
 
         private void HandleTargetClick()
         {
-            Unit clickedUnit = RaycastUnitUnderCursor();
-            if (IsCurrentSelectedUnit(clickedUnit))
-            {
-                ClearSelectionAndExitModes();
-                return;
-            }
-
             if (currentMode == ActionMode.MoveTargeting)
             {
                 HandleMoveTargetClick(RaycastTileUnderCursor());
+                return;
+            }
+
+            Unit clickedUnit = RaycastTargetUnitUnderCursor();
+            if (IsCurrentSelectedUnit(clickedUnit))
+            {
+                ClearSelectionAndExitModes();
                 return;
             }
 
@@ -362,13 +362,13 @@ namespace BoneThrone.UI
         {
             if (tile == null || !currentMoveTargets.Contains(tile.Position))
             {
-                ShowPrompt("Invalid move target.");
+                ShowPrompt("无效移动目标。");
                 return;
             }
 
             if (movementControllerToSuspend == null)
             {
-                ShowPrompt("Move unavailable: movement controller unbound.");
+                ShowPrompt("移动暂不可用：移动控制器未绑定。");
                 return;
             }
 
@@ -381,28 +381,28 @@ namespace BoneThrone.UI
                 return;
             }
 
-            ShowPrompt("Invalid move target.");
+            ShowPrompt("无效移动目标。");
         }
 
         private void HandleBasicAttackTargetClick(Unit target)
         {
             if (target == null || target.Faction != UnitFaction.Enemy)
             {
-                ShowPrompt("Invalid attack target.");
+                ShowPrompt("无效攻击目标。");
                 return;
             }
 
             Unit attacker = selectionManager != null ? selectionManager.SelectedUnit : null;
             if (attacker == null)
             {
-                ShowPrompt("Select a unit first.");
+                ShowPrompt("请先选择一名玩家角色。");
                 ExitTargetingMode();
                 return;
             }
 
             if (combatSystem == null)
             {
-                ShowPrompt("Basic attack unavailable: CombatSystem unbound.");
+                ShowPrompt("普通攻击暂不可用：战斗系统未绑定。");
                 return;
             }
 
@@ -414,28 +414,28 @@ namespace BoneThrone.UI
                 return;
             }
 
-            ShowPrompt("Invalid attack target.");
+            ShowPrompt("无效攻击目标。");
         }
 
         private void HandleSkillTargetClick(Unit target)
         {
             if (target == null)
             {
-                ShowPrompt("Invalid skill target.");
+                ShowPrompt("无效技能目标。");
                 return;
             }
 
             Unit caster = selectionManager != null ? selectionManager.SelectedUnit : null;
             if (caster == null)
             {
-                ShowPrompt("Select a unit first.");
+                ShowPrompt("请先选择一名玩家角色。");
                 ExitTargetingMode();
                 return;
             }
 
             if (skillSystem == null)
             {
-                ShowPrompt("Skill unavailable: SkillSystem unbound.");
+                ShowPrompt("技能暂不可用：技能系统未绑定。");
                 return;
             }
 
@@ -447,7 +447,7 @@ namespace BoneThrone.UI
                 return;
             }
 
-            ShowPrompt("Invalid skill target.");
+            ShowPrompt("无效技能目标。");
         }
 
         private void ShowBasicAttackTargets()
@@ -465,6 +465,7 @@ namespace BoneThrone.UI
                 return;
             }
 
+            List<Tile> rangeTiles = BuildManhattanRangeTiles(attacker, GetBasicAttackRange(attacker));
             List<Tile> targetTiles = new List<Tile>();
             for (int i = 0; i < enemies.Length; i++)
             {
@@ -480,7 +481,7 @@ namespace BoneThrone.UI
                 }
             }
 
-            highlighter.ShowAttackTargets(targetTiles);
+            highlighter.ShowAttackRangeAndTargets(rangeTiles, targetTiles);
         }
 
         private void ShowSkillTargets(int slotIndex)
@@ -498,6 +499,7 @@ namespace BoneThrone.UI
                 return;
             }
 
+            List<Tile> rangeTiles = BuildManhattanRangeTiles(caster, GetSkillRange(caster, slotIndex));
             List<Tile> targetTiles = new List<Tile>();
             for (int i = 0; i < enemies.Length; i++)
             {
@@ -513,7 +515,50 @@ namespace BoneThrone.UI
                 }
             }
 
-            highlighter.ShowSkillTargets(targetTiles);
+            highlighter.ShowSkillRangeAndTargets(rangeTiles, targetTiles);
+        }
+
+        private List<Tile> BuildManhattanRangeTiles(Unit originUnit, int range)
+        {
+            List<Tile> rangeTiles = new List<Tile>();
+            if (gridManager == null || originUnit == null || originUnit.CurrentTile == null)
+            {
+                return rangeTiles;
+            }
+
+            int clampedRange = Mathf.Max(0, range);
+            List<Tile> registeredTiles = new List<Tile>();
+            gridManager.FillRegisteredTiles(registeredTiles);
+            GridPosition origin = originUnit.CurrentTile.Position;
+            for (int i = 0; i < registeredTiles.Count; i++)
+            {
+                Tile tile = registeredTiles[i];
+                if (tile == null || tile == originUnit.CurrentTile)
+                {
+                    continue;
+                }
+
+                GridPosition position = tile.Position;
+                int distance = Mathf.Abs(position.X - origin.X) + Mathf.Abs(position.Y - origin.Y);
+                if (distance <= clampedRange)
+                {
+                    rangeTiles.Add(tile);
+                }
+            }
+
+            return rangeTiles;
+        }
+
+        private static int GetBasicAttackRange(Unit attacker)
+        {
+            return attacker != null && attacker.Stats != null ? attacker.Stats.BasicAttackRange : 1;
+        }
+
+        private static int GetSkillRange(Unit caster, int slotIndex)
+        {
+            SkillRuntime runtime = caster != null ? caster.GetComponent<SkillRuntime>() : null;
+            SkillData skill = runtime != null ? runtime.GetSkill(slotIndex) : null;
+            return skill != null ? skill.Range : 0;
         }
 
         private Unit[] GetEnemyTargetsForPreview()
@@ -556,7 +601,7 @@ namespace BoneThrone.UI
                 highlighter.Clear();
             }
 
-            ShowPrompt("Free Select.", 1.5f);
+            ShowPrompt("自由选择。", 1.5f);
         }
 
         private Unit RaycastUnitUnderCursor()
@@ -564,18 +609,35 @@ namespace BoneThrone.UI
             Camera cameraToUse = inputCamera != null ? inputCamera : Camera.main;
             if (cameraToUse == null)
             {
-                ShowPrompt("Basic attack unavailable: Camera unbound.");
+                ShowPrompt("普通攻击暂不可用：摄像机未绑定。");
                 return null;
             }
 
             Ray ray = cameraToUse.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hit;
-            if (!Physics.Raycast(ray, out hit, maxRayDistance, targetLayerMask, QueryTriggerInteraction.Ignore))
+            RaycastHit[] hits = Physics.RaycastAll(ray, maxRayDistance, targetLayerMask, QueryTriggerInteraction.Ignore);
+            SortHitsByDistance(hits);
+            for (int i = 0; i < hits.Length; i++)
             {
-                return null;
+                Unit unit = hits[i].collider != null ? hits[i].collider.GetComponentInParent<Unit>() : null;
+                if (unit != null)
+                {
+                    return unit;
+                }
             }
 
-            return hit.collider.GetComponentInParent<Unit>();
+            return null;
+        }
+
+        private Unit RaycastTargetUnitUnderCursor()
+        {
+            Tile tile = RaycastTileUnderCursor();
+            Unit unitOnTile = FindUnitOnTile(tile);
+            if (unitOnTile != null)
+            {
+                return unitOnTile;
+            }
+
+            return RaycastUnitUnderCursor();
         }
 
         private Tile RaycastTileUnderCursor()
@@ -583,18 +645,76 @@ namespace BoneThrone.UI
             Camera cameraToUse = inputCamera != null ? inputCamera : Camera.main;
             if (cameraToUse == null)
             {
-                ShowPrompt("Move unavailable: Camera unbound.");
+                ShowPrompt("移动暂不可用：摄像机未绑定。");
                 return null;
             }
 
             Ray ray = cameraToUse.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hit;
-            if (!Physics.Raycast(ray, out hit, maxRayDistance, targetLayerMask, QueryTriggerInteraction.Ignore))
+            RaycastHit[] hits = Physics.RaycastAll(ray, maxRayDistance, targetLayerMask, QueryTriggerInteraction.Ignore);
+            SortHitsByDistance(hits);
+            for (int i = 0; i < hits.Length; i++)
+            {
+                Tile tile = hits[i].collider != null ? hits[i].collider.GetComponentInParent<Tile>() : null;
+                if (tile != null)
+                {
+                    return tile;
+                }
+            }
+
+            return null;
+        }
+
+        private Unit FindUnitOnTile(Tile tile)
+        {
+            if (tile == null)
             {
                 return null;
             }
 
-            return hit.collider.GetComponentInParent<Tile>();
+            ActiveUnitProvider provider = ResolveActiveUnitProvider();
+            Unit[] activeUnits = provider != null ? provider.GetActiveAliveUnits() : null;
+            Unit found = FindUnitOnTile(tile, activeUnits);
+            if (found != null)
+            {
+                return found;
+            }
+
+            Unit[] units = Object.FindObjectsByType<Unit>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            return FindUnitOnTile(tile, units);
+        }
+
+        private static Unit FindUnitOnTile(Tile tile, Unit[] units)
+        {
+            if (tile == null || units == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < units.Length; i++)
+            {
+                Unit unit = units[i];
+                if (unit != null && unit.IsAlive && unit.CurrentTile == tile)
+                {
+                    return unit;
+                }
+            }
+
+            return null;
+        }
+
+        private static void SortHitsByDistance(RaycastHit[] hits)
+        {
+            if (hits == null || hits.Length < 2)
+            {
+                return;
+            }
+
+            System.Array.Sort(hits, CompareRaycastHitsByDistance);
+        }
+
+        private static int CompareRaycastHitsByDistance(RaycastHit a, RaycastHit b)
+        {
+            return a.distance.CompareTo(b.distance);
         }
 
         private void CancelTargeting()
@@ -602,8 +722,8 @@ namespace BoneThrone.UI
             ActionMode canceledMode = currentMode;
             ExitTargetingMode();
             string message = canceledMode == ActionMode.MoveTargeting
-                ? "Move canceled."
-                : canceledMode == ActionMode.SkillTargeting ? "Skill targeting canceled." : "Basic attack canceled.";
+                ? "移动已取消。"
+                : canceledMode == ActionMode.SkillTargeting ? "技能目标选择已取消。" : "普通攻击已取消。";
             ShowPrompt(message, 1.5f);
         }
 

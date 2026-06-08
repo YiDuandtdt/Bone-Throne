@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using BoneThrone.Combat;
 using BoneThrone.Grid;
+using BoneThrone.Levels;
 using BoneThrone.Movement;
 using BoneThrone.Turns;
+using BoneThrone.UI;
 using BoneThrone.Units;
 using System.Collections;
 using UnityEngine;
@@ -25,14 +27,20 @@ namespace BoneThrone.AI
         [SerializeField] private ActionPermissionService actionPermissionService;
         [SerializeField] private DamageResolver damageResolver;
         [SerializeField] private CombatLog combatLog;
+        [SerializeField] private TurnTransitionPopupView turnTransitionPopupView;
+        [SerializeField] private TurnPacingSettings turnPacingSettings;
         [SerializeField] private float enemyActionDelay = 0.4f;
+        [SerializeField] [Min(0f)] private float enemyAttackRecoveryDelay = 1.05f;
 
         private readonly EnemyAIController enemyAIController = new EnemyAIController();
+        private readonly BossEnemyAIController bossEnemyAIController = new BossEnemyAIController();
         private readonly List<Unit> activeEnemies = new List<Unit>();
         private readonly List<Unit> activePlayers = new List<Unit>();
         private Coroutine runningRoutine;
         private TurnManager runningTurnManager;
         private bool isRunning;
+        private Unit pendingBasicAttackAttacker;
+        private bool pendingBasicAttackResolved;
 
         private void Awake()
         {
@@ -66,6 +74,8 @@ namespace BoneThrone.AI
                 runningRoutine = null;
             }
 
+            EndBasicAttackResolutionWait();
+
             TurnManager turnManager = runningTurnManager;
             runningTurnManager = null;
             bool wasRunning = isRunning;
@@ -94,6 +104,8 @@ namespace BoneThrone.AI
             }
             else
             {
+                yield return PlayEnemyTurnIntro();
+
                 for (int i = 0; i < activeEnemies.Count; i++)
                 {
                     Unit enemy = activeEnemies[i];
@@ -117,6 +129,24 @@ namespace BoneThrone.AI
                         continue;
                     }
 
+                    if (BossEnemyAIController.IsBossLikeUnit(enemy))
+                    {
+                        yield return bossEnemyAIController.RunActionRoutine(
+                            enemy,
+                            activePlayers,
+                            gridManager,
+                            pathfinder,
+                            unitMover,
+                            damageResolver,
+                            combatLog,
+                            actionPermissionService,
+                            turnManager);
+
+                        yield return WaitForEnemyActionDelay();
+                        continue;
+                    }
+
+                    BeginBasicAttackResolutionWait(enemy);
                     EnemyAIResult result = enemyAIController.TryRunAction(
                         enemy,
                         activePlayers,
@@ -129,8 +159,42 @@ namespace BoneThrone.AI
                         turnManager);
 
                     LogResult(result);
-                    yield return WaitForEnemyActionDelay();
+                    yield return WaitForBasicAttackResolutionIfNeeded(result);
+                    EndBasicAttackResolutionWait();
+
+                    if (result.ActionType == EnemyAIActionType.Move)
+                    {
+                        yield return WaitForMoveVisual(enemy);
+                        BeginBasicAttackResolutionWait(enemy);
+                        EnemyAIResult followUpResult = enemyAIController.TryAttackCurrentTargetIfInRange(
+                            enemy,
+                            activePlayers,
+                            attackRangeService,
+                            combatSystem,
+                            actionPermissionService,
+                            turnManager);
+
+                        if (followUpResult.ActionType == EnemyAIActionType.Attack || ShouldLogFollowUpSkip(followUpResult))
+                        {
+                            LogResult(followUpResult);
+                        }
+
+                        yield return WaitForBasicAttackResolutionIfNeeded(followUpResult);
+                        EndBasicAttackResolutionWait();
+
+                        yield return followUpResult.ActionType == EnemyAIActionType.Attack
+                            ? WaitForEnemyAttackRecoveryDelay()
+                            : WaitForEnemyActionDelay();
+                        continue;
+                    }
+
+                    yield return result.ActionType == EnemyAIActionType.Attack
+                        ? WaitForEnemyAttackRecoveryDelay()
+                        : WaitForEnemyActionDelay();
                 }
+
+                yield return WaitForDelay(GetAfterEnemyRoundDelay());
+                yield return PlayPlayerTurnIntro();
             }
 
             runningRoutine = null;
@@ -145,11 +209,13 @@ namespace BoneThrone.AI
             if (activeUnitProvider != null)
             {
                 activeUnitProvider.FillActiveAliveEnemies(activeEnemies);
+                RemoveBossEnemiesBeforeBossFight();
             }
 
             if (activeEnemies.Count == 0)
             {
                 FillFromFallback(enemyUnits, UnitFaction.Enemy, activeEnemies);
+                RemoveBossEnemiesBeforeBossFight();
             }
         }
 
@@ -205,6 +271,38 @@ namespace BoneThrone.AI
         private void SortActiveEnemies()
         {
             activeEnemies.Sort(CompareEnemiesForTurnOrder);
+        }
+
+        private void RemoveBossEnemiesBeforeBossFight()
+        {
+            bool hasBossCandidate = false;
+            for (int i = 0; i < activeEnemies.Count; i++)
+            {
+                if (BossEnemyAIController.IsBossLikeUnit(activeEnemies[i]))
+                {
+                    hasBossCandidate = true;
+                    break;
+                }
+            }
+
+            if (!hasBossCandidate || IsBossFightStarted())
+            {
+                return;
+            }
+
+            for (int i = activeEnemies.Count - 1; i >= 0; i--)
+            {
+                if (BossEnemyAIController.IsBossLikeUnit(activeEnemies[i]))
+                {
+                    activeEnemies.RemoveAt(i);
+                }
+            }
+        }
+
+        private static bool IsBossFightStarted()
+        {
+            BossGateProgressionState progressionState = BossGateProgressionState.GetOrCreateSceneState();
+            return progressionState != null && progressionState.ShouldExposeBossFightRuntime();
         }
 
         private static int CompareEnemiesForTurnOrder(Unit a, Unit b)
@@ -310,6 +408,16 @@ namespace BoneThrone.AI
             {
                 combatLog = Object.FindFirstObjectByType<CombatLog>();
             }
+
+            if (turnTransitionPopupView == null)
+            {
+                turnTransitionPopupView = Object.FindFirstObjectByType<TurnTransitionPopupView>();
+            }
+
+            if (turnPacingSettings == null && turnTransitionPopupView != null)
+            {
+                turnPacingSettings = turnTransitionPopupView.PacingSettings;
+            }
         }
 
         private void TickBleed(Unit enemy)
@@ -345,7 +453,174 @@ namespace BoneThrone.AI
 
         private WaitForSeconds WaitForEnemyActionDelay()
         {
-            return new WaitForSeconds(Mathf.Max(0f, enemyActionDelay));
+            return new WaitForSeconds(Mathf.Max(0f, GetEnemyActionInterval()));
+        }
+
+        private WaitForSeconds WaitForEnemyAttackRecoveryDelay()
+        {
+            return new WaitForSeconds(Mathf.Max(GetEnemyActionInterval(), enemyAttackRecoveryDelay));
+        }
+
+        private IEnumerator PlayEnemyTurnIntro()
+        {
+            yield return WaitForDelay(GetBeforeEnemyTurnBannerDelay());
+
+            if (turnTransitionPopupView != null)
+            {
+                yield return turnTransitionPopupView.PlayEnemyTurnAnnouncement();
+            }
+            else
+            {
+                yield return WaitForDelay(GetEnemyTurnBannerHoldDuration());
+            }
+
+            yield return WaitForDelay(GetAfterEnemyTurnBannerDelay());
+        }
+
+        private IEnumerator PlayPlayerTurnIntro()
+        {
+            yield return WaitForDelay(GetBeforePlayerTurnBannerDelay());
+
+            if (turnTransitionPopupView != null)
+            {
+                yield return turnTransitionPopupView.PlayPlayerTurnAnnouncement();
+            }
+            else
+            {
+                yield return WaitForDelay(GetPlayerTurnBannerHoldDuration());
+            }
+
+            yield return WaitForDelay(GetAfterPlayerTurnBannerDelay());
+        }
+
+        private IEnumerator WaitForDelay(float duration)
+        {
+            if (duration > 0f)
+            {
+                yield return new WaitForSeconds(duration);
+            }
+        }
+
+        private IEnumerator WaitForMoveVisual(Unit enemy)
+        {
+            if (enemy == null || unitMover == null)
+            {
+                yield break;
+            }
+
+            bool movementCompleted = !unitMover.IsMoving(enemy);
+            System.Action<Unit> handleMoveCompleted = movedUnit =>
+            {
+                if (movedUnit == enemy)
+                {
+                    movementCompleted = true;
+                }
+            };
+
+            unitMover.MoveVisualCompleted += handleMoveCompleted;
+            float timeout = 4f;
+            while (enemy != null && !movementCompleted && unitMover.IsMoving(enemy) && timeout > 0f)
+            {
+                timeout -= Time.deltaTime;
+                yield return null;
+            }
+
+            unitMover.MoveVisualCompleted -= handleMoveCompleted;
+        }
+
+        private void BeginBasicAttackResolutionWait(Unit attacker)
+        {
+            EndBasicAttackResolutionWait();
+            pendingBasicAttackAttacker = attacker;
+            pendingBasicAttackResolved = false;
+
+            if (combatSystem != null && attacker != null)
+            {
+                combatSystem.BasicAttackResolved += HandleBasicAttackResolved;
+            }
+        }
+
+        private IEnumerator WaitForBasicAttackResolutionIfNeeded(EnemyAIResult result)
+        {
+            if (result.ActionType != EnemyAIActionType.Attack)
+            {
+                yield break;
+            }
+
+            float timeout = Mathf.Max(Mathf.Max(GetEnemyActionInterval(), enemyAttackRecoveryDelay), 0.1f) + 2f;
+            while (!pendingBasicAttackResolved && timeout > 0f)
+            {
+                timeout -= Time.deltaTime;
+                yield return null;
+            }
+        }
+
+        private void EndBasicAttackResolutionWait()
+        {
+            if (combatSystem != null)
+            {
+                combatSystem.BasicAttackResolved -= HandleBasicAttackResolved;
+            }
+
+            pendingBasicAttackAttacker = null;
+            pendingBasicAttackResolved = false;
+        }
+
+        private void HandleBasicAttackResolved(Unit attacker, Unit target)
+        {
+            if (attacker == pendingBasicAttackAttacker)
+            {
+                pendingBasicAttackResolved = true;
+            }
+        }
+
+        private static bool ShouldLogFollowUpSkip(EnemyAIResult result)
+        {
+            return !result.Success
+                && !string.Equals(
+                    result.Message,
+                    "Enemy AI skipped follow-up attack because target is still out of range after movement.",
+                    System.StringComparison.Ordinal);
+        }
+
+        private float GetBeforeEnemyTurnBannerDelay()
+        {
+            return turnPacingSettings != null ? turnPacingSettings.BeforeEnemyTurnBannerDelay : 0f;
+        }
+
+        private float GetEnemyTurnBannerHoldDuration()
+        {
+            return turnPacingSettings != null ? turnPacingSettings.EnemyTurnBannerHoldDuration : 0f;
+        }
+
+        private float GetAfterEnemyTurnBannerDelay()
+        {
+            return turnPacingSettings != null ? turnPacingSettings.AfterEnemyTurnBannerDelay : 0f;
+        }
+
+        private float GetEnemyActionInterval()
+        {
+            return turnPacingSettings != null ? turnPacingSettings.EnemyActionInterval : enemyActionDelay;
+        }
+
+        private float GetAfterEnemyRoundDelay()
+        {
+            return turnPacingSettings != null ? turnPacingSettings.AfterEnemyRoundDelay : 0f;
+        }
+
+        private float GetBeforePlayerTurnBannerDelay()
+        {
+            return turnPacingSettings != null ? turnPacingSettings.BeforePlayerTurnBannerDelay : 0f;
+        }
+
+        private float GetPlayerTurnBannerHoldDuration()
+        {
+            return turnPacingSettings != null ? turnPacingSettings.PlayerTurnBannerHoldDuration : 0f;
+        }
+
+        private float GetAfterPlayerTurnBannerDelay()
+        {
+            return turnPacingSettings != null ? turnPacingSettings.AfterPlayerTurnBannerDelay : 0f;
         }
 
         private void LogResult(EnemyAIResult result)

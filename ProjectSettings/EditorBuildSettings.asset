@@ -9,14 +9,20 @@ EditorBuildSettings:
     path: Assets/_BoneThrone/Scenes/StartMenu.unity
     guid: 99c9720ab356a0642a771bea13969a05
   - enabled: 1
+    path: Assets/_BoneThrone/Scenes/IntroStory.unity
+    guid: 6dfb0f89f8d4404eb5f2a95ffd441f01
+  - enabled: 1
     path: Assets/_BoneThrone/Scenes/Level_1.unity
-    guid: f29cd29527bd28744bdc78408e7719a3
+    guid: db989c679b224a141aff5f3375bdb3d7
   - enabled: 1
     path: Assets/_BoneThrone/Scenes/Level_2.unity
-    guid: f29808caf9b46764a94654c5dde2b6b5
+    guid: a4d0563f9c262604d92b46d6078214dd
   - enabled: 1
-    path: Assets/_BoneThrone/Scenes/Level_3.unity
-    guid: 41598a1dcc178f342abd30a0b26d5c63
+    path: Assets/_BoneThrone/Scenes/boss_test.unity
+    guid: caad7d70ede841b39f9121d9de47af68
+  - enabled: 1
+    path: Assets/_BoneThrone/Scenes/EndMenu.unity
+    guid: eb833630b4429f14f81b183670d5166f
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

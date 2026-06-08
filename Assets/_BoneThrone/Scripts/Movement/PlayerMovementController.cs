@@ -3,6 +3,7 @@ using BoneThrone.Grid;
 using BoneThrone.Turns;
 using BoneThrone.Units;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace BoneThrone.Movement
 {
@@ -22,8 +23,21 @@ namespace BoneThrone.Movement
         [SerializeField] private MovementDebugHighlighter debugHighlighter;
         [SerializeField] private TurnManager turnManager;
         [SerializeField] private ActionPermissionService actionPermissionService;
+        [SerializeField] private ActiveUnitProvider activeUnitProvider;
 
         private readonly HashSet<GridPosition> reachablePositions = new HashSet<GridPosition>();
+        private readonly List<Unit> activeUnitsScratch = new List<Unit>();
+        private bool unitMoverEventSubscribed;
+
+        private void OnEnable()
+        {
+            SubscribeUnitMoverEvent();
+        }
+
+        private void OnDisable()
+        {
+            UnsubscribeUnitMoverEvent();
+        }
 
         private void Update()
         {
@@ -32,20 +46,19 @@ namespace BoneThrone.Movement
                 return;
             }
 
-            RaycastHit hit;
-            if (!TryGetInputHit(out hit))
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             {
                 return;
             }
 
-            Unit clickedUnit = hit.collider.GetComponentInParent<Unit>();
+            Unit clickedUnit = RaycastUnitUnderCursor();
             if (clickedUnit != null)
             {
                 HandleUnitClick(clickedUnit);
                 return;
             }
 
-            Tile clickedTile = hit.collider.GetComponentInParent<Tile>();
+            Tile clickedTile = RaycastTileUnderCursor();
             if (clickedTile != null)
             {
                 HandleTileClick(clickedTile);
@@ -260,18 +273,124 @@ namespace BoneThrone.Movement
             }
         }
 
-        private bool TryGetInputHit(out RaycastHit hit)
+        private Unit RaycastUnitUnderCursor()
         {
             Camera cameraToUse = inputCamera != null ? inputCamera : Camera.main;
             if (cameraToUse == null)
             {
                 Debug.LogWarning("PlayerMovementController needs an input camera or a MainCamera-tagged camera.", this);
-                hit = default(RaycastHit);
-                return false;
+                return null;
             }
 
             Ray ray = cameraToUse.ScreenPointToRay(Input.mousePosition);
-            return Physics.Raycast(ray, out hit, maxRayDistance, inputLayerMask, QueryTriggerInteraction.Ignore);
+            RaycastHit[] hits = Physics.RaycastAll(ray, maxRayDistance, inputLayerMask, QueryTriggerInteraction.Ignore);
+            SortHitsByDistance(hits);
+            for (int i = 0; i < hits.Length; i++)
+            {
+                Unit unit = hits[i].collider != null ? hits[i].collider.GetComponentInParent<Unit>() : null;
+                if (unit != null)
+                {
+                    return unit;
+                }
+            }
+
+            Tile tile = RaycastTileUnderCursor();
+            return FindSelectableUnitOnTile(tile);
+        }
+
+        private Tile RaycastTileUnderCursor()
+        {
+            Camera cameraToUse = inputCamera != null ? inputCamera : Camera.main;
+            if (cameraToUse == null)
+            {
+                Debug.LogWarning("PlayerMovementController needs an input camera or a MainCamera-tagged camera.", this);
+                return null;
+            }
+
+            Ray ray = cameraToUse.ScreenPointToRay(Input.mousePosition);
+            RaycastHit[] hits = Physics.RaycastAll(ray, maxRayDistance, inputLayerMask, QueryTriggerInteraction.Ignore);
+            SortHitsByDistance(hits);
+            for (int i = 0; i < hits.Length; i++)
+            {
+                Tile tile = hits[i].collider != null ? hits[i].collider.GetComponentInParent<Tile>() : null;
+                if (tile != null)
+                {
+                    return tile;
+                }
+            }
+
+            return null;
+        }
+
+        private static void SortHitsByDistance(RaycastHit[] hits)
+        {
+            if (hits == null || hits.Length < 2)
+            {
+                return;
+            }
+
+            System.Array.Sort(hits, CompareRaycastHitsByDistance);
+        }
+
+        private static int CompareRaycastHitsByDistance(RaycastHit a, RaycastHit b)
+        {
+            return a.distance.CompareTo(b.distance);
+        }
+
+        private Unit FindSelectableUnitOnTile(Tile tile)
+        {
+            if (tile == null)
+            {
+                return null;
+            }
+
+            Unit unit = FindSelectableUnitOnTile(tile, GetActiveUnits());
+            if (unit != null)
+            {
+                return unit;
+            }
+
+            Unit[] fallbackUnits = Object.FindObjectsByType<Unit>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            return FindSelectableUnitOnTile(tile, fallbackUnits);
+        }
+
+        private IReadOnlyList<Unit> GetActiveUnits()
+        {
+            if (activeUnitProvider == null)
+            {
+                activeUnitProvider = Object.FindFirstObjectByType<ActiveUnitProvider>();
+            }
+
+            if (activeUnitProvider == null)
+            {
+                return null;
+            }
+
+            activeUnitsScratch.Clear();
+            activeUnitProvider.FillActiveAliveUnits(activeUnitsScratch);
+            return activeUnitsScratch;
+        }
+
+        private static Unit FindSelectableUnitOnTile(Tile tile, IReadOnlyList<Unit> units)
+        {
+            if (tile == null || units == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < units.Count; i++)
+            {
+                Unit unit = units[i];
+                if (unit != null
+                    && unit.IsAlive
+                    && unit.Faction == UnitFaction.Player
+                    && unit.CurrentTile == tile)
+                {
+                    return unit;
+                }
+            }
+
+            return null;
         }
 
         private bool HasRequiredReferences()
@@ -306,7 +425,39 @@ namespace BoneThrone.Movement
                 return false;
             }
 
+            SubscribeUnitMoverEvent();
             return true;
+        }
+
+        private void SubscribeUnitMoverEvent()
+        {
+            if (unitMover == null || unitMoverEventSubscribed)
+            {
+                return;
+            }
+
+            unitMover.MoveVisualCompleted -= HandleMoveVisualCompleted;
+            unitMover.MoveVisualCompleted += HandleMoveVisualCompleted;
+            unitMoverEventSubscribed = true;
+        }
+
+        private void UnsubscribeUnitMoverEvent()
+        {
+            if (unitMover == null || !unitMoverEventSubscribed)
+            {
+                return;
+            }
+
+            unitMover.MoveVisualCompleted -= HandleMoveVisualCompleted;
+            unitMoverEventSubscribed = false;
+        }
+
+        private void HandleMoveVisualCompleted(Unit unit)
+        {
+            if (turnManager != null)
+            {
+                turnManager.TryAutoEndPlayerUnitTurnIfNoAvailableActions(unit);
+            }
         }
     }
 }

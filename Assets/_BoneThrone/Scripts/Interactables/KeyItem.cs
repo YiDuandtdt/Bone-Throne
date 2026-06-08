@@ -1,3 +1,4 @@
+using BoneThrone.Audio;
 using BoneThrone.Levels;
 using BoneThrone.Movement;
 using BoneThrone.Units;
@@ -37,7 +38,10 @@ namespace BoneThrone.Interactables
         {
             ResolveReferences();
             Unit collector = selectionManager != null ? selectionManager.SelectedUnit : null;
-            TryCollectFromClick(collector);
+            if (!TryCollectFromClick(collector))
+            {
+                BTAudioService.PlaySfx(BTAudioCueId.InvalidAction);
+            }
         }
 
         public bool TryCollectFromClick(Unit collector)
@@ -85,6 +89,8 @@ namespace BoneThrone.Interactables
 
             collected = true;
             progressionService.CollectSharedKey(this);
+            BTAudioService.PlaySfx(BTAudioCueId.KeyPickup);
+            BTInteractionVfxService.PlayKeyPickup(transform.position);
 
             if (consumeOnCollect)
             {

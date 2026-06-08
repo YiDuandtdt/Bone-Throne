@@ -1,3 +1,4 @@
+using BoneThrone.Audio;
 using BoneThrone.Core;
 using BoneThrone.Grid;
 using UnityEngine;
@@ -134,14 +135,20 @@ namespace BoneThrone.Units
             currentTile = null;
         }
 
-        public void MarkDeadAndReleaseTile()
+        public void MarkDeadAndReleaseTile(bool playDeathSfx = true)
         {
             if (runtimeState == null)
             {
                 runtimeState = new UnitRuntimeState();
             }
 
+            bool wasDead = runtimeState.IsDead;
             runtimeState.MarkDead();
+            if (playDeathSfx && !wasDead)
+            {
+                BTAudioService.PlayDeathSfx(this);
+            }
+
             UnitAnimationController animationController = GetComponent<UnitAnimationController>();
             LogAnimationDebug(animationController, "SetDead(true)");
             animationController?.SetDead(true);

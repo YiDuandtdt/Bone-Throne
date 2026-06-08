@@ -51,6 +51,12 @@ MonoBehaviour:
   lockedVisual: {fileID: 0}
   openedVisual: {fileID: 0}
   opened: 0
+  autoDetectBlockedTiles: 1
+  blockedTileDetectionRadius: 1.25
+  blockedTiles: []
+  autoOpenWhenPlayerWithKeyNearby: 1
+  autoOpenRadius: 3.25
+  autoOpenCheckInterval: 0.2
   debugLogging: 0
 --- !u!65 &610003
 BoxCollider:

@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4cc889ca985c43d2832cb38a5d801d16, type: 3}
+  m_Name: TurnPacingSettings_Default
+  m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.UI.TurnPacingSettings
+  beforeEnemyTurnBannerDelay: 0.3
+  enemyTurnBannerHoldDuration: 0.85
+  afterEnemyTurnBannerDelay: 0.2
+  enemyActionInterval: 0.55
+  afterEnemyRoundDelay: 0.35
+  beforePlayerTurnBannerDelay: 0.2
+  playerTurnBannerHoldDuration: 0.8
+  afterPlayerTurnBannerDelay: 0.15
+  popupFadeInDuration: 0.14
+  popupFadeOutDuration: 0.18
+  popupDriftDistance: 22

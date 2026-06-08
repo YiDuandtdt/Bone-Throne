@@ -1,3 +1,4 @@
+using BoneThrone.Levels;
 using BoneThrone.Units;
 using UnityEngine;
 
@@ -12,6 +13,7 @@ namespace BoneThrone.Rooms
         [SerializeField] private RoomState currentState = RoomState.Unentered;
         [SerializeField] private RoomShadowController shadowController;
         [SerializeField] private RoomEnemyActivator enemyActivator;
+        [SerializeField] private bool requireBossDoorOpenedForBossRooms = true;
 
         public RoomState CurrentState
         {
@@ -40,6 +42,7 @@ namespace BoneThrone.Rooms
 
             int aliveEnemyCount = ActivateEnemies();
             currentState = aliveEnemyCount > 0 ? RoomState.CombatActive : RoomState.Cleared;
+            MarkBossFightStartedIfNeeded();
 
             Debug.Log("Room entered. State=" + currentState + " AliveEnemies=" + aliveEnemyCount + ".", this);
         }
@@ -48,7 +51,6 @@ namespace BoneThrone.Rooms
         {
             if (shadowController == null)
             {
-                Debug.LogWarning("RoomController cannot reveal room because RoomShadowController is missing.", this);
                 return;
             }
 
@@ -140,7 +142,30 @@ namespace BoneThrone.Rooms
                 return false;
             }
 
+            if (requireBossDoorOpenedForBossRooms && IsBossRoomBlockedByGate())
+            {
+                Debug.Log("Room entry ignored because the boss door is not opened yet.", this);
+                return false;
+            }
+
             return true;
+        }
+
+        private bool IsBossRoomBlockedByGate()
+        {
+            BossGateProgressionState progressionState = BossGateProgressionState.GetOrCreateSceneState();
+            return progressionState != null
+                && progressionState.IsBossRoom(this)
+                && !progressionState.IsBossDoorOpened;
+        }
+
+        private void MarkBossFightStartedIfNeeded()
+        {
+            BossGateProgressionState progressionState = BossGateProgressionState.GetOrCreateSceneState();
+            if (progressionState != null && progressionState.IsBossRoom(this))
+            {
+                progressionState.MarkBossFightStarted(this);
+            }
         }
     }
 }

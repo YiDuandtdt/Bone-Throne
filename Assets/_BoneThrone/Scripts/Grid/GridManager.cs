@@ -93,5 +93,22 @@ namespace BoneThrone.Grid
             Tile tile;
             return TryGetTile(position, out tile) && tile.CanEnter();
         }
+
+        public void FillRegisteredTiles(List<Tile> results)
+        {
+            if (results == null)
+            {
+                return;
+            }
+
+            results.Clear();
+            foreach (KeyValuePair<GridPosition, Tile> pair in tilesByPosition)
+            {
+                if (pair.Value != null)
+                {
+                    results.Add(pair.Value);
+                }
+            }
+        }
     }
 }
