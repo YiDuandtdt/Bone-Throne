@@ -2,7 +2,6 @@ using BoneThrone.Audio;
 using BoneThrone.Core;
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 
@@ -20,12 +19,13 @@ namespace BoneThrone.UI
         [SerializeField] [FormerlySerializedAs("retryButton")] private Button returnToStartButton;
         [SerializeField] [FormerlySerializedAs("closeButton")] private Button quitButton;
         [SerializeField] private string startMenuSceneName = "StartMenu";
-        [SerializeField] private string returnToStartButtonText = "返回开始";
-        [SerializeField] private string quitButtonText = "退出游戏";
-        [SerializeField] private string victoryTitle = "胜利";
-        [SerializeField] private string defeatTitle = "失败";
-        [SerializeField] private string defaultVictoryReason = "队伍取得了胜利。";
-        [SerializeField] private string defaultDefeatReason = "队伍全灭了。";
+        [SerializeField] private string returnToStartButtonText = "\u8FD4\u56DE\u4E3B\u9875";
+        [SerializeField] private string retryButtonText = "\u91CD\u65B0\u5F00\u59CB";
+        [SerializeField] private string quitButtonText = "\u8FD4\u56DE\u4E3B\u9875";
+        [SerializeField] private string victoryTitle = "\u80DC\u5229";
+        [SerializeField] private string defeatTitle = "\u5931\u8D25";
+        [SerializeField] private string defaultVictoryReason = "\u961F\u4F0D\u53D6\u5F97\u4E86\u80DC\u5229\u3002";
+        [SerializeField] private string defaultDefeatReason = "\u961F\u4F0D\u5168\u706D\u4E86\u3002";
 
         [Header("Replaceable Images")]
         [SerializeField] private Image panelBackgroundImage;
@@ -37,8 +37,16 @@ namespace BoneThrone.UI
         [SerializeField] private Sprite returnButtonSprite;
         [SerializeField] private Sprite quitButtonSprite;
 
+        [Header("Outcome Override Images")]
+        [SerializeField] private Sprite victoryPanelBackgroundSprite;
+        [SerializeField] private Sprite defeatPanelBackgroundSprite;
+        [SerializeField] private Sprite victoryReturnButtonSprite;
+        [SerializeField] private Sprite defeatRetryButtonSprite;
+        [SerializeField] private Sprite defeatReturnHomeButtonSprite;
+
         [SerializeField] private bool debugLogging;
 
+        private GameOutcome displayedOutcome = GameOutcome.None;
         private bool missingOutcomeServiceWarningLogged;
         private bool subscribed;
 
@@ -51,7 +59,7 @@ namespace BoneThrone.UI
 
             ResolveReplaceableImages();
             ApplyReplaceableImages();
-            RefreshButtonLabels();
+            RefreshButtonLabels(GameOutcome.None);
             SetPanelVisible(false);
         }
 
@@ -60,7 +68,7 @@ namespace BoneThrone.UI
             ResolveOutcomeService();
             Subscribe();
             BindButtons();
-            RefreshButtonLabels();
+            RefreshButtonLabels(GameOutcome.None);
             RefreshFromCurrentOutcome();
         }
 
@@ -75,12 +83,17 @@ namespace BoneThrone.UI
             if (outcome == GameOutcome.None)
             {
                 SetPanelVisible(false);
+                displayedOutcome = GameOutcome.None;
                 return;
             }
 
+            displayedOutcome = outcome;
             bool victory = outcome == GameOutcome.Victory;
+            ApplyOutcomeImages(outcome);
             SetText(titleText, victory ? victoryTitle : defeatTitle);
             SetText(reasonText, string.IsNullOrEmpty(reason) ? GetDefaultReason(outcome) : reason);
+            SetOutcomeButtonVisibility(outcome);
+            RefreshButtonLabels(outcome);
             SetPanelVisible(true);
             Log("Displayed outcome " + outcome + ".");
         }
@@ -90,24 +103,31 @@ namespace BoneThrone.UI
             BTAudioService.PlaySfx(BTAudioCueId.ButtonClick);
             BTOutcomePopupService.HideOutcome();
 
+            if (displayedOutcome == GameOutcome.Defeat && outcomeService != null)
+            {
+                outcomeService.RequestRetry();
+                return;
+            }
+
+            ReturnToStartMenu();
+        }
+
+        private void OnReturnHomeClicked()
+        {
+            BTAudioService.PlaySfx(BTAudioCueId.ButtonClick);
+            BTOutcomePopupService.HideOutcome();
+            ReturnToStartMenu();
+        }
+
+        private void ReturnToStartMenu()
+        {
             if (!Application.CanStreamedLevelBeLoaded(startMenuSceneName))
             {
                 Debug.LogWarning("GameResultPanelController cannot load start menu scene '" + startMenuSceneName + "' because it is not in Build Settings.", this);
                 return;
             }
 
-            SceneManager.LoadScene(startMenuSceneName, LoadSceneMode.Single);
-        }
-
-        private void OnQuitClicked()
-        {
-            BTAudioService.PlaySfx(BTAudioCueId.ButtonClick);
-            Log("Quit requested.");
-#if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
-#else
-            Application.Quit();
-#endif
+            SceneBlackCoverService.LoadSceneWithCover(startMenuSceneName);
         }
 
         private void RefreshFromCurrentOutcome()
@@ -162,8 +182,8 @@ namespace BoneThrone.UI
 
             if (quitButton != null)
             {
-                quitButton.onClick.RemoveListener(OnQuitClicked);
-                quitButton.onClick.AddListener(OnQuitClicked);
+                quitButton.onClick.RemoveListener(OnReturnHomeClicked);
+                quitButton.onClick.AddListener(OnReturnHomeClicked);
             }
         }
 
@@ -176,7 +196,7 @@ namespace BoneThrone.UI
 
             if (quitButton != null)
             {
-                quitButton.onClick.RemoveListener(OnQuitClicked);
+                quitButton.onClick.RemoveListener(OnReturnHomeClicked);
             }
         }
 
@@ -219,10 +239,36 @@ namespace BoneThrone.UI
             ApplySprite(quitButtonImage, quitButtonSprite);
         }
 
-        private void RefreshButtonLabels()
+        private void RefreshButtonLabels(GameOutcome outcome)
         {
-            SetButtonLabel(returnToStartButton, returnToStartButtonText);
+            string primaryText = outcome == GameOutcome.Defeat ? retryButtonText : returnToStartButtonText;
+            SetButtonLabel(returnToStartButton, primaryText);
             SetButtonLabel(quitButton, quitButtonText);
+        }
+
+        private void ApplyOutcomeImages(GameOutcome outcome)
+        {
+            Sprite nextPanelSprite = outcome == GameOutcome.Victory
+                ? FirstAssigned(victoryPanelBackgroundSprite, panelBackgroundSprite)
+                : FirstAssigned(defeatPanelBackgroundSprite, panelBackgroundSprite);
+
+            Sprite nextPrimaryButtonSprite = outcome == GameOutcome.Defeat
+                ? FirstAssigned(defeatRetryButtonSprite, returnButtonSprite)
+                : FirstAssigned(victoryReturnButtonSprite, returnButtonSprite);
+
+            Sprite nextQuitButtonSprite = outcome == GameOutcome.Defeat
+                ? FirstAssigned(defeatReturnHomeButtonSprite, quitButtonSprite)
+                : quitButtonSprite;
+
+            ApplySprite(panelBackgroundImage, nextPanelSprite);
+            ApplySprite(returnButtonImage, nextPrimaryButtonSprite);
+            ApplySprite(quitButtonImage, nextQuitButtonSprite);
+        }
+
+        private void SetOutcomeButtonVisibility(GameOutcome outcome)
+        {
+            SetButtonVisible(returnToStartButton, true);
+            SetButtonVisible(quitButton, outcome == GameOutcome.Defeat);
         }
 
         private static void ApplySprite(Image image, Sprite sprite)
@@ -230,8 +276,13 @@ namespace BoneThrone.UI
             if (image != null && sprite != null)
             {
                 image.sprite = sprite;
-                image.type = Image.Type.Sliced;
+                image.type = Image.Type.Simple;
             }
+        }
+
+        private static Sprite FirstAssigned(Sprite primary, Sprite fallback)
+        {
+            return primary != null ? primary : fallback;
         }
 
         private static void SetButtonLabel(Button button, string value)
@@ -245,6 +296,14 @@ namespace BoneThrone.UI
             if (label != null)
             {
                 label.text = value;
+            }
+        }
+
+        private static void SetButtonVisible(Button button, bool visible)
+        {
+            if (button != null && button.gameObject.activeSelf != visible)
+            {
+                button.gameObject.SetActive(visible);
             }
         }
 

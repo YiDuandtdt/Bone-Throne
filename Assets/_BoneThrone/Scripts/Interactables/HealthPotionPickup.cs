@@ -1,3 +1,4 @@
+using BoneThrone.Audio;
 using BoneThrone.Items;
 using BoneThrone.Movement;
 using BoneThrone.Units;
@@ -25,7 +26,10 @@ namespace BoneThrone.Interactables
         {
             ResolveReferences();
             Unit collector = selectionManager != null ? selectionManager.SelectedUnit : null;
-            TryCollect(collector);
+            if (!TryCollect(collector))
+            {
+                BTAudioService.PlaySfx(BTAudioCueId.InvalidAction);
+            }
         }
 
         public bool TryCollect(Unit collector)

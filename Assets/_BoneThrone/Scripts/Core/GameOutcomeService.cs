@@ -58,6 +58,17 @@ namespace BoneThrone.Core
             RetryRequested?.Invoke();
         }
 
+        public void ForceShowCurrentOutcomePopup()
+        {
+            if (!HasOutcome)
+            {
+                return;
+            }
+
+            BTOutcomePopupService.ShowOutcome(currentOutcome);
+            Log("Force showed popup for " + currentOutcome + ".");
+        }
+
         private bool SetOutcome(GameOutcome outcome, string reason)
         {
             if (HasOutcome)

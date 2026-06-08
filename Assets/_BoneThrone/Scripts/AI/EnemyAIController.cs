@@ -98,6 +98,52 @@ namespace BoneThrone.AI
             return EnemyAIResult.Moved(enemy, target, destination);
         }
 
+        public EnemyAIResult TryAttackCurrentTargetIfInRange(
+            Unit enemy,
+            IReadOnlyList<Unit> playerCandidates,
+            AttackRangeService attackRangeService,
+            CombatSystem combatSystem,
+            ActionPermissionService actionPermissionService = null,
+            TurnManager turnManager = null)
+        {
+            EnemyAIResult guardResult;
+            if (!TryValidateEnemy(enemy, out guardResult))
+            {
+                return guardResult;
+            }
+
+            Unit target;
+            if (!targetSelector.TrySelectNearestAlivePlayer(enemy, playerCandidates, out target))
+            {
+                return EnemyAIResult.Skipped(enemy, null, "Enemy AI skipped follow-up attack because no alive player target was found.");
+            }
+
+            if (attackRangeService == null)
+            {
+                return EnemyAIResult.Skipped(enemy, target, "Enemy AI skipped follow-up attack because AttackRangeService is missing.");
+            }
+
+            if (!attackRangeService.IsInBasicAttackRange(enemy, target))
+            {
+                return EnemyAIResult.Skipped(enemy, target, "Enemy AI skipped follow-up attack because target is still out of range after movement.");
+            }
+
+            if (combatSystem == null)
+            {
+                return EnemyAIResult.Skipped(enemy, target, "Enemy AI skipped follow-up attack because CombatSystem is missing.");
+            }
+
+            if (!CanAct(enemy, actionPermissionService, turnManager))
+            {
+                return EnemyAIResult.Skipped(enemy, target, "Enemy AI skipped follow-up attack because action permission rejected the enemy.");
+            }
+
+            bool attacked = combatSystem.TryBasicAttack(enemy, target);
+            return attacked
+                ? EnemyAIResult.Attacked(enemy, target)
+                : EnemyAIResult.Skipped(enemy, target, "Enemy AI skipped follow-up attack because CombatSystem rejected the basic attack.");
+        }
+
         private static bool TryValidateEnemy(Unit enemy, out EnemyAIResult result)
         {
             if (enemy == null)

@@ -3,6 +3,7 @@ using BoneThrone.Grid;
 using BoneThrone.Turns;
 using BoneThrone.Units;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace BoneThrone.Movement
 {
@@ -22,8 +23,10 @@ namespace BoneThrone.Movement
         [SerializeField] private MovementDebugHighlighter debugHighlighter;
         [SerializeField] private TurnManager turnManager;
         [SerializeField] private ActionPermissionService actionPermissionService;
+        [SerializeField] private ActiveUnitProvider activeUnitProvider;
 
         private readonly HashSet<GridPosition> reachablePositions = new HashSet<GridPosition>();
+        private readonly List<Unit> activeUnitsScratch = new List<Unit>();
         private bool unitMoverEventSubscribed;
 
         private void OnEnable()
@@ -39,6 +42,11 @@ namespace BoneThrone.Movement
         private void Update()
         {
             if (!Input.GetMouseButtonDown(0))
+            {
+                return;
+            }
+
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             {
                 return;
             }
@@ -286,7 +294,8 @@ namespace BoneThrone.Movement
                 }
             }
 
-            return null;
+            Tile tile = RaycastTileUnderCursor();
+            return FindSelectableUnitOnTile(tile);
         }
 
         private Tile RaycastTileUnderCursor()
@@ -326,6 +335,62 @@ namespace BoneThrone.Movement
         private static int CompareRaycastHitsByDistance(RaycastHit a, RaycastHit b)
         {
             return a.distance.CompareTo(b.distance);
+        }
+
+        private Unit FindSelectableUnitOnTile(Tile tile)
+        {
+            if (tile == null)
+            {
+                return null;
+            }
+
+            Unit unit = FindSelectableUnitOnTile(tile, GetActiveUnits());
+            if (unit != null)
+            {
+                return unit;
+            }
+
+            Unit[] fallbackUnits = Object.FindObjectsByType<Unit>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            return FindSelectableUnitOnTile(tile, fallbackUnits);
+        }
+
+        private IReadOnlyList<Unit> GetActiveUnits()
+        {
+            if (activeUnitProvider == null)
+            {
+                activeUnitProvider = Object.FindFirstObjectByType<ActiveUnitProvider>();
+            }
+
+            if (activeUnitProvider == null)
+            {
+                return null;
+            }
+
+            activeUnitsScratch.Clear();
+            activeUnitProvider.FillActiveAliveUnits(activeUnitsScratch);
+            return activeUnitsScratch;
+        }
+
+        private static Unit FindSelectableUnitOnTile(Tile tile, IReadOnlyList<Unit> units)
+        {
+            if (tile == null || units == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < units.Count; i++)
+            {
+                Unit unit = units[i];
+                if (unit != null
+                    && unit.IsAlive
+                    && unit.Faction == UnitFaction.Player
+                    && unit.CurrentTile == tile)
+                {
+                    return unit;
+                }
+            }
+
+            return null;
         }
 
         private bool HasRequiredReferences()

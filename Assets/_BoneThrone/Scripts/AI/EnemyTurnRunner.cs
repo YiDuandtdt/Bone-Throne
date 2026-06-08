@@ -39,6 +39,8 @@ namespace BoneThrone.AI
         private Coroutine runningRoutine;
         private TurnManager runningTurnManager;
         private bool isRunning;
+        private Unit pendingBasicAttackAttacker;
+        private bool pendingBasicAttackResolved;
 
         private void Awake()
         {
@@ -71,6 +73,8 @@ namespace BoneThrone.AI
                 StopCoroutine(runningRoutine);
                 runningRoutine = null;
             }
+
+            EndBasicAttackResolutionWait();
 
             TurnManager turnManager = runningTurnManager;
             runningTurnManager = null;
@@ -142,6 +146,7 @@ namespace BoneThrone.AI
                         continue;
                     }
 
+                    BeginBasicAttackResolutionWait(enemy);
                     EnemyAIResult result = enemyAIController.TryRunAction(
                         enemy,
                         activePlayers,
@@ -154,6 +159,35 @@ namespace BoneThrone.AI
                         turnManager);
 
                     LogResult(result);
+                    yield return WaitForBasicAttackResolutionIfNeeded(result);
+                    EndBasicAttackResolutionWait();
+
+                    if (result.ActionType == EnemyAIActionType.Move)
+                    {
+                        yield return WaitForMoveVisual(enemy);
+                        BeginBasicAttackResolutionWait(enemy);
+                        EnemyAIResult followUpResult = enemyAIController.TryAttackCurrentTargetIfInRange(
+                            enemy,
+                            activePlayers,
+                            attackRangeService,
+                            combatSystem,
+                            actionPermissionService,
+                            turnManager);
+
+                        if (followUpResult.ActionType == EnemyAIActionType.Attack || ShouldLogFollowUpSkip(followUpResult))
+                        {
+                            LogResult(followUpResult);
+                        }
+
+                        yield return WaitForBasicAttackResolutionIfNeeded(followUpResult);
+                        EndBasicAttackResolutionWait();
+
+                        yield return followUpResult.ActionType == EnemyAIActionType.Attack
+                            ? WaitForEnemyAttackRecoveryDelay()
+                            : WaitForEnemyActionDelay();
+                        continue;
+                    }
+
                     yield return result.ActionType == EnemyAIActionType.Attack
                         ? WaitForEnemyAttackRecoveryDelay()
                         : WaitForEnemyActionDelay();
@@ -465,6 +499,88 @@ namespace BoneThrone.AI
             {
                 yield return new WaitForSeconds(duration);
             }
+        }
+
+        private IEnumerator WaitForMoveVisual(Unit enemy)
+        {
+            if (enemy == null || unitMover == null)
+            {
+                yield break;
+            }
+
+            bool movementCompleted = !unitMover.IsMoving(enemy);
+            System.Action<Unit> handleMoveCompleted = movedUnit =>
+            {
+                if (movedUnit == enemy)
+                {
+                    movementCompleted = true;
+                }
+            };
+
+            unitMover.MoveVisualCompleted += handleMoveCompleted;
+            float timeout = 4f;
+            while (enemy != null && !movementCompleted && unitMover.IsMoving(enemy) && timeout > 0f)
+            {
+                timeout -= Time.deltaTime;
+                yield return null;
+            }
+
+            unitMover.MoveVisualCompleted -= handleMoveCompleted;
+        }
+
+        private void BeginBasicAttackResolutionWait(Unit attacker)
+        {
+            EndBasicAttackResolutionWait();
+            pendingBasicAttackAttacker = attacker;
+            pendingBasicAttackResolved = false;
+
+            if (combatSystem != null && attacker != null)
+            {
+                combatSystem.BasicAttackResolved += HandleBasicAttackResolved;
+            }
+        }
+
+        private IEnumerator WaitForBasicAttackResolutionIfNeeded(EnemyAIResult result)
+        {
+            if (result.ActionType != EnemyAIActionType.Attack)
+            {
+                yield break;
+            }
+
+            float timeout = Mathf.Max(Mathf.Max(GetEnemyActionInterval(), enemyAttackRecoveryDelay), 0.1f) + 2f;
+            while (!pendingBasicAttackResolved && timeout > 0f)
+            {
+                timeout -= Time.deltaTime;
+                yield return null;
+            }
+        }
+
+        private void EndBasicAttackResolutionWait()
+        {
+            if (combatSystem != null)
+            {
+                combatSystem.BasicAttackResolved -= HandleBasicAttackResolved;
+            }
+
+            pendingBasicAttackAttacker = null;
+            pendingBasicAttackResolved = false;
+        }
+
+        private void HandleBasicAttackResolved(Unit attacker, Unit target)
+        {
+            if (attacker == pendingBasicAttackAttacker)
+            {
+                pendingBasicAttackResolved = true;
+            }
+        }
+
+        private static bool ShouldLogFollowUpSkip(EnemyAIResult result)
+        {
+            return !result.Success
+                && !string.Equals(
+                    result.Message,
+                    "Enemy AI skipped follow-up attack because target is still out of range after movement.",
+                    System.StringComparison.Ordinal);
         }
 
         private float GetBeforeEnemyTurnBannerDelay()

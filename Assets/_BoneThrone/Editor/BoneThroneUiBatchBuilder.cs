@@ -259,7 +259,7 @@ namespace BoneThrone.Editor
             bloodBarRect.offsetMin = new Vector2(16f, -42f);
             bloodBarRect.offsetMax = new Vector2(-16f, -18f);
 
-            TMP_Text statusText = CreateText(root.transform, "StatusText", "Hero: Unbound", 18, FontStyles.Normal, TextAlignmentOptions.TopLeft, Color.white);
+            TMP_Text statusText = CreateText(root.transform, "StatusText", "角色：未绑定\n生命：-- / --\n等级：--\n移动：-- | 行动：--\n回合：--\n状态：--", 18, FontStyles.Normal, TextAlignmentOptions.TopLeft, Color.white);
             Stretch(statusText.rectTransform, new Vector2(16f, 54f), new Vector2(-16f, -14f));
             heroPanelView.Bind(statusText);
 
@@ -278,7 +278,7 @@ namespace BoneThrone.Editor
             background.color = Color.white;
 
             TurnBannerView view = root.AddComponent<TurnBannerView>();
-            TMP_Text text = CreateText(root.transform, "TurnText", "Turn: Unbound", 28, FontStyles.Bold, TextAlignmentOptions.Center, Color.white);
+            TMP_Text text = CreateText(root.transform, "TurnText", "回合：未绑定", 28, FontStyles.Bold, TextAlignmentOptions.Center, Color.white);
             Stretch(text.rectTransform, new Vector2(18f, 10f), new Vector2(-18f, -10f));
             view.Bind(text);
 
@@ -297,7 +297,7 @@ namespace BoneThrone.Editor
             background.color = Color.white;
 
             PromptView view = root.AddComponent<PromptView>();
-            TMP_Text text = CreateText(root.transform, "PromptText", "Select a player unit.", 20, FontStyles.Normal, TextAlignmentOptions.Center, Color.white);
+            TMP_Text text = CreateText(root.transform, "PromptText", "请选择一名玩家角色。", 20, FontStyles.Normal, TextAlignmentOptions.Center, Color.white);
             Stretch(text.rectTransform, new Vector2(16f, 8f), new Vector2(-16f, -8f));
             view.Bind(text);
 
@@ -316,7 +316,7 @@ namespace BoneThrone.Editor
             background.color = Color.white;
 
             CombatFeedbackView view = root.AddComponent<CombatFeedbackView>();
-            TMP_Text text = CreateText(root.transform, "CombatLogText", "Combat Log: No combat yet", 18, FontStyles.Normal, TextAlignmentOptions.TopLeft, Color.white);
+            TMP_Text text = CreateText(root.transform, "CombatLogText", "战斗日志：暂无记录", 18, FontStyles.Normal, TextAlignmentOptions.TopLeft, Color.white);
             Stretch(text.rectTransform, new Vector2(18f, 14f), new Vector2(-18f, -14f));
             view.Bind(text);
 
@@ -890,8 +890,8 @@ namespace BoneThrone.Editor
 
                 SerializedObject serialized = new SerializedObject(evaluator);
                 serialized.FindProperty("outcomeService").objectReferenceValue = outcomeService;
-                serialized.FindProperty("defeatReason").stringValue = "All player units were defeated.";
-                serialized.FindProperty("victoryReason").stringValue = "All tracked enemy units were defeated.";
+                serialized.FindProperty("defeatReason").stringValue = "玩家队伍全员倒下。";
+                serialized.FindProperty("victoryReason").stringValue = "所有追踪敌人已被击败。";
                 SetObjectArray(serialized.FindProperty("trackedPlayerUnits"), players);
                 SetObjectArray(serialized.FindProperty("trackedVictoryUnits"), enemies);
                 serialized.ApplyModifiedPropertiesWithoutUndo();

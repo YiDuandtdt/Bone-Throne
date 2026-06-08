@@ -1,3 +1,4 @@
+using BoneThrone.Audio;
 using BoneThrone.Items;
 using BoneThrone.Levels;
 using BoneThrone.Units;
@@ -24,7 +25,10 @@ namespace BoneThrone.Interactables
 
         private void OnMouseDown()
         {
-            TryUse();
+            if (!TryUse())
+            {
+                BTAudioService.PlaySfx(BTAudioCueId.InvalidAction);
+            }
         }
 
         public bool TryUse()

@@ -68,7 +68,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.08, g: 0.06, b: 0.05, a: 0.94}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.94}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -140,6 +140,33 @@ MonoBehaviour:
   - {fileID: 4729297466751923138}
   - {fileID: 2342697571944858842}
   - {fileID: 4609155426740709775}
+  hideIconText: 1
+  previewRoleWhenNoSelection: 1
+  moveSprite: {fileID: 21300000, guid: 22340ed79a82b0449a4dc29e0140a246, type: 3}
+  basicAttackSprite: {fileID: 21300000, guid: 6843438e731f03e44bd75306ad62f02d, type: 3}
+  defendSprite: {fileID: 21300000, guid: 87297dba4ae0e794185640ab05ae409b, type: 3}
+  potionSprite: {fileID: 21300000, guid: a3d472752c3793f458ce8b4ae5bde6c7, type: 3}
+  endTurnSprite: {fileID: 21300000, guid: 0e66a5c89bc01ee4e81c46fd39e99832, type: 3}
+  roleSkillIconSets:
+  - roleId: 1
+    slot0Sprite: {fileID: 21300000, guid: c1ed51183cf117847ae7891ad8ed7fb1, type: 3}
+    slot1Sprite: {fileID: 21300000, guid: 02c90bf6fb1af1047afeb35cae001483, type: 3}
+    slot2Sprite: {fileID: 21300000, guid: 7429510127018664198590933e016432, type: 3}
+  - roleId: 2
+    slot0Sprite: {fileID: 21300000, guid: 34ee13791607e2040b14f9c3288df59c, type: 3}
+    slot1Sprite: {fileID: 21300000, guid: 107da56089a3a6e4ba4b9d27bc075b03, type: 3}
+    slot2Sprite: {fileID: 21300000, guid: c20660ba407fbb942990c43c9fde4b66, type: 3}
+  - roleId: 3
+    slot0Sprite: {fileID: 21300000, guid: 6b7cd2954cd38804cb40c57f4445f572, type: 3}
+    slot1Sprite: {fileID: 21300000, guid: aa5c9fb8a4225874da7c51461335a9da, type: 3}
+    slot2Sprite: {fileID: 21300000, guid: e0991d9d7aafa3e4a88de68a16405970, type: 3}
+  - roleId: 4
+    slot0Sprite: {fileID: 21300000, guid: 60d12083b8a1fde49adb1cb097b5bbe7, type: 3}
+    slot1Sprite: {fileID: 21300000, guid: a8f7ba6adeb1c5c4ca43a862e9337a4b, type: 3}
+    slot2Sprite: {fileID: 21300000, guid: e08cb872f99fec74ca69d5afd05d06ec, type: 3}
+  enabledIconColor: {r: 1, g: 1, b: 1, a: 1}
+  disabledIconColor: {r: 1, g: 1, b: 1, a: 0.42}
+  cooldownIconColor: {r: 0.65, g: 0.75, b: 1, a: 0.72}
   enabledTextColor: {r: 1, g: 1, b: 1, a: 1}
   disabledTextColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   cooldownTextColor: {r: 0.65, g: 0.75, b: 1, a: 1}
@@ -151,6 +178,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2917458146270826336}
     m_Modifications:
+    - target: {fileID: 1574426848428003778, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5757316562983850440, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 0e66a5c89bc01ee4e81c46fd39e99832, type: 3}
     - target: {fileID: 6722018851088900807, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
       propertyPath: m_text
       value: "\u7ED3\u675F\u56DE\u5408"
@@ -315,9 +350,17 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2917458146270826336}
     m_Modifications:
+    - target: {fileID: 1574426848428003778, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5757316562983850440, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 02c90bf6fb1af1047afeb35cae001483, type: 3}
     - target: {fileID: 6722018851088900807, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
       propertyPath: m_text
-      value: "\u6280\u80FD1"
+      value: "\u6280\u80FD2"
       objectReference: {fileID: 0}
     - target: {fileID: 6722018851088900807, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
       propertyPath: m_fontAsset
@@ -479,9 +522,17 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2917458146270826336}
     m_Modifications:
+    - target: {fileID: 1574426848428003778, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5757316562983850440, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 6843438e731f03e44bd75306ad62f02d, type: 3}
     - target: {fileID: 6722018851088900807, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
       propertyPath: m_text
-      value: Attack
+      value: "\u666E\u901A\u653B\u51FB"
       objectReference: {fileID: 0}
     - target: {fileID: 6722018851088900807, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
       propertyPath: m_fontAsset
@@ -643,6 +694,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2917458146270826336}
     m_Modifications:
+    - target: {fileID: 1574426848428003778, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5757316562983850440, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: a3d472752c3793f458ce8b4ae5bde6c7, type: 3}
     - target: {fileID: 6722018851088900807, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
       propertyPath: m_text
       value: "\u836F\u6C34"
@@ -807,9 +866,17 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2917458146270826336}
     m_Modifications:
+    - target: {fileID: 1574426848428003778, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5757316562983850440, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: c1ed51183cf117847ae7891ad8ed7fb1, type: 3}
     - target: {fileID: 6722018851088900807, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
       propertyPath: m_text
-      value: "\u6280\u80FD0"
+      value: "\u6280\u80FD1"
       objectReference: {fileID: 0}
     - target: {fileID: 6722018851088900807, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
       propertyPath: m_fontAsset
@@ -971,9 +1038,17 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2917458146270826336}
     m_Modifications:
+    - target: {fileID: 1574426848428003778, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5757316562983850440, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 7429510127018664198590933e016432, type: 3}
     - target: {fileID: 6722018851088900807, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
       propertyPath: m_text
-      value: Skill 2
+      value: "\u6280\u80FD3"
       objectReference: {fileID: 0}
     - target: {fileID: 6722018851088900807, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
       propertyPath: m_fontAsset
@@ -1135,6 +1210,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2917458146270826336}
     m_Modifications:
+    - target: {fileID: 1574426848428003778, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5757316562983850440, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 22340ed79a82b0449a4dc29e0140a246, type: 3}
     - target: {fileID: 6722018851088900807, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
       propertyPath: m_text
       value: "\u79FB\u52A8"
@@ -1299,6 +1382,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2917458146270826336}
     m_Modifications:
+    - target: {fileID: 1574426848428003778, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5757316562983850440, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 87297dba4ae0e794185640ab05ae409b, type: 3}
     - target: {fileID: 6722018851088900807, guid: 04f39a5dcc2548a468712d8db67fa274, type: 3}
       propertyPath: m_text
       value: "\u9632\u5FA1"

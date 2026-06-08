@@ -1825,13 +1825,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d087e4e53d4f92445b442786c986b5e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Rooms.RoomEnemyActivator
+  enemyPrefabs: []
   assignedEnemies:
   - {fileID: 1722145374}
   - {fileID: 1158182956}
   spawnTiles:
   - {fileID: 1632716381}
   - {fileID: 2072141250}
+  spawnedEnemyParent: {fileID: 0}
   deactivateEnemiesAtStart: 1
+  keepBossLikeAssignedEnemiesActiveAtStart: 1
+  bossNameContains: boss
+  golemNameContains: golem
 --- !u!114 &184952150
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1847,6 +1852,7 @@ MonoBehaviour:
   currentState: 0
   shadowController: {fileID: 184952148}
   enemyActivator: {fileID: 184952149}
+  requireBossDoorOpenedForBossRooms: 1
 --- !u!4 &184952151
 Transform:
   m_ObjectHideFlags: 0
@@ -2806,6 +2812,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Rooms.RoomTrigger
   roomController: {fileID: 184952150}
+  requireOpenedBossDoorEntryForBossRooms: 1
+  openedBossDoorEntryRadius: 4
 --- !u!65 &361748296
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3957,6 +3965,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Movement.UnitMover
   worldPositionOffset: {x: 0, y: 0, z: 0}
   moveSpeed: 4
+  bossMoveSpeedMultiplier: 0.42
   turnDuration: 0.12
 --- !u!114 &510826839
 MonoBehaviour:
@@ -3995,6 +4004,7 @@ MonoBehaviour:
   debugHighlighter: {fileID: 510826842}
   turnManager: {fileID: 916906059}
   actionPermissionService: {fileID: 916906060}
+  activeUnitProvider: {fileID: 0}
 --- !u!114 &510826841
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4021,8 +4031,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Movement.MovementDebugHighlighter
   selectedColor: {r: 0.2, g: 0.45, b: 1, a: 1}
   reachableColor: {r: 0.25, g: 0.85, b: 0.35, a: 1}
+  actionRangeColor: {r: 1, g: 0.28, b: 0.76, a: 1}
   attackColor: {r: 0.95, g: 0.18, b: 0.16, a: 1}
   skillColor: {r: 1, g: 0.86, b: 0.12, a: 1}
+  bossIntentColor: {r: 1, g: 0.08, b: 0.02, a: 1}
+  bossIntentFootTileDarken: 0.38
   showPlayerFootTiles: 1
   playerFootTileColor: {r: 1, g: 1, b: 1, a: 1}
   endedPlayerFootTileColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
@@ -4063,6 +4076,30 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 559363633}
     m_Modifications:
+    - target: {fileID: 258, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 258, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 258, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 361, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 361, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 361, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 100000, guid: 88b3fa7eedc74a3eab14c3a5ebdea5b4, type: 3}
       propertyPath: m_Name
       value: BattleHUD
@@ -6908,6 +6945,7 @@ MonoBehaviour:
   - {fileID: 1349290702}
   - {fileID: 1557234268}
   - {fileID: 782111276}
+  autoEndPlayerUnitsWithNoAvailableActions: 1
   currentPhase: 1
   currentRole: 0
   currentTurnIndex: 0
@@ -7069,13 +7107,13 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 120002, guid: 44eb417b15134d818dfda70c2db7d60f, type: 3}
-      propertyPath: stats.level
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 120002, guid: 44eb417b15134d818dfda70c2db7d60f, type: 3}
       propertyPath: currentTile
       value: 
       objectReference: {fileID: 734407603}
+    - target: {fileID: 120002, guid: 44eb417b15134d818dfda70c2db7d60f, type: 3}
+      propertyPath: stats.level
+      value: 3
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8484,13 +8522,13 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 110002, guid: c6b79b81d81941fd8b2b488451f4b852, type: 3}
-      propertyPath: stats.level
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 110002, guid: c6b79b81d81941fd8b2b488451f4b852, type: 3}
       propertyPath: currentTile
       value: 
       objectReference: {fileID: 2034993646}
+    - target: {fileID: 110002, guid: c6b79b81d81941fd8b2b488451f4b852, type: 3}
+      propertyPath: stats.level
+      value: 3
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -8562,6 +8600,11 @@ MonoBehaviour:
   turnManager: {fileID: 916906059}
   actionPermissionService: {fileID: 916906060}
   combatLog: {fileID: 1809320150}
+  skillImpactDelay: 0.2
+  meleeSkillImpactDelay: 0.65
+  barbarianSkillSfxDelay: 0.5
+  fighterFirstSkillSfxDelay: 0.3
+  fighterFirstSkillSfxVolumeScale: 2
 --- !u!4 &1112835312
 Transform:
   m_ObjectHideFlags: 0
@@ -8787,6 +8830,9 @@ MonoBehaviour:
   - {fileID: 1662607247}
   spawnedEnemyParent: {fileID: 0}
   deactivateEnemiesAtStart: 0
+  keepBossLikeAssignedEnemiesActiveAtStart: 1
+  bossNameContains: boss
+  golemNameContains: golem
 --- !u!114 &1158726093
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8802,6 +8848,7 @@ MonoBehaviour:
   currentState: 0
   shadowController: {fileID: 0}
   enemyActivator: {fileID: 1158726092}
+  requireBossDoorOpenedForBossRooms: 1
 --- !u!4 &1158726094
 Transform:
   m_ObjectHideFlags: 0
@@ -9464,13 +9511,13 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 100002, guid: 1187edca4e4d44d68896010427f15f2c, type: 3}
-      propertyPath: stats.level
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 100002, guid: 1187edca4e4d44d68896010427f15f2c, type: 3}
       propertyPath: currentTile
       value: 
       objectReference: {fileID: 1929522825}
+    - target: {fileID: 100002, guid: 1187edca4e4d44d68896010427f15f2c, type: 3}
+      propertyPath: stats.level
+      value: 3
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -10206,13 +10253,13 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 130002, guid: e652b0dcd36c4764a4bfc0a96041b883, type: 3}
-      propertyPath: stats.level
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 130002, guid: e652b0dcd36c4764a4bfc0a96041b883, type: 3}
       propertyPath: currentTile
       value: 
       objectReference: {fileID: 376290391}
+    - target: {fileID: 130002, guid: e652b0dcd36c4764a4bfc0a96041b883, type: 3}
+      propertyPath: stats.level
+      value: 3
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -14351,6 +14398,9 @@ MonoBehaviour:
   combatLog: {fileID: 1809320150}
   turnManager: {fileID: 916906059}
   actionPermissionService: {fileID: 916906060}
+  basicAttackImpactDelay: 0.18
+  meleeBasicAttackImpactDelay: 0.65
+  axeBasicAttackSfxDelay: 0.8
 --- !u!114 &1809320147
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16293,6 +16343,274 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2113041483}
   m_Mesh: {fileID: -2634147639830484596, guid: 26d7efd706c78714b90a0be2730a9396, type: 3}
+--- !u!1 &2137000000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2137000001}
+  - component: {fileID: 2137000002}
+  - component: {fileID: 2137000003}
+  m_Layer: 6
+  m_Name: Room_0_BossTrigger
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2137000001
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2137000000}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 14, y: 0.12, z: 14}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &2137000002
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2137000000}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 8, y: 2, z: 8}
+  m_Center: {x: 0, y: 0.8, z: 0}
+--- !u!114 &2137000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2137000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19f876269ff42e244ade3f90e6d056c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Rooms.RoomTrigger
+  roomController: {fileID: 1158726093}
+  requireOpenedBossDoorEntryForBossRooms: 1
+  openedBossDoorEntryRadius: 4
+--- !u!1001 &2137100000
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 600000, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
+      propertyPath: m_Name
+      value: BossKey_AfterOuterRoomClear
+      objectReference: {fileID: 0}
+    - target: {fileID: 600001, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 600001, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.12
+      objectReference: {fileID: 0}
+    - target: {fileID: 600001, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 600001, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 600001, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 600001, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 600001, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 600001, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 600001, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 600001, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 600002, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
+      propertyPath: progressionState
+      value: 
+      objectReference: {fileID: 2137300002}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
+--- !u!1001 &2137200000
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 610000, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
+      propertyPath: m_Name
+      value: BossDoor_ToBossRoom
+      objectReference: {fileID: 0}
+    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 610002, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
+      propertyPath: progressionState
+      value: 
+      objectReference: {fileID: 2137300002}
+    - target: {fileID: 610002, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
+      propertyPath: autoDetectBlockedTiles
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 610002, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
+      propertyPath: blockedTileDetectionRadius
+      value: 3.25
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
+--- !u!1 &2137300000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2137300001}
+  - component: {fileID: 2137300002}
+  m_Layer: 0
+  m_Name: BossGateProgressionState
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2137300001
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2137300000}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 8, y: 0.5, z: 6}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2137300002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2137300000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f96f3188ae3b485e85ec65b7111406d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Levels.BossGateProgressionState
+  hasBossKey: 0
+  isBossDoorOpened: 0
+  isBossFightStarted: 0
+  hasUsedSupplyPoint: 0
+  autoRequireAllNonBossRoomsCleared: 1
+  requireNoActiveNonBossEnemies: 1
+  requiredClearedRooms:
+  - {fileID: 184952150}
+  bossNameContains: boss
+  golemNameContains: golem
+  acceptSharedKeyForBossDoor: 1
+  levelProgressionService: {fileID: 1520370594}
+  debugLogging: 1
 --- !u!1001 &2147483000
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -16366,73 +16684,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 794e213d8c404c7bbd870d6f0e820f72, type: 3}
---- !u!1 &2137000000
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2137000001}
-  - component: {fileID: 2137000002}
-  - component: {fileID: 2137000003}
-  m_Layer: 6
-  m_Name: Room_0_BossTrigger
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2137000001
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2137000000}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 14, y: 0.12, z: 14}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &2137000002
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2137000000}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 8, y: 2, z: 8}
-  m_Center: {x: 0, y: 0.8, z: 0}
---- !u!114 &2137000003
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2137000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 19f876269ff42e244ade3f90e6d056c2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Rooms.RoomTrigger
-  roomController: {fileID: 1158726093}
 --- !u!1001 &2147483101
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -16509,205 +16760,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1f08e952949ac1e43a0a42f841579477, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Units.Unit
---- !u!1001 &2137100000
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 600000, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
-      propertyPath: m_Name
-      value: BossKey_AfterOuterRoomClear
-      objectReference: {fileID: 0}
-    - target: {fileID: 600002, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
-      propertyPath: progressionState
-      value: 
-      objectReference: {fileID: 2137300002}
-    - target: {fileID: 600001, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 6
-      objectReference: {fileID: 0}
-    - target: {fileID: 600001, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.12
-      objectReference: {fileID: 0}
-    - target: {fileID: 600001, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 6
-      objectReference: {fileID: 0}
-    - target: {fileID: 600001, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 600001, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 600001, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 600001, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 600001, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 600001, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 600001, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 3ce445c01da146148a855467c7a1a439, type: 3}
---- !u!1001 &2137200000
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 610000, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
-      propertyPath: m_Name
-      value: BossDoor_ToBossRoom
-      objectReference: {fileID: 0}
-    - target: {fileID: 610002, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
-      propertyPath: progressionState
-      value: 
-      objectReference: {fileID: 2137300002}
-    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 12
-      objectReference: {fileID: 0}
-    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 610001, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 610002, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
-      propertyPath: autoDetectBlockedTiles
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 610002, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
-      propertyPath: blockedTileDetectionRadius
-      value: 3.25
-      objectReference: {fileID: 0}
-  m_RemovedComponents: []
-  m_RemovedGameObjects: []
-  m_AddedGameObjects: []
-  m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 86489c68d9da462e858e964c12ab181a, type: 3}
---- !u!1 &2137300000
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2137300001}
-  - component: {fileID: 2137300002}
-  m_Layer: 0
-  m_Name: BossGateProgressionState
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2137300001
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2137300000}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 8, y: 0.5, z: 6}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2137300002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2137300000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f96f3188ae3b485e85ec65b7111406d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Levels.BossGateProgressionState
-  hasBossKey: 0
-  isBossDoorOpened: 0
-  isBossFightStarted: 0
-  hasUsedSupplyPoint: 0
-  autoRequireAllNonBossRoomsCleared: 1
-  requireNoActiveNonBossEnemies: 1
-  requiredClearedRooms:
-  - {fileID: 184952150}
-  bossNameContains: boss
-  golemNameContains: golem
-  acceptSharedKeyForBossDoor: 1
-  levelProgressionService: {fileID: 1520370594}
-  debugLogging: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -16754,3 +16806,4 @@ SceneRoots:
   - {fileID: 2137100000}
   - {fileID: 2137200000}
   - {fileID: 2137300001}
+  - {fileID: 2137000001}

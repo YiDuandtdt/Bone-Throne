@@ -60,7 +60,7 @@ namespace BoneThrone.Levels
         {
             if (!hasSharedKey)
             {
-                reason = "The party does not have the shared key.";
+                reason = "队伍还没有获得共用钥匙。";
                 return false;
             }
 
@@ -71,11 +71,11 @@ namespace BoneThrone.Levels
 
             if (transitionInProgress)
             {
-                reason = "A level transition is already in progress.";
+                reason = "正在切换关卡，请稍等。";
                 return false;
             }
 
-            reason = "Progression conditions satisfied.";
+            reason = "进度条件已满足。";
             return true;
         }
 
@@ -192,7 +192,7 @@ namespace BoneThrone.Levels
         {
             if (requiredClearedRooms == null || requiredClearedRooms.Length == 0)
             {
-                reason = "No required rooms configured; treating room condition as satisfied.";
+                reason = "没有配置必清房间，视为已满足。";
                 return true;
             }
 
@@ -201,18 +201,18 @@ namespace BoneThrone.Levels
                 RoomController room = requiredClearedRooms[i];
                 if (room == null)
                 {
-                    reason = "Required room reference at index " + i + " is missing.";
+                    reason = "第 " + i + " 个必清房间引用缺失。";
                     return false;
                 }
 
                 if (!room.CheckCleared())
                 {
-                    reason = "Required room at index " + i + " is not cleared. CurrentState=" + room.CurrentState + ".";
+                    reason = "第 " + i + " 个必清房间尚未清理完成。当前状态：" + room.CurrentState + "。";
                     return false;
                 }
             }
 
-            reason = "All required rooms are cleared.";
+            reason = "所有必清房间已清理完成。";
             return true;
         }
     }

@@ -38,7 +38,10 @@ namespace BoneThrone.Interactables
         {
             ResolveReferences();
             Unit collector = selectionManager != null ? selectionManager.SelectedUnit : null;
-            TryCollectFromClick(collector);
+            if (!TryCollectFromClick(collector))
+            {
+                BTAudioService.PlaySfx(BTAudioCueId.InvalidAction);
+            }
         }
 
         public bool TryCollectFromClick(Unit collector)

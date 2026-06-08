@@ -69,7 +69,9 @@ namespace BoneThrone.CameraControls
                 return;
             }
 
-            if (ShouldBlockForUI())
+            HandleMouseWheelZoom();
+
+            if (IsPointerOverBlockingUI())
             {
                 isDragging = false;
                 ResetRightMouseRotation();
@@ -78,7 +80,6 @@ namespace BoneThrone.CameraControls
 
             HandleMiddleMousePan();
             HandleRightMouseRotation();
-            HandleMouseWheelZoom();
         }
 
         private void HandleMiddleMousePan()
@@ -211,7 +212,7 @@ namespace BoneThrone.CameraControls
         private void DollyPerspectiveCamera(float scroll)
         {
             Transform cameraTransform = targetCamera.transform;
-            Vector3 pivotPosition = zoomPivot != null ? zoomPivot.position : Vector3.zero;
+            Vector3 pivotPosition = ResolveZoomPivot();
             Vector3 candidatePosition = cameraTransform.position + cameraTransform.forward * (scroll * zoomSpeed);
             float candidateDistance = Vector3.Distance(candidatePosition, pivotPosition);
 
@@ -221,6 +222,17 @@ namespace BoneThrone.CameraControls
             }
 
             cameraTransform.position = candidatePosition;
+        }
+
+        private Vector3 ResolveZoomPivot()
+        {
+            if (zoomPivot != null)
+            {
+                return zoomPivot.position;
+            }
+
+            Transform cameraTransform = targetCamera.transform;
+            return cameraTransform.position + cameraTransform.forward * fallbackPivotDistance;
         }
 
         private void RotateAroundPivot(float yawDelta)
@@ -278,7 +290,7 @@ namespace BoneThrone.CameraControls
             targetCamera.transform.rotation = Quaternion.Euler(currentPitch, yaw, 0f);
         }
 
-        private bool ShouldBlockForUI()
+        private bool IsPointerOverBlockingUI()
         {
             return blockWhenPointerOverUI
                 && EventSystem.current != null

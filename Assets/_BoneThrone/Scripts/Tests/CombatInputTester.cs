@@ -14,17 +14,17 @@ namespace BoneThrone.Tests
         [SerializeField] private Unit attacker;
         [SerializeField] private Unit target;
 
-        [ContextMenu("Phase 7/Basic Attack Test")]
+        [ContextMenu("Phase 7/普通攻击测试")]
         public void BasicAttackTest()
         {
             if (combatSystem == null)
             {
-                Debug.LogWarning("CombatInputTester needs a CombatSystem reference.", this);
+                Debug.LogWarning("CombatInputTester 需要绑定 CombatSystem。", this);
                 return;
             }
 
             bool result = combatSystem.TryBasicAttack(attacker, target);
-            Debug.Log("CombatInputTester BasicAttackTest result: " + result + ".", this);
+            Debug.Log("CombatInputTester 普通攻击测试结果：" + result + "。", this);
         }
     }
 }

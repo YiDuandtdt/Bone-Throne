@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using BoneThrone.Core;
 using BoneThrone.Units;
@@ -15,18 +16,29 @@ namespace BoneThrone.Audio
         private const float MaxNormalizedMusicVolume = 0.55f;
         private const float DefaultSfxVolume = 0.85f;
         private const float DefaultBgmVolume = 0.35f;
+        private const string BgmVolumeKey = "BoneThrone.Audio.BgmVolume";
+        private const string SfxVolumeKey = "BoneThrone.Audio.SfxVolume";
 
         private static BTAudioService instance;
         private static bool sceneHooksRegistered;
+        private static bool pendingNextSceneBgmFadeIn;
+        private static float pendingNextSceneBgmFadeDuration;
 
         private readonly Dictionary<BTAudioCueId, AudioClip> clipCache = new Dictionary<BTAudioCueId, AudioClip>();
         private readonly Dictionary<BTAudioCueId, float> sfxVolumeCache = new Dictionary<BTAudioCueId, float>();
         private readonly Dictionary<BTAudioCueId, float> musicVolumeCache = new Dictionary<BTAudioCueId, float>();
         private readonly Dictionary<int, AudioSource> activeLoops = new Dictionary<int, AudioSource>();
+        private readonly Dictionary<int, BTAudioCueId> activeLoopCues = new Dictionary<int, BTAudioCueId>();
 
         private AudioSource sfxSource;
         private AudioSource bgmSource;
         private BTAudioCueId currentBgmCue = BTAudioCueId.None;
+        private float userBgmVolume = 1f;
+        private float userSfxVolume = 1f;
+        private int lastButtonClickFrame = -1;
+        private int lastInvalidActionFrame = -1;
+        private bool userVolumeSettingsLoaded;
+        private Coroutine bgmFadeRoutine;
 
         private static readonly Dictionary<BTAudioCueId, string> ClipPaths = new Dictionary<BTAudioCueId, string>
         {
@@ -79,6 +91,11 @@ namespace BoneThrone.Audio
             EnsureInstance().PlaySfxInternal(cue, volumeScale, pitch);
         }
 
+        public static bool WasExplicitUiClickFeedbackPlayedSinceFrame(int frame)
+        {
+            return instance != null && instance.WasExplicitUiClickFeedbackPlayedSinceFrameInternal(frame);
+        }
+
         public static void PlayDeathSfx(Unit unit)
         {
             if (unit == null)
@@ -115,6 +132,31 @@ namespace BoneThrone.Audio
         public static void PlaySceneBgmForCurrentScene()
         {
             EnsureInstance().PlaySceneBgm(SceneManager.GetActiveScene().name);
+        }
+
+        public static void RequestNextSceneBgmFadeIn(float durationSeconds)
+        {
+            EnsureInstance().RequestNextSceneBgmFadeInInternal(durationSeconds);
+        }
+
+        public static float GetBgmVolume()
+        {
+            return EnsureInstance().GetUserBgmVolumeInternal();
+        }
+
+        public static float GetSfxVolume()
+        {
+            return EnsureInstance().GetUserSfxVolumeInternal();
+        }
+
+        public static void SetBgmVolume(float value)
+        {
+            EnsureInstance().SetUserBgmVolumeInternal(value);
+        }
+
+        public static void SetSfxVolume(float value)
+        {
+            EnsureInstance().SetUserSfxVolumeInternal(value);
         }
 
         public static void PlayLoop(BTAudioCueId cue, Object owner)
@@ -326,6 +368,8 @@ namespace BoneThrone.Audio
 
         private void EnsureSources()
         {
+            LoadUserVolumeSettingsIfNeeded();
+
             if (sfxSource == null)
             {
                 sfxSource = gameObject.AddComponent<AudioSource>();
@@ -340,7 +384,95 @@ namespace BoneThrone.Audio
                 bgmSource.playOnAwake = false;
                 bgmSource.loop = true;
                 bgmSource.spatialBlend = 0f;
-                bgmSource.volume = DefaultBgmVolume;
+                bgmSource.volume = DefaultBgmVolume * userBgmVolume;
+            }
+        }
+
+        private void LoadUserVolumeSettingsIfNeeded()
+        {
+            if (userVolumeSettingsLoaded)
+            {
+                return;
+            }
+
+            userBgmVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(BgmVolumeKey, 1f));
+            userSfxVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(SfxVolumeKey, 1f));
+            userVolumeSettingsLoaded = true;
+        }
+
+        private float GetUserBgmVolumeInternal()
+        {
+            LoadUserVolumeSettingsIfNeeded();
+            return userBgmVolume;
+        }
+
+        private float GetUserSfxVolumeInternal()
+        {
+            LoadUserVolumeSettingsIfNeeded();
+            return userSfxVolume;
+        }
+
+        private void RequestNextSceneBgmFadeInInternal(float durationSeconds)
+        {
+            pendingNextSceneBgmFadeIn = true;
+            pendingNextSceneBgmFadeDuration = Mathf.Max(0f, durationSeconds);
+
+            if (bgmSource != null)
+            {
+                bgmSource.volume = 0f;
+            }
+        }
+
+        private void SetUserBgmVolumeInternal(float value)
+        {
+            LoadUserVolumeSettingsIfNeeded();
+            userBgmVolume = Mathf.Clamp01(value);
+            PlayerPrefs.SetFloat(BgmVolumeKey, userBgmVolume);
+            PlayerPrefs.Save();
+            ApplyUserBgmVolume();
+        }
+
+        private void SetUserSfxVolumeInternal(float value)
+        {
+            LoadUserVolumeSettingsIfNeeded();
+            userSfxVolume = Mathf.Clamp01(value);
+            PlayerPrefs.SetFloat(SfxVolumeKey, userSfxVolume);
+            PlayerPrefs.Save();
+            ApplyUserSfxVolumeToActiveLoops();
+        }
+
+        private void ApplyUserBgmVolume()
+        {
+            if (bgmSource == null || bgmSource.clip == null)
+            {
+                return;
+            }
+
+            if (bgmFadeRoutine != null)
+            {
+                return;
+            }
+
+            bgmSource.volume = GetTargetBgmVolume(currentBgmCue, bgmSource.clip);
+        }
+
+        private void ApplyUserSfxVolumeToActiveLoops()
+        {
+            foreach (KeyValuePair<int, AudioSource> pair in activeLoops)
+            {
+                AudioSource source = pair.Value;
+                if (source == null || source.clip == null)
+                {
+                    continue;
+                }
+
+                BTAudioCueId cue;
+                if (!activeLoopCues.TryGetValue(pair.Key, out cue))
+                {
+                    continue;
+                }
+
+                source.volume = GetNormalizedSfxVolume(cue, source.clip) * userSfxVolume;
             }
         }
 
@@ -358,7 +490,8 @@ namespace BoneThrone.Audio
                 return;
             }
 
-            sfxSource.PlayOneShot(clip, GetNormalizedSfxVolume(cue, clip));
+            MarkUiClickFeedbackFrame(cue);
+            sfxSource.PlayOneShot(clip, GetNormalizedSfxVolume(cue, clip) * userSfxVolume);
         }
 
         private void PlaySfxInternal(BTAudioCueId cue, float volumeScale, float pitch)
@@ -375,13 +508,33 @@ namespace BoneThrone.Audio
                 return;
             }
 
+            MarkUiClickFeedbackFrame(cue);
             AudioSource source = gameObject.AddComponent<AudioSource>();
             source.playOnAwake = false;
             source.loop = false;
             source.spatialBlend = 0f;
             source.pitch = Mathf.Clamp(pitch, 0.35f, 2f);
-            source.PlayOneShot(clip, Mathf.Clamp(GetNormalizedSfxVolume(cue, clip) * Mathf.Max(0f, volumeScale), 0f, 1.8f));
+            source.PlayOneShot(clip, Mathf.Clamp(GetNormalizedSfxVolume(cue, clip) * userSfxVolume * Mathf.Max(0f, volumeScale), 0f, 1.8f));
             Destroy(source, Mathf.Max(0.05f, clip.length / Mathf.Max(0.1f, Mathf.Abs(source.pitch))) + 0.1f);
+        }
+
+        private bool WasExplicitUiClickFeedbackPlayedSinceFrameInternal(int frame)
+        {
+            return lastButtonClickFrame >= frame || lastInvalidActionFrame >= frame;
+        }
+
+        private void MarkUiClickFeedbackFrame(BTAudioCueId cue)
+        {
+            if (cue == BTAudioCueId.ButtonClick)
+            {
+                lastButtonClickFrame = Time.frameCount;
+                return;
+            }
+
+            if (cue == BTAudioCueId.InvalidAction)
+            {
+                lastInvalidActionFrame = Time.frameCount;
+            }
         }
 
         private void PlayBgmInternal(BTAudioCueId cue)
@@ -398,11 +551,17 @@ namespace BoneThrone.Audio
                 return;
             }
 
+            if (bgmFadeRoutine != null)
+            {
+                StopCoroutine(bgmFadeRoutine);
+                bgmFadeRoutine = null;
+            }
+
             currentBgmCue = cue;
             bgmSource.Stop();
             bgmSource.clip = clip;
             bgmSource.loop = true;
-            bgmSource.volume = GetNormalizedMusicVolume(cue, clip);
+            bgmSource.volume = GetTargetBgmVolume(cue, clip);
             bgmSource.Play();
         }
 
@@ -424,7 +583,7 @@ namespace BoneThrone.Audio
             bgmSource.Stop();
             bgmSource.clip = clip;
             bgmSource.loop = false;
-            bgmSource.volume = GetNormalizedMusicVolume(cue, clip);
+            bgmSource.volume = GetTargetBgmVolume(cue, clip);
             bgmSource.Play();
         }
 
@@ -438,7 +597,82 @@ namespace BoneThrone.Audio
                 return;
             }
 
-            PlayBgmInternal(GetSceneBgmCue(sceneName));
+            BTAudioCueId cue = GetSceneBgmCue(sceneName);
+            float fadeDuration = pendingNextSceneBgmFadeIn ? pendingNextSceneBgmFadeDuration : 0f;
+            pendingNextSceneBgmFadeIn = false;
+            pendingNextSceneBgmFadeDuration = 0f;
+            PlayBgmInternal(cue, fadeDuration);
+        }
+
+        private void PlayBgmInternal(BTAudioCueId cue, float fadeInSeconds)
+        {
+            if (cue == BTAudioCueId.None)
+            {
+                return;
+            }
+
+            EnsureSources();
+            AudioClip clip = LoadClip(cue);
+            if (clip == null)
+            {
+                return;
+            }
+
+            float clampedFade = Mathf.Max(0f, fadeInSeconds);
+            float targetVolume = GetTargetBgmVolume(cue, clip);
+
+            if (clampedFade <= 0f && IsFadingSameBgm(cue, clip))
+            {
+                if (!bgmSource.isPlaying)
+                {
+                    bgmSource.Play();
+                }
+
+                return;
+            }
+
+            if (bgmFadeRoutine != null)
+            {
+                StopCoroutine(bgmFadeRoutine);
+                bgmFadeRoutine = null;
+            }
+
+            bool shouldRestartClip = currentBgmCue != cue || bgmSource.clip != clip || !bgmSource.isPlaying;
+            currentBgmCue = cue;
+            bgmSource.loop = true;
+
+            if (shouldRestartClip)
+            {
+                bgmSource.Stop();
+                bgmSource.clip = clip;
+            }
+
+            if (clampedFade <= 0f)
+            {
+                bgmSource.volume = targetVolume;
+                if (!bgmSource.isPlaying)
+                {
+                    bgmSource.Play();
+                }
+
+                return;
+            }
+
+            bgmSource.volume = 0f;
+            if (!bgmSource.isPlaying)
+            {
+                bgmSource.Play();
+            }
+
+            bgmFadeRoutine = StartCoroutine(FadeInBgmRoutine(cue, clip, clampedFade));
+        }
+
+        private bool IsFadingSameBgm(BTAudioCueId cue, AudioClip clip)
+        {
+            return bgmFadeRoutine != null
+                && bgmSource != null
+                && bgmSource.clip == clip
+                && currentBgmCue == cue;
         }
 
         private void PlayLoopInternal(BTAudioCueId cue, Object owner)
@@ -473,8 +707,9 @@ namespace BoneThrone.Audio
             source.clip = clip;
             source.loop = true;
             source.pitch = cue == BTAudioCueId.FootstepLargeLoop ? 0.82f : 1f;
-            source.volume = GetNormalizedSfxVolume(cue, clip);
+            source.volume = GetNormalizedSfxVolume(cue, clip) * userSfxVolume;
             source.Play();
+            activeLoopCues[ownerId] = cue;
         }
 
         private void StopLoopInternal(Object owner)
@@ -498,6 +733,7 @@ namespace BoneThrone.Audio
             }
 
             activeLoops.Remove(ownerId);
+            activeLoopCues.Remove(ownerId);
         }
 
         private void StopAllNonBgmLoopsInternal()
@@ -512,6 +748,7 @@ namespace BoneThrone.Audio
             }
 
             activeLoops.Clear();
+            activeLoopCues.Clear();
         }
 
         private AudioClip LoadClip(BTAudioCueId cue)
@@ -577,6 +814,36 @@ namespace BoneThrone.Audio
             return volume;
         }
 
+        private float GetTargetBgmVolume(BTAudioCueId cue, AudioClip clip)
+        {
+            return GetNormalizedMusicVolume(cue, clip) * userBgmVolume;
+        }
+
+        private IEnumerator FadeInBgmRoutine(BTAudioCueId cue, AudioClip clip, float duration)
+        {
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                if (bgmSource == null || bgmSource.clip != clip || currentBgmCue != cue)
+                {
+                    bgmFadeRoutine = null;
+                    yield break;
+                }
+
+                elapsed += Time.unscaledDeltaTime;
+                float normalized = Mathf.Clamp01(elapsed / duration);
+                bgmSource.volume = Mathf.Lerp(0f, GetTargetBgmVolume(cue, clip), normalized);
+                yield return null;
+            }
+
+            if (bgmSource != null && bgmSource.clip == clip && currentBgmCue == cue)
+            {
+                bgmSource.volume = GetTargetBgmVolume(cue, clip);
+            }
+
+            bgmFadeRoutine = null;
+        }
+
         private static float TryCalculateRms(AudioClip clip)
         {
             if (clip == null || clip.samples <= 0 || clip.channels <= 0)
@@ -611,6 +878,11 @@ namespace BoneThrone.Audio
         {
             string normalized = Normalize(sceneName);
             if (normalized.Contains("startmenu"))
+            {
+                return BTAudioCueId.BgmMenu;
+            }
+
+            if (normalized.Contains("introstory"))
             {
                 return BTAudioCueId.BgmMenu;
             }

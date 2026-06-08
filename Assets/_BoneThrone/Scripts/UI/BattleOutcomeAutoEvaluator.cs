@@ -17,8 +17,8 @@ namespace BoneThrone.UI
         [SerializeField] private GameOutcomeService outcomeService;
         [SerializeField] private bool triggerDefeatWhenAllTrackedPlayersDie = true;
         [SerializeField] private bool triggerVictoryWhenAllTrackedEnemiesDie = true;
-        [SerializeField] private string defeatReason = "The party has fallen.";
-        [SerializeField] private string victoryReason = "Victory.";
+        [SerializeField] private string defeatReason = "队伍全员倒下。";
+        [SerializeField] private string victoryReason = "胜利。";
         [SerializeField] [Min(0f)] private float defeatDelaySeconds = 1.2f;
         [SerializeField] [Min(0f)] private float victoryDelaySeconds = 1.2f;
         [SerializeField] private bool victoryRequiresBossUnit = true;
@@ -76,8 +76,8 @@ namespace BoneThrone.UI
             loadEndMenuOnVictory = true;
             victorySceneName = "EndMenu";
             bossNameContains = "Boss";
-            defeatReason = "Demo defeat.";
-            victoryReason = "Boss defeated.";
+            defeatReason = "演示失败。";
+            victoryReason = "Boss 已被击败。";
             defeatDelaySeconds = Mathf.Max(0f, outcomeDelaySeconds);
             victoryDelaySeconds = Mathf.Max(0f, outcomeDelaySeconds);
             ResolveOutcomeService();

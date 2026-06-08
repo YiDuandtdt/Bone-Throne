@@ -45,16 +45,13 @@ namespace BoneThrone.UI
             {
                 if (selectedUnit != null)
                 {
-                    string displayName = string.IsNullOrEmpty(selectedUnit.DisplayName)
-                        ? selectedUnit.RoleId.ToString()
-                        : selectedUnit.DisplayName;
-                    return "回合：玩家回合 | 当前选择：" + displayName;
+                    return "回合：玩家回合 - 当前选择：" + BoneThroneTextUtility.GetUnitDisplayName(selectedUnit);
                 }
 
                 return "回合：玩家回合 - 请选择角色";
             }
 
-            return "回合：-- | 行动者：--";
+            return "回合：未开始 - 行动者：" + BoneThroneTextUtility.GetRoleDisplayName(role);
         }
     }
 }

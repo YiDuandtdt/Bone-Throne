@@ -4,12 +4,12 @@ using UnityEngine;
 namespace BoneThrone.Units
 {
     /// <summary>
-    /// Holds Mage-style hit effects that should appear on the target at the same moment damage triggers Hit animation.
+    /// Holds Mage-style hit effects that appear on the target when damage triggers the Hit animation.
     /// </summary>
     public sealed class MageHitPresentationConfig : MonoBehaviour
     {
-        [Header("Basic Attack")]
-        [SerializeField] [Tooltip("Impact effect spawned on the target when this unit's basic attack deals damage.")]
+        [Header("普通攻击")]
+        [SerializeField] [Tooltip("普通攻击造成伤害时，在目标身上生成的命中特效。")]
         private GameObject basicAttackImpactEffectPrefab;
         [SerializeField] private Vector3 basicAttackLocalOffset = new Vector3(0f, 1.05f, 0f);
         [SerializeField] private Vector3 basicAttackLocalEulerAngles = Vector3.zero;

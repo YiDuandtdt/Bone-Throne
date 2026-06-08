@@ -1,3 +1,4 @@
+using BoneThrone.Audio;
 using BoneThrone.Core;
 using BoneThrone.Levels;
 using UnityEngine;
@@ -66,7 +67,8 @@ namespace BoneThrone.UI
 
             Scene activeScene = SceneManager.GetActiveScene();
             Log("Reloading active scene '" + activeScene.name + "'.");
-            SceneManager.LoadScene(activeScene.name, LoadSceneMode.Single);
+            BTAudioService.PlaySceneBgmForCurrentScene();
+            SceneBlackCoverService.LoadSceneWithCover(activeScene.name);
         }
 
         private void Log(string message)

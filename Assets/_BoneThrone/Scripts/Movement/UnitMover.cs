@@ -23,6 +23,11 @@ namespace BoneThrone.Movement
 
         public event System.Action<Unit> MoveVisualCompleted;
 
+        public bool IsMoving(Unit unit)
+        {
+            return unit != null && activeMoveRoutines.ContainsKey(unit);
+        }
+
         private void OnDisable()
         {
             foreach (KeyValuePair<Unit, Coroutine> pair in activeMoveRoutines)

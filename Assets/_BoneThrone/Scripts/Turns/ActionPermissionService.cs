@@ -26,6 +26,12 @@ namespace BoneThrone.Turns
                 return false;
             }
 
+            if (turnState.HasActed)
+            {
+                Debug.LogWarning("Move denied because unit " + unit.UnitId + " has already acted this round.", unit);
+                return false;
+            }
+
             if (turnState.HasMoved)
             {
                 Debug.LogWarning("Move denied because unit " + unit.UnitId + " has already moved this round.", unit);
