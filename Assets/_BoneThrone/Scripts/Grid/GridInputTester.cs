@@ -1,3 +1,4 @@
+using BoneThrone.UI;
 using UnityEngine;
 
 namespace BoneThrone.Grid
@@ -13,7 +14,8 @@ namespace BoneThrone.Grid
 
         private void Update()
         {
-            if (!Input.GetMouseButtonDown(0))
+            Vector2 pointerPosition;
+            if (!BTPrimaryPointerInput.TryGetPrimaryClick(out pointerPosition))
             {
                 return;
             }
@@ -25,7 +27,7 @@ namespace BoneThrone.Grid
                 return;
             }
 
-            Ray ray = cameraToUse.ScreenPointToRay(Input.mousePosition);
+            Ray ray = cameraToUse.ScreenPointToRay(pointerPosition);
             RaycastHit hit;
             if (!Physics.Raycast(ray, out hit, maxRayDistance, tileLayerMask))
             {

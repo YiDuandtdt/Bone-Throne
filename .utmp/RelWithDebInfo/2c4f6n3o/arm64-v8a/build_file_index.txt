@@ -1,0 +1,2 @@
+D:\work\unity\Bone-Throne\Bone-Throne\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\CMakeLists.txt
+D:\work\unity\Bone-Throne\Bone-Throne\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\src\main\cpp\GameActivity\CMakeLists.txt

@@ -16,6 +16,7 @@ namespace BoneThrone.Audio
         private const float MaxNormalizedMusicVolume = 0.55f;
         private const float DefaultSfxVolume = 0.85f;
         private const float DefaultBgmVolume = 0.35f;
+        private const float ImmediateUiPressFeedbackSuppressionSeconds = 1f;
         private const string BgmVolumeKey = "BoneThrone.Audio.BgmVolume";
         private const string SfxVolumeKey = "BoneThrone.Audio.SfxVolume";
 
@@ -38,6 +39,9 @@ namespace BoneThrone.Audio
         private int lastButtonClickFrame = -1;
         private int lastInvalidActionFrame = -1;
         private bool userVolumeSettingsLoaded;
+        private bool uiSfxWarmed;
+        private bool suppressNextButtonClick;
+        private float suppressNextButtonClickExpiresAt;
         private Coroutine bgmFadeRoutine;
 
         private static readonly Dictionary<BTAudioCueId, string> ClipPaths = new Dictionary<BTAudioCueId, string>
@@ -78,7 +82,7 @@ namespace BoneThrone.Audio
         private static void Bootstrap()
         {
             RegisterSceneHooks();
-            EnsureInstance().PlaySceneBgm(SceneManager.GetActiveScene().name);
+            EnsureInstance().PlaySceneBgm(SceneManager.GetActiveScene().name, true);
         }
 
         public static void PlaySfx(BTAudioCueId cue)
@@ -89,6 +93,19 @@ namespace BoneThrone.Audio
         public static void PlaySfx(BTAudioCueId cue, float volumeScale, float pitch)
         {
             EnsureInstance().PlaySfxInternal(cue, volumeScale, pitch);
+        }
+
+        public static void PlayImmediateUiPressFeedback()
+        {
+            EnsureInstance().PlayImmediateUiPressFeedbackInternal();
+        }
+
+        public static void ClearPendingImmediateUiPressFeedbackSuppression()
+        {
+            if (instance != null)
+            {
+                instance.ClearPendingImmediateUiPressFeedbackSuppressionInternal();
+            }
         }
 
         public static bool WasExplicitUiClickFeedbackPlayedSinceFrame(int frame)
@@ -195,6 +212,11 @@ namespace BoneThrone.Audio
             if (attacker.GetComponent<MageHitPresentationConfig>() != null)
             {
                 return BTAudioCueId.MagicBasic;
+            }
+
+            if (attacker.Faction == UnitFaction.Enemy && IsAxeSkeleton(attacker))
+            {
+                return BTAudioCueId.AxeChop;
             }
 
             switch (attacker.RoleId)
@@ -341,7 +363,7 @@ namespace BoneThrone.Audio
         {
             BTAudioService service = EnsureInstance();
             service.StopAllNonBgmLoopsInternal();
-            service.PlaySceneBgm(scene.name);
+            service.PlaySceneBgm(scene.name, true);
         }
 
         private void Awake()
@@ -386,6 +408,8 @@ namespace BoneThrone.Audio
                 bgmSource.spatialBlend = 0f;
                 bgmSource.volume = DefaultBgmVolume * userBgmVolume;
             }
+
+            WarmUpUiSfx();
         }
 
         private void LoadUserVolumeSettingsIfNeeded()
@@ -478,7 +502,17 @@ namespace BoneThrone.Audio
 
         private void PlaySfxInternal(BTAudioCueId cue)
         {
+            PlaySfxInternal(cue, ignoreButtonClickSuppression: false);
+        }
+
+        private void PlaySfxInternal(BTAudioCueId cue, bool ignoreButtonClickSuppression)
+        {
             if (cue == BTAudioCueId.None)
+            {
+                return;
+            }
+
+            if (!ignoreButtonClickSuppression && ShouldSuppressImmediateButtonClickDuplicate(cue))
             {
                 return;
             }
@@ -497,6 +531,11 @@ namespace BoneThrone.Audio
         private void PlaySfxInternal(BTAudioCueId cue, float volumeScale, float pitch)
         {
             if (cue == BTAudioCueId.None)
+            {
+                return;
+            }
+
+            if (ShouldSuppressImmediateButtonClickDuplicate(cue))
             {
                 return;
             }
@@ -521,6 +560,37 @@ namespace BoneThrone.Audio
         private bool WasExplicitUiClickFeedbackPlayedSinceFrameInternal(int frame)
         {
             return lastButtonClickFrame >= frame || lastInvalidActionFrame >= frame;
+        }
+
+        private void PlayImmediateUiPressFeedbackInternal()
+        {
+            PlaySfxInternal(BTAudioCueId.ButtonClick, ignoreButtonClickSuppression: true);
+            suppressNextButtonClick = true;
+            suppressNextButtonClickExpiresAt = Time.unscaledTime + ImmediateUiPressFeedbackSuppressionSeconds;
+        }
+
+        private bool ShouldSuppressImmediateButtonClickDuplicate(BTAudioCueId cue)
+        {
+            if (cue != BTAudioCueId.ButtonClick || !suppressNextButtonClick)
+            {
+                return false;
+            }
+
+            if (Time.unscaledTime > suppressNextButtonClickExpiresAt)
+            {
+                ClearPendingImmediateUiPressFeedbackSuppressionInternal();
+                return false;
+            }
+
+            suppressNextButtonClick = false;
+            MarkUiClickFeedbackFrame(cue);
+            return true;
+        }
+
+        private void ClearPendingImmediateUiPressFeedbackSuppressionInternal()
+        {
+            suppressNextButtonClick = false;
+            suppressNextButtonClickExpiresAt = 0f;
         }
 
         private void MarkUiClickFeedbackFrame(BTAudioCueId cue)
@@ -587,7 +657,7 @@ namespace BoneThrone.Audio
             bgmSource.Play();
         }
 
-        private void PlaySceneBgm(string sceneName)
+        private void PlaySceneBgm(string sceneName, bool forceRestart = false)
         {
             if (Normalize(sceneName).Contains("endmenu")
                 && (currentBgmCue == BTAudioCueId.BgmVictory || currentBgmCue == BTAudioCueId.BgmDefeat)
@@ -601,10 +671,32 @@ namespace BoneThrone.Audio
             float fadeDuration = pendingNextSceneBgmFadeIn ? pendingNextSceneBgmFadeDuration : 0f;
             pendingNextSceneBgmFadeIn = false;
             pendingNextSceneBgmFadeDuration = 0f;
-            PlayBgmInternal(cue, fadeDuration);
+            if (cue == BTAudioCueId.None)
+            {
+                StopBgmInternal();
+                return;
+            }
+
+            PlayBgmInternal(cue, fadeDuration, forceRestart);
         }
 
-        private void PlayBgmInternal(BTAudioCueId cue, float fadeInSeconds)
+        private void StopBgmInternal()
+        {
+            if (bgmFadeRoutine != null)
+            {
+                StopCoroutine(bgmFadeRoutine);
+                bgmFadeRoutine = null;
+            }
+
+            currentBgmCue = BTAudioCueId.None;
+            if (bgmSource != null)
+            {
+                bgmSource.Stop();
+                bgmSource.clip = null;
+            }
+        }
+
+        private void PlayBgmInternal(BTAudioCueId cue, float fadeInSeconds, bool forceRestart = false)
         {
             if (cue == BTAudioCueId.None)
             {
@@ -621,7 +713,7 @@ namespace BoneThrone.Audio
             float clampedFade = Mathf.Max(0f, fadeInSeconds);
             float targetVolume = GetTargetBgmVolume(cue, clip);
 
-            if (clampedFade <= 0f && IsFadingSameBgm(cue, clip))
+            if (!forceRestart && clampedFade <= 0f && IsFadingSameBgm(cue, clip))
             {
                 if (!bgmSource.isPlaying)
                 {
@@ -637,7 +729,7 @@ namespace BoneThrone.Audio
                 bgmFadeRoutine = null;
             }
 
-            bool shouldRestartClip = currentBgmCue != cue || bgmSource.clip != clip || !bgmSource.isPlaying;
+            bool shouldRestartClip = forceRestart || currentBgmCue != cue || bgmSource.clip != clip || !bgmSource.isPlaying;
             currentBgmCue = cue;
             bgmSource.loop = true;
 
@@ -777,6 +869,34 @@ namespace BoneThrone.Audio
             return clip;
         }
 
+        private void WarmUpUiSfx()
+        {
+            if (uiSfxWarmed)
+            {
+                return;
+            }
+
+            uiSfxWarmed = true;
+            WarmUpSfxCue(BTAudioCueId.ButtonClick);
+            WarmUpSfxCue(BTAudioCueId.MouseClick);
+            WarmUpSfxCue(BTAudioCueId.InvalidAction);
+            WarmUpSfxCue(BTAudioCueId.Page);
+        }
+
+        private void WarmUpSfxCue(BTAudioCueId cue)
+        {
+            AudioClip clip = LoadClip(cue);
+            if (clip != null)
+            {
+                if (clip.loadState == AudioDataLoadState.Unloaded)
+                {
+                    clip.LoadAudioData();
+                }
+
+                GetNormalizedSfxVolume(cue, clip);
+            }
+        }
+
         private float GetNormalizedSfxVolume(BTAudioCueId cue, AudioClip clip)
         {
             float cached;
@@ -910,6 +1030,31 @@ namespace BoneThrone.Audio
                 || displayName.Contains("boss")
                 || displayName.Contains("golem")
                 || displayName.Contains("large");
+        }
+
+        private static bool IsAxeSkeleton(Unit unit)
+        {
+            if (unit == null)
+            {
+                return false;
+            }
+
+            string objectName = Normalize(unit.name);
+            string displayName = Normalize(unit.DisplayName);
+            return ContainsSkeletonAxeName(objectName) || ContainsSkeletonAxeName(displayName);
+        }
+
+        private static bool ContainsSkeletonAxeName(string normalizedName)
+        {
+            if (string.IsNullOrEmpty(normalizedName))
+            {
+                return false;
+            }
+
+            return normalizedName.Contains("skeleton_warrior")
+                || normalizedName.Contains("skeleton warrior")
+                || normalizedName.Contains("skeleton_minion")
+                || normalizedName.Contains("skeleton minion");
         }
 
         private static string Normalize(string value)

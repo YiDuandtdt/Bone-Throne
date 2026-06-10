@@ -81,6 +81,11 @@ namespace BoneThrone.Audio
                 yield return new WaitForSeconds(visibleDuration);
             }
 
+            if (instanceObject == null)
+            {
+                yield break;
+            }
+
             ParticleSystem[] particleSystems = instanceObject.GetComponentsInChildren<ParticleSystem>(true);
             for (int i = 0; i < particleSystems.Length; i++)
             {
@@ -95,6 +100,11 @@ namespace BoneThrone.Audio
             if (fadeDuration > 0f)
             {
                 yield return new WaitForSeconds(fadeDuration);
+            }
+
+            if (instanceObject == null)
+            {
+                yield break;
             }
 
             if (instanceObject != null)

@@ -20,6 +20,7 @@ namespace BoneThrone.Turns
         [SerializeField] private DamageResolver damageResolver;
         [SerializeField] private CombatLog combatLog;
         [SerializeField] private Unit[] playerUnits;
+        [SerializeField] private bool autoFindPlayerUnitsIfMissing = true;
         [SerializeField] private bool autoEndPlayerUnitsWithNoAvailableActions = true;
         [SerializeField] private TurnPhase currentPhase = TurnPhase.None;
         [SerializeField] private RoleId currentRole = RoleId.None;
@@ -45,10 +46,13 @@ namespace BoneThrone.Turns
         private void Awake()
         {
             ResolveReferences();
+            ResolvePlayerUnitsIfNeeded();
         }
 
         public void StartPlayerRound()
         {
+            ResolvePlayerUnitsIfNeeded();
+
             if (!HasAnyAlivePlayerUnit())
             {
                 currentPhase = TurnPhase.None;
@@ -156,6 +160,8 @@ namespace BoneThrone.Turns
 
         public void ResetPlayerUnitTurnStates()
         {
+            ResolvePlayerUnitsIfNeeded();
+
             if (playerUnits == null)
             {
                 return;
@@ -296,6 +302,8 @@ namespace BoneThrone.Turns
 
         public bool AreAllAlivePlayersEnded()
         {
+            ResolvePlayerUnitsIfNeeded();
+
             bool foundAlivePlayer = false;
             if (playerUnits == null)
             {
@@ -464,6 +472,8 @@ namespace BoneThrone.Turns
 
         private bool HasAnyAlivePlayerUnit()
         {
+            ResolvePlayerUnitsIfNeeded();
+
             if (playerUnits == null)
             {
                 return false;
@@ -483,6 +493,8 @@ namespace BoneThrone.Turns
 
         private void AutoEndUnavailablePlayersForCurrentRound()
         {
+            ResolvePlayerUnitsIfNeeded();
+
             if (!autoEndPlayerUnitsWithNoAvailableActions || playerUnits == null)
             {
                 return;
@@ -594,6 +606,117 @@ namespace BoneThrone.Turns
             if (actionPermissionService != null)
             {
                 actionPermissionService.RequireCurrentRole = false;
+            }
+        }
+
+        private void ResolvePlayerUnitsIfNeeded()
+        {
+            if (!autoFindPlayerUnitsIfMissing || HasAnyConfiguredUnit(playerUnits))
+            {
+                return;
+            }
+
+            Unit[] sceneUnits = Object.FindObjectsByType<Unit>(FindObjectsInactive.Exclude, FindObjectsSortMode.InstanceID);
+            if (sceneUnits == null || sceneUnits.Length == 0)
+            {
+                return;
+            }
+
+            int playerCount = 0;
+            for (int i = 0; i < sceneUnits.Length; i++)
+            {
+                Unit unit = sceneUnits[i];
+                if (unit != null && unit.Faction == UnitFaction.Player)
+                {
+                    playerCount++;
+                }
+            }
+
+            if (playerCount == 0)
+            {
+                return;
+            }
+
+            playerUnits = new Unit[playerCount];
+            int writeIndex = 0;
+            for (int i = 0; i < sceneUnits.Length; i++)
+            {
+                Unit unit = sceneUnits[i];
+                if (unit != null && unit.Faction == UnitFaction.Player)
+                {
+                    playerUnits[writeIndex] = unit;
+                    writeIndex++;
+                }
+            }
+
+            System.Array.Sort(playerUnits, ComparePlayerUnitsForTurnOrder);
+            Debug.Log("TurnManager auto-assigned " + playerUnits.Length + " player units.", this);
+        }
+
+        private static bool HasAnyConfiguredUnit(Unit[] units)
+        {
+            if (units == null || units.Length == 0)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < units.Length; i++)
+            {
+                if (units[i] != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static int ComparePlayerUnitsForTurnOrder(Unit left, Unit right)
+        {
+            if (left == right)
+            {
+                return 0;
+            }
+
+            if (left == null)
+            {
+                return 1;
+            }
+
+            if (right == null)
+            {
+                return -1;
+            }
+
+            int roleCompare = GetPlayerRoleOrder(left.RoleId).CompareTo(GetPlayerRoleOrder(right.RoleId));
+            if (roleCompare != 0)
+            {
+                return roleCompare;
+            }
+
+            int idCompare = left.UnitId.CompareTo(right.UnitId);
+            if (idCompare != 0)
+            {
+                return idCompare;
+            }
+
+            return left.GetInstanceID().CompareTo(right.GetInstanceID());
+        }
+
+        private static int GetPlayerRoleOrder(RoleId role)
+        {
+            switch (role)
+            {
+                case RoleId.Fighter:
+                    return 0;
+                case RoleId.Ranger:
+                    return 1;
+                case RoleId.Mage:
+                    return 2;
+                case RoleId.Barbarian:
+                    return 3;
+                default:
+                    return 100;
             }
         }
     }

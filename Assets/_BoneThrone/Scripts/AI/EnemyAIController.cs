@@ -256,7 +256,7 @@ namespace BoneThrone.AI
         private const float BossAttackRecoveryDelay = 0.75f;
         private const float BossPostMoveSettleDelay = 0.45f;
         private const float BossFacingSettleDelay = 0.28f;
-        private const float BossAttackSoundDelay = 0.18f;
+        private const float BossAttackSoundDelay = 1.68f;
         private const float BossAttackAnimationSpeed = 0.46f;
         private const float BossAttackAnimationRestoreDelay = 2.45f;
         private const float BossAttackVolumeScale = 1.55f;

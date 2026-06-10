@@ -78,6 +78,7 @@ namespace BoneThrone.Core
                 case "level_2":
                     return 2;
                 case "level_3":
+                case "level_3_final":
                     return 3;
                 case "boss_test":
                     return 3;
@@ -95,7 +96,7 @@ namespace BoneThrone.Core
                 case 2:
                     return "Level_2";
                 case 3:
-                    return "boss_test";
+                    return "Level_3_final";
                 default:
                     return string.Empty;
             }

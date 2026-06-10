@@ -75,6 +75,12 @@ namespace BoneThrone.Rooms
                 return true;
             }
 
+            if (currentState == RoomState.Unentered && enemyActivator != null && enemyActivator.HasConfiguredEnemies)
+            {
+                Debug.Log("Room is not cleared because it has configured enemies and has not been entered yet.", this);
+                return false;
+            }
+
             if (enemyActivator == null)
             {
                 currentState = RoomState.Cleared;
@@ -90,6 +96,28 @@ namespace BoneThrone.Rooms
             currentState = RoomState.Cleared;
             Debug.Log("Room cleared because all assigned enemies are dead.", this);
             return true;
+        }
+
+        public bool CheckBossLikeEnemiesDefeated()
+        {
+            if (currentState == RoomState.Cleared)
+            {
+                return true;
+            }
+
+            if (enemyActivator == null || !enemyActivator.HasConfiguredBossLikeEnemy)
+            {
+                Debug.LogWarning("Room cannot satisfy boss defeat because no boss-like enemy is configured.", this);
+                return false;
+            }
+
+            if (currentState == RoomState.Unentered)
+            {
+                Debug.Log("Room boss is not defeated because the room has not been entered yet.", this);
+                return false;
+            }
+
+            return enemyActivator.AreAllBossLikeEnemiesDead();
         }
 
         public void ForceSetClearedForTest()
@@ -161,7 +189,7 @@ namespace BoneThrone.Rooms
 
         private void MarkBossFightStartedIfNeeded()
         {
-            BossGateProgressionState progressionState = BossGateProgressionState.GetOrCreateSceneState();
+            BossGateProgressionState progressionState = Object.FindFirstObjectByType<BossGateProgressionState>();
             if (progressionState != null && progressionState.IsBossRoom(this))
             {
                 progressionState.MarkBossFightStarted(this);

@@ -101,7 +101,7 @@ namespace BoneThrone.UI
             switch (BoneThroneTextUtility.NormalizeKey(message))
             {
                 case "thepartydoesnothavethesharedkey":
-                    return "队伍还没有获得共用钥匙。";
+                    return "队伍还没有获得通行钥匙。";
                 case "progressionconditionssatisfied":
                     return "进度条件已满足。";
                 case "aleveltransitionisalreadyinprogress":
@@ -169,8 +169,41 @@ namespace BoneThrone.UI
                 case "targetisoutofskillrange":
                     return "目标超出技能范围。";
                 default:
+                    if (ContainsAsciiLetter(message) && !ContainsCjk(message))
+                    {
+                        return "当前条件尚未满足。";
+                    }
+
                     return EnsureChinesePunctuation(message);
             }
+        }
+
+        private static bool ContainsAsciiLetter(string message)
+        {
+            for (int i = 0; i < message.Length; i++)
+            {
+                char c = message[i];
+                if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool ContainsCjk(string message)
+        {
+            for (int i = 0; i < message.Length; i++)
+            {
+                char c = message[i];
+                if (c >= '\u4e00' && c <= '\u9fff')
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static string EnsureChinesePunctuation(string message)

@@ -25,6 +25,7 @@ namespace BoneThrone.UI
     public sealed class BattleHUDController : MonoBehaviour
     {
         private const float BossHealthLookupInterval = 1f;
+        private const string MobileCameraJoystickObjectName = "MobileCameraJoystickHint";
 
         [Header("Gameplay References")]
         [SerializeField] private TurnManager turnManager;
@@ -39,6 +40,7 @@ namespace BoneThrone.UI
         [SerializeField] private PotionSystem potionSystem;
         [SerializeField] private GameOutcomeService outcomeService;
         [SerializeField] private BattleOutcomeAutoEvaluator outcomeAutoEvaluator;
+        [SerializeField] [Min(0f)] private float battleOutcomeDelaySeconds = 1f;
         [SerializeField] private Unit[] playerUnits = new Unit[4];
         [SerializeField] private Unit[] enemyUnits;
         [SerializeField] private ActiveUnitProvider activeUnitProvider;
@@ -82,6 +84,13 @@ namespace BoneThrone.UI
         [SerializeField] private Button gameplayQuitButton;
         [SerializeField] private string mainMenuSceneName = "StartMenu";
 
+        [Header("Mobile HUD")]
+        [SerializeField] private bool mobileHudSafeLayoutEnabled = true;
+        [SerializeField] private bool showMobileCameraJoystick = true;
+        [SerializeField] private Vector2 mobileCameraJoystickViewportCenter = new Vector2(0.17f, 0.16f);
+        [SerializeField] [Range(0.04f, 0.16f)] private float mobileCameraJoystickRadiusViewportHeight = 0.085f;
+        [SerializeField] private Color mobileCameraJoystickColor = new Color(1f, 1f, 1f, 0.32f);
+
         [Header("Boss Test Demo")]
         [SerializeField] private bool showBossTestVictoryButton = true;
         [SerializeField] private bool showBossTestDefeatButton = true;
@@ -110,16 +119,23 @@ namespace BoneThrone.UI
         private bool gameplaySettingsVisible;
         private bool restoreMovementControllerAfterGameplaySettings;
         private Coroutine pendingBossTestDefeatRoutine;
+        private RectTransform mobileCameraJoystickRect;
+        private MobileCameraJoystickGraphic mobileCameraJoystickGraphic;
 
         private void Awake()
         {
             RebindMissingViews();
+            ResolveMissingGameplayReferences();
+            EnsureMobileHudSafeLayout();
+            EnsureMobileCameraJoystickHint();
+            RefreshMobileCameraJoystickHint();
 
             EnsureBossHealthBar();
             EnsureEndTurnButton();
             EnsureTurnTransitionPopupView();
             EnsureActiveUnitProvider();
             EnsurePlayerUnitBindings();
+            EnsureBattleOutcomeAutoEvaluator();
             EnsureDefendSystem();
             EnsurePotionSystem();
             EnsureActionModeController();
@@ -135,6 +151,9 @@ namespace BoneThrone.UI
         {
             SubscribeCombatLog();
             SubscribeSkillBar();
+            EnsureMobileHudSafeLayout();
+            EnsureMobileCameraJoystickHint();
+            RefreshMobileCameraJoystickHint();
             EnsureGameplaySettingsPageView();
             ConfigureGameplaySettingsPageView();
             BindGameplaySettingsUi();
@@ -201,6 +220,7 @@ namespace BoneThrone.UI
 
             RefreshBossHealthBar();
             RefreshBossIntentPreview();
+            RefreshMobileCameraJoystickHint();
         }
 
         private void SubscribeSkillBar()
@@ -575,6 +595,84 @@ namespace BoneThrone.UI
                 activeUnitProvider);
         }
 
+        private void ResolveMissingGameplayReferences()
+        {
+            if (turnManager == null)
+            {
+                turnManager = Object.FindFirstObjectByType<TurnManager>();
+            }
+
+            if (selectionManager == null)
+            {
+                selectionManager = Object.FindFirstObjectByType<SelectionManager>();
+            }
+
+            if (progressionService == null)
+            {
+                progressionService = Object.FindFirstObjectByType<LevelProgressionService>();
+            }
+
+            if (stairs == null)
+            {
+                stairs = Object.FindFirstObjectByType<InteractableStairs>();
+            }
+
+            if (combatLog == null)
+            {
+                combatLog = Object.FindFirstObjectByType<CombatLog>();
+            }
+
+            if (gridManager == null)
+            {
+                gridManager = Object.FindFirstObjectByType<GridManager>();
+            }
+
+            if (combatSystem == null)
+            {
+                combatSystem = Object.FindFirstObjectByType<CombatSystem>();
+            }
+
+            if (skillSystem == null)
+            {
+                skillSystem = Object.FindFirstObjectByType<SkillSystem>();
+            }
+
+            if (movementControllerToSuspend == null)
+            {
+                movementControllerToSuspend = Object.FindFirstObjectByType<PlayerMovementController>();
+            }
+
+            if (movementHighlighter == null)
+            {
+                movementHighlighter = Object.FindFirstObjectByType<MovementDebugHighlighter>();
+            }
+
+            if (activeUnitProvider == null)
+            {
+                activeUnitProvider = Object.FindFirstObjectByType<ActiveUnitProvider>();
+            }
+
+            if (outcomeService == null)
+            {
+                outcomeService = Object.FindFirstObjectByType<GameOutcomeService>();
+            }
+
+            if (outcomeAutoEvaluator == null)
+            {
+                outcomeAutoEvaluator = Object.FindFirstObjectByType<BattleOutcomeAutoEvaluator>();
+            }
+
+            if (actionInputCamera == null)
+            {
+                actionInputCamera = Camera.main != null ? Camera.main : Object.FindFirstObjectByType<Camera>();
+            }
+
+            if (!HasAnyUnit(enemyUnits))
+            {
+                enemyUnits = FindSceneUnitsByFaction(UnitFaction.Enemy, FindObjectsInactive.Include);
+            }
+        }
+
         private void BindGameplaySettingsUi()
         {
             if (gameplaySettingsButton != null)
@@ -744,6 +842,9 @@ namespace BoneThrone.UI
             {
                 gameplaySettingsOverlayRoot.SetActive(gameplaySettingsVisible);
             }
+
+            RefreshMobileCameraJoystickHint();
+            RefreshBossHealthLayering();
         }
 
         private void EnsureGameplaySettingsPageView()
@@ -1108,6 +1209,36 @@ namespace BoneThrone.UI
             }
         }
 
+        private void EnsureBattleOutcomeAutoEvaluator()
+        {
+            ResolveOutcomeService();
+            if (outcomeService == null)
+            {
+                outcomeService = gameObject.AddComponent<GameOutcomeService>();
+            }
+
+            if (outcomeAutoEvaluator == null)
+            {
+                outcomeAutoEvaluator = GetComponentInChildren<BattleOutcomeAutoEvaluator>(true);
+            }
+
+            if (outcomeAutoEvaluator == null)
+            {
+                outcomeAutoEvaluator = Object.FindFirstObjectByType<BattleOutcomeAutoEvaluator>();
+            }
+
+            if (outcomeAutoEvaluator == null)
+            {
+                outcomeAutoEvaluator = gameObject.AddComponent<BattleOutcomeAutoEvaluator>();
+            }
+
+            EnsurePlayerUnitBindings();
+            outcomeAutoEvaluator.ConfigureDefeatOnly(
+                outcomeService,
+                playerUnits,
+                battleOutcomeDelaySeconds);
+        }
+
         private void EnsureBossTestOutcomeEvaluator()
         {
             if (!IsBossTestScene())
@@ -1140,7 +1271,7 @@ namespace BoneThrone.UI
                 outcomeService,
                 playerUnits,
                 enemyUnits,
-                0f);
+                bossTestOutcomeDelaySeconds);
         }
 
         private void EnsureEndTurnButton()
@@ -1470,6 +1601,177 @@ namespace BoneThrone.UI
             }
         }
 
+        private void EnsureMobileHudSafeLayout()
+        {
+            if (!mobileHudSafeLayoutEnabled)
+            {
+                return;
+            }
+
+            RectTransform sharedFrame = FindChildByName(transform, "HeroPanelsSharedFrameImage") as RectTransform;
+            if (sharedFrame != null)
+            {
+                Image frameImage = sharedFrame.GetComponent<Image>();
+                if (frameImage != null)
+                {
+                    frameImage.raycastTarget = false;
+                }
+            }
+
+            DisableLooseHeroBackdropRaycasts();
+        }
+
+        private void DisableLooseHeroBackdropRaycasts()
+        {
+            Image[] images = GetComponentsInChildren<Image>(true);
+            for (int i = 0; i < images.Length; i++)
+            {
+                Image image = images[i];
+                if (image == null || image.transform == null || !image.name.StartsWith("BattleCustomImagePlaceholder"))
+                {
+                    continue;
+                }
+
+                image.raycastTarget = false;
+            }
+        }
+
+        private void EnsureMobileCameraJoystickHint()
+        {
+            Transform existing = FindChildByName(transform, MobileCameraJoystickObjectName);
+            if (existing != null)
+            {
+                mobileCameraJoystickRect = existing as RectTransform;
+                mobileCameraJoystickGraphic = existing.GetComponent<MobileCameraJoystickGraphic>();
+            }
+
+            if (mobileCameraJoystickRect != null && mobileCameraJoystickGraphic != null)
+            {
+                return;
+            }
+
+            GameObject joystickObject = new GameObject(
+                MobileCameraJoystickObjectName,
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(MobileCameraJoystickGraphic));
+            joystickObject.layer = gameObject.layer;
+            joystickObject.transform.SetParent(transform, false);
+
+            mobileCameraJoystickRect = joystickObject.GetComponent<RectTransform>();
+            mobileCameraJoystickGraphic = joystickObject.GetComponent<MobileCameraJoystickGraphic>();
+            mobileCameraJoystickGraphic.raycastTarget = false;
+            mobileCameraJoystickGraphic.color = mobileCameraJoystickColor;
+        }
+
+        private void RefreshMobileCameraJoystickHint()
+        {
+            if (mobileCameraJoystickRect == null || mobileCameraJoystickGraphic == null)
+            {
+                return;
+            }
+
+            bool visible = ShouldShowMobileCameraJoystick();
+            if (mobileCameraJoystickRect.gameObject.activeSelf != visible)
+            {
+                mobileCameraJoystickRect.gameObject.SetActive(visible);
+            }
+
+            if (!visible)
+            {
+                return;
+            }
+
+            RectTransform rootRect = transform as RectTransform;
+            Rect canvasRect = rootRect != null ? rootRect.rect : new Rect(0f, 0f, 1920f, 1080f);
+            float width = Mathf.Max(1f, canvasRect.width);
+            float height = Mathf.Max(1f, canvasRect.height);
+            Rect safeArea = Screen.safeArea;
+            if (safeArea.width <= 0f || safeArea.height <= 0f || Screen.width <= 0 || Screen.height <= 0)
+            {
+                safeArea = new Rect(0f, 0f, Screen.width > 0 ? Screen.width : 1920f, Screen.height > 0 ? Screen.height : 1080f);
+            }
+
+            float scaleX = width / Mathf.Max(1f, Screen.width);
+            float scaleY = height / Mathf.Max(1f, Screen.height);
+            Vector2 clampedViewportCenter = new Vector2(
+                Mathf.Clamp01(mobileCameraJoystickViewportCenter.x),
+                Mathf.Clamp01(mobileCameraJoystickViewportCenter.y));
+            Vector2 center = new Vector2(
+                (safeArea.xMin + safeArea.width * clampedViewportCenter.x) * scaleX,
+                (safeArea.yMin + safeArea.height * clampedViewportCenter.y) * scaleY);
+            float diameter = Mathf.Max(64f, safeArea.height * scaleY * Mathf.Max(0.01f, mobileCameraJoystickRadiusViewportHeight) * 2f);
+
+            Vector2 joystickSize = new Vector2(diameter, diameter);
+            if (mobileCameraJoystickRect.anchorMin != Vector2.zero)
+            {
+                mobileCameraJoystickRect.anchorMin = Vector2.zero;
+            }
+
+            if (mobileCameraJoystickRect.anchorMax != Vector2.zero)
+            {
+                mobileCameraJoystickRect.anchorMax = Vector2.zero;
+            }
+
+            if (mobileCameraJoystickRect.pivot != new Vector2(0.5f, 0.5f))
+            {
+                mobileCameraJoystickRect.pivot = new Vector2(0.5f, 0.5f);
+            }
+
+            if ((mobileCameraJoystickRect.anchoredPosition - center).sqrMagnitude > 0.01f)
+            {
+                mobileCameraJoystickRect.anchoredPosition = center;
+            }
+
+            if ((mobileCameraJoystickRect.sizeDelta - joystickSize).sqrMagnitude > 0.01f)
+            {
+                mobileCameraJoystickRect.sizeDelta = joystickSize;
+            }
+
+            if (mobileCameraJoystickRect.localScale != Vector3.one)
+            {
+                mobileCameraJoystickRect.localScale = Vector3.one;
+            }
+
+            if (mobileCameraJoystickGraphic.color != mobileCameraJoystickColor)
+            {
+                mobileCameraJoystickGraphic.color = mobileCameraJoystickColor;
+            }
+        }
+
+        private bool ShouldShowMobileCameraJoystick()
+        {
+            return showMobileCameraJoystick
+                && IsMobileCameraJoystickPlatform()
+                && !IsGameplaySettingsPanelVisible();
+        }
+
+        private static bool IsMobileCameraJoystickPlatform()
+        {
+#if UNITY_EDITOR
+            return false;
+#elif UNITY_ANDROID || UNITY_IOS
+            return true;
+#else
+            return Application.isMobilePlatform;
+#endif
+        }
+
+        private bool IsGameplaySettingsPanelVisible()
+        {
+            if (gameplaySettingsVisible)
+            {
+                return true;
+            }
+
+            if (gameplaySettingsOverlayRoot != null && gameplaySettingsOverlayRoot.activeInHierarchy)
+            {
+                return true;
+            }
+
+            return gameplaySettingsPageView != null && gameplaySettingsPageView.gameObject.activeInHierarchy;
+        }
+
         private void EnsureTurnTransitionPopupView()
         {
             if (turnTransitionPopupView == null)
@@ -1487,6 +1789,7 @@ namespace BoneThrone.UI
             }
 
             ConfigureBossHealthFill();
+            RefreshBossHealthLayering();
         }
 
         private void RebindBossHealthViews()
@@ -1592,6 +1895,7 @@ namespace BoneThrone.UI
             bossHealthValueText = CreateBossHealthText(rootObject.transform, "BossHealthValueText", "-- / --", TextAlignmentOptions.Right);
             CreateBossHealthFill(rootObject.transform);
             rootObject.SetActive(false);
+            RefreshBossHealthLayering();
         }
 
         private TMP_Text CreateBossHealthText(Transform parent, string objectName, string text, TextAlignmentOptions alignment)
@@ -1794,7 +2098,7 @@ namespace BoneThrone.UI
         {
             if (bossHealthNameText != null)
             {
-                bossHealthNameText.text = string.IsNullOrEmpty(boss.DisplayName) ? boss.gameObject.name : boss.DisplayName;
+                bossHealthNameText.text = BoneThroneTextUtility.GetUnitDisplayName(boss);
             }
 
             if (bossHealthValueText != null)
@@ -1968,6 +2272,62 @@ namespace BoneThrone.UI
             }
         }
 
+        private static bool HasAnyUnit(Unit[] units)
+        {
+            if (units == null || units.Length == 0)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < units.Length; i++)
+            {
+                if (units[i] != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static Unit[] FindSceneUnitsByFaction(UnitFaction faction, FindObjectsInactive inactiveMode)
+        {
+            Unit[] sceneUnits = Object.FindObjectsByType<Unit>(inactiveMode, FindObjectsSortMode.InstanceID);
+            if (sceneUnits == null || sceneUnits.Length == 0)
+            {
+                return new Unit[0];
+            }
+
+            int count = 0;
+            for (int i = 0; i < sceneUnits.Length; i++)
+            {
+                Unit unit = sceneUnits[i];
+                if (unit != null && unit.Faction == faction)
+                {
+                    count++;
+                }
+            }
+
+            if (count == 0)
+            {
+                return new Unit[0];
+            }
+
+            Unit[] results = new Unit[count];
+            int writeIndex = 0;
+            for (int i = 0; i < sceneUnits.Length; i++)
+            {
+                Unit unit = sceneUnits[i];
+                if (unit != null && unit.Faction == faction)
+                {
+                    results[writeIndex] = unit;
+                    writeIndex++;
+                }
+            }
+
+            return results;
+        }
+
         private Unit ResolveBossHealthUnit()
         {
             if (bossHealthUnit != null && IsBossLikeUnit(bossHealthUnit))
@@ -2046,14 +2406,47 @@ namespace BoneThrone.UI
 
         private void SetBossHealthVisible(bool visible)
         {
-            if (bossHealthRoot != null && bossHealthRoot.activeSelf != visible)
+            if (bossHealthRoot == null)
             {
-                bossHealthRoot.SetActive(visible);
+                return;
+            }
+
+            bool effectiveVisible = visible && !IsGameplaySettingsPanelVisible();
+            if (bossHealthRoot.activeSelf != effectiveVisible)
+            {
+                bossHealthRoot.SetActive(effectiveVisible);
+            }
+        }
+
+        private void RefreshBossHealthLayering()
+        {
+            if (bossHealthRoot == null || gameplaySettingsOverlayRoot == null)
+            {
+                return;
+            }
+
+            Transform bossTransform = bossHealthRoot.transform;
+            Transform settingsTransform = gameplaySettingsOverlayRoot.transform;
+            if (bossTransform.parent != settingsTransform.parent)
+            {
+                return;
+            }
+
+            int settingsIndex = settingsTransform.GetSiblingIndex();
+            int bossIndex = bossTransform.GetSiblingIndex();
+            if (bossIndex > settingsIndex)
+            {
+                bossTransform.SetSiblingIndex(settingsIndex);
             }
         }
 
         private bool ShouldExposeBossFightRuntime()
         {
+            if (BossEncounterIntroController.HasRevealedActiveBossEncounter())
+            {
+                return true;
+            }
+
             BossGateProgressionState progressionState = Object.FindFirstObjectByType<BossGateProgressionState>();
             return progressionState != null && progressionState.ShouldExposeBossFightRuntime();
         }
@@ -2098,6 +2491,78 @@ namespace BoneThrone.UI
             }
 
             return true;
+        }
+    }
+
+    internal sealed class MobileCameraJoystickGraphic : MaskableGraphic
+    {
+        private const int SegmentCount = 56;
+
+        protected override void OnPopulateMesh(VertexHelper vertexHelper)
+        {
+            vertexHelper.Clear();
+
+            Rect rect = GetPixelAdjustedRect();
+            float radius = Mathf.Min(rect.width, rect.height) * 0.5f;
+            if (radius <= 0f)
+            {
+                return;
+            }
+
+            Vector2 center = rect.center;
+            Color32 ringColor = color;
+            AddRing(vertexHelper, center, radius, radius * 0.78f, ringColor);
+
+            Color knobColor = color;
+            knobColor.a *= 0.75f;
+            AddFilledCircle(vertexHelper, center, radius * 0.14f, knobColor);
+        }
+
+        private static void AddRing(VertexHelper vertexHelper, Vector2 center, float outerRadius, float innerRadius, Color32 vertexColor)
+        {
+            for (int i = 0; i < SegmentCount; i++)
+            {
+                float angle0 = Mathf.PI * 2f * i / SegmentCount;
+                float angle1 = Mathf.PI * 2f * (i + 1) / SegmentCount;
+                Vector2 outer0 = center + new Vector2(Mathf.Cos(angle0), Mathf.Sin(angle0)) * outerRadius;
+                Vector2 outer1 = center + new Vector2(Mathf.Cos(angle1), Mathf.Sin(angle1)) * outerRadius;
+                Vector2 inner0 = center + new Vector2(Mathf.Cos(angle0), Mathf.Sin(angle0)) * innerRadius;
+                Vector2 inner1 = center + new Vector2(Mathf.Cos(angle1), Mathf.Sin(angle1)) * innerRadius;
+
+                int startIndex = vertexHelper.currentVertCount;
+                AddVertex(vertexHelper, outer0, vertexColor);
+                AddVertex(vertexHelper, outer1, vertexColor);
+                AddVertex(vertexHelper, inner1, vertexColor);
+                AddVertex(vertexHelper, inner0, vertexColor);
+                vertexHelper.AddTriangle(startIndex, startIndex + 1, startIndex + 2);
+                vertexHelper.AddTriangle(startIndex + 2, startIndex + 3, startIndex);
+            }
+        }
+
+        private static void AddFilledCircle(VertexHelper vertexHelper, Vector2 center, float radius, Color vertexColor)
+        {
+            int centerIndex = vertexHelper.currentVertCount;
+            AddVertex(vertexHelper, center, vertexColor);
+
+            for (int i = 0; i <= SegmentCount; i++)
+            {
+                float angle = Mathf.PI * 2f * i / SegmentCount;
+                Vector2 point = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+                AddVertex(vertexHelper, point, vertexColor);
+            }
+
+            for (int i = 1; i <= SegmentCount; i++)
+            {
+                vertexHelper.AddTriangle(centerIndex, centerIndex + i, centerIndex + i + 1);
+            }
+        }
+
+        private static void AddVertex(VertexHelper vertexHelper, Vector2 position, Color32 vertexColor)
+        {
+            UIVertex vertex = UIVertex.simpleVert;
+            vertex.position = position;
+            vertex.color = vertexColor;
+            vertexHelper.AddVert(vertex);
         }
     }
 }

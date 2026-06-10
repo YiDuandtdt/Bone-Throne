@@ -9,6 +9,9 @@ namespace BoneThrone.Grid
     public sealed class GridManager : MonoBehaviour
     {
         [SerializeField] private Tile[] initialTiles;
+        [SerializeField]
+        [Tooltip("When the serialized tile list has no valid entries, scan scene Tile components once in Awake.")]
+        private bool autoFindSceneTilesIfInitialTilesMissing = true;
 
         private readonly Dictionary<GridPosition, Tile> tilesByPosition = new Dictionary<GridPosition, Tile>();
 
@@ -26,14 +29,18 @@ namespace BoneThrone.Grid
         {
             tilesByPosition.Clear();
 
-            if (initialTiles == null)
+            int registeredTileCount = RegisterTiles(initialTiles);
+            if (registeredTileCount > 0 || !autoFindSceneTilesIfInitialTilesMissing)
             {
                 return;
             }
 
-            for (int i = 0; i < initialTiles.Length; i++)
+            int discoveredTileCount = RegisterSceneTiles();
+            if (discoveredTileCount > 0)
             {
-                RegisterTile(initialTiles[i]);
+                Debug.Log(
+                    "GridManager auto-registered " + discoveredTileCount + " scene tiles because Initial Tiles had no valid entries.",
+                    this);
             }
         }
 
@@ -54,6 +61,37 @@ namespace BoneThrone.Grid
 
             tilesByPosition.Add(position, tile);
             return true;
+        }
+
+        private int RegisterTiles(Tile[] tiles)
+        {
+            if (tiles == null)
+            {
+                return 0;
+            }
+
+            int registeredTileCount = 0;
+            for (int i = 0; i < tiles.Length; i++)
+            {
+                Tile tile = tiles[i];
+                if (tile == null)
+                {
+                    continue;
+                }
+
+                if (RegisterTile(tile))
+                {
+                    registeredTileCount++;
+                }
+            }
+
+            return registeredTileCount;
+        }
+
+        private int RegisterSceneTiles()
+        {
+            Tile[] sceneTiles = Object.FindObjectsByType<Tile>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            return RegisterTiles(sceneTiles);
         }
 
         public bool UnregisterTile(Tile tile)

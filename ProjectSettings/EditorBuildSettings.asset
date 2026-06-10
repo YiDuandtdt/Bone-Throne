@@ -18,8 +18,8 @@ EditorBuildSettings:
     path: Assets/_BoneThrone/Scenes/Level_2.unity
     guid: a4d0563f9c262604d92b46d6078214dd
   - enabled: 1
-    path: Assets/_BoneThrone/Scenes/boss_test.unity
-    guid: caad7d70ede841b39f9121d9de47af68
+    path: Assets/_BoneThrone/Scenes/Level_3_final.unity
+    guid: 4dd9af733c85930499d65a0bf8db6dd9
   - enabled: 1
     path: Assets/_BoneThrone/Scenes/EndMenu.unity
     guid: eb833630b4429f14f81b183670d5166f

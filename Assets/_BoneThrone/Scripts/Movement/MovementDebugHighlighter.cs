@@ -312,11 +312,11 @@ namespace BoneThrone.Movement
                 if (renderer != null)
                 {
                     Color footColor;
-                    SetRendererColor(
-                        renderer,
-                        playerFootColors.TryGetValue(renderer, out footColor)
-                            ? DarkenColor(footColor, bossIntentFootTileDarken)
-                            : bossIntentColor);
+                    Color color = playerFootColors.TryGetValue(renderer, out footColor)
+                        ? DarkenColor(footColor, bossIntentFootTileDarken)
+                        : bossIntentColor;
+
+                    SetRendererColor(renderer, color);
                 }
             }
 

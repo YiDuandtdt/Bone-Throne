@@ -340,7 +340,7 @@ namespace BoneThrone.Combat
             switch (BoneThroneTextUtility.NormalizeKey(reason))
             {
                 case "thepartydoesnothavethesharedkey":
-                    return "队伍还没有获得共用钥匙。";
+                    return "队伍还没有获得通行钥匙。";
                 case "casterismissing":
                 case "attackerismissing":
                     return "行动者不存在。";

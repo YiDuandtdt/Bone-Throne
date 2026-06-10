@@ -11,7 +11,7 @@ namespace BoneThrone.Core
     {
         [SerializeField] private GameOutcome currentOutcome = GameOutcome.None;
         [SerializeField] private string lastReason;
-        [SerializeField] private bool showVictoryPopup;
+        [SerializeField] private bool showVictoryPopup = true;
         [SerializeField] private bool showDefeatPopup = true;
         [SerializeField] private bool debugLogging;
 

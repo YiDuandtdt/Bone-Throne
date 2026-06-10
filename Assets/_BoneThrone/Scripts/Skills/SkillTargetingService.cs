@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using BoneThrone.Grid;
 using BoneThrone.Units;
 using UnityEngine;
@@ -114,12 +115,114 @@ namespace BoneThrone.Skills
 
         public bool IsInRange(Unit caster, Unit target, SkillData skill)
         {
-            if (skill == null)
+            if (skill == null || caster == null || target == null || caster.CurrentTile == null || target.CurrentTile == null)
             {
                 return false;
             }
 
-            return GetManhattanDistance(caster, target) <= skill.Range;
+            return IsPositionInRange(caster, skill, target.CurrentTile.Position);
+        }
+
+        public bool TryFillRangeTiles(Unit caster, SkillData skill, GridManager gridManager, List<Tile> results, out string reason)
+        {
+            if (results != null)
+            {
+                results.Clear();
+            }
+
+            if (results == null)
+            {
+                reason = "Range result list is missing.";
+                return false;
+            }
+
+            if (caster == null || caster.CurrentTile == null)
+            {
+                reason = "Caster or caster tile is missing.";
+                return false;
+            }
+
+            if (skill == null)
+            {
+                reason = "SkillData is missing.";
+                return false;
+            }
+
+            if (gridManager == null)
+            {
+                reason = "GridManager is missing.";
+                return false;
+            }
+
+            List<Tile> registeredTiles = new List<Tile>();
+            gridManager.FillRegisteredTiles(registeredTiles);
+            for (int i = 0; i < registeredTiles.Count; i++)
+            {
+                Tile tile = registeredTiles[i];
+                if (tile != null && tile != caster.CurrentTile && IsPositionInRange(caster, skill, tile.Position))
+                {
+                    results.Add(tile);
+                }
+            }
+
+            reason = "Skill range tiles resolved.";
+            return true;
+        }
+
+        public bool IsPositionInRange(Unit caster, SkillData skill, GridPosition targetPosition)
+        {
+            if (caster == null || caster.CurrentTile == null || skill == null)
+            {
+                return false;
+            }
+
+            GridPosition casterPosition = caster.CurrentTile.Position;
+            return IsPositionInRange(casterPosition, targetPosition, ResolveRange(caster, skill), ResolveRangeShape(caster, skill));
+        }
+
+        public SkillRangeShape ResolveRangeShape(Unit caster, SkillData skill)
+        {
+            if (skill == null)
+            {
+                return SkillRangeShape.Manhattan;
+            }
+
+            if (skill.RangeShape != SkillRangeShape.Automatic)
+            {
+                return skill.RangeShape;
+            }
+
+            string key = NormalizeSkillName(skill.DisplayName);
+            SkillRangeShape skillShape;
+            if (TryResolveKnownSkillRangeShape(key, out skillShape))
+            {
+                return skillShape;
+            }
+
+            return SkillRangeShape.Manhattan;
+        }
+
+        public int ResolveRange(Unit caster, SkillData skill)
+        {
+            if (skill == null)
+            {
+                return 0;
+            }
+
+            if (skill.RangeShape != SkillRangeShape.Automatic)
+            {
+                return skill.Range;
+            }
+
+            string key = NormalizeSkillName(skill.DisplayName);
+            SkillRangeShape ignoredShape;
+            int resolvedRange;
+            if (TryResolveKnownSkillRangeRule(key, out ignoredShape, out resolvedRange))
+            {
+                return resolvedRange;
+            }
+
+            return skill.Range;
         }
 
         public int GetManhattanDistance(Unit caster, Unit target)
@@ -132,6 +235,121 @@ namespace BoneThrone.Skills
             GridPosition casterPosition = caster.CurrentTile.Position;
             GridPosition targetPosition = target.CurrentTile.Position;
             return Mathf.Abs(casterPosition.X - targetPosition.X) + Mathf.Abs(casterPosition.Y - targetPosition.Y);
+        }
+
+        private static bool IsPositionInRange(GridPosition origin, GridPosition target, int range, SkillRangeShape shape)
+        {
+            int dx = Mathf.Abs(target.X - origin.X);
+            int dy = Mathf.Abs(target.Y - origin.Y);
+            int clampedRange = Mathf.Max(0, range);
+
+            if (dx == 0 && dy == 0)
+            {
+                return true;
+            }
+
+            switch (shape)
+            {
+                case SkillRangeShape.Chebyshev:
+                    return Mathf.Max(dx, dy) <= clampedRange;
+                case SkillRangeShape.ManhattanWithCloseDiagonals:
+                    return dx + dy <= clampedRange || (clampedRange >= 1 && dx == 1 && dy == 1);
+                case SkillRangeShape.ManhattanWithCardinalTips:
+                    return dx + dy <= clampedRange
+                        || (clampedRange >= 1 && ((dx == clampedRange + 1 && dy == 0) || (dy == clampedRange + 1 && dx == 0)));
+                case SkillRangeShape.Manhattan:
+                case SkillRangeShape.Automatic:
+                default:
+                    return dx + dy <= clampedRange;
+            }
+        }
+
+        private static bool TryResolveKnownSkillRangeShape(string normalizedSkillName, out SkillRangeShape shape)
+        {
+            int resolvedRange;
+            return TryResolveKnownSkillRangeRule(normalizedSkillName, out shape, out resolvedRange);
+        }
+
+        private static bool TryResolveKnownSkillRangeRule(string normalizedSkillName, out SkillRangeShape shape, out int resolvedRange)
+        {
+            switch (normalizedSkillName)
+            {
+                case "fightershieldbash":
+                    shape = SkillRangeShape.Manhattan;
+                    resolvedRange = 1;
+                    return true;
+                case "fighterguardstrike":
+                    shape = SkillRangeShape.ManhattanWithCloseDiagonals;
+                    resolvedRange = 1;
+                    return true;
+                case "fightercrushingchallenge":
+                    shape = SkillRangeShape.ManhattanWithCardinalTips;
+                    resolvedRange = 2;
+                    return true;
+                case "rangerprecisionshot":
+                    shape = SkillRangeShape.ManhattanWithCardinalTips;
+                    resolvedRange = 4;
+                    return true;
+                case "rangerquickshot":
+                    shape = SkillRangeShape.ManhattanWithCloseDiagonals;
+                    resolvedRange = 4;
+                    return true;
+                case "rangerpiercingarrow":
+                    shape = SkillRangeShape.Manhattan;
+                    resolvedRange = 5;
+                    return true;
+                case "magefireball":
+                    shape = SkillRangeShape.Manhattan;
+                    resolvedRange = 3;
+                    return true;
+                case "magefrostbolt":
+                    shape = SkillRangeShape.ManhattanWithCardinalTips;
+                    resolvedRange = 4;
+                    return true;
+                case "magearcaneburst":
+                    shape = SkillRangeShape.Manhattan;
+                    resolvedRange = 4;
+                    return true;
+                case "barbarianheavycleave":
+                    shape = SkillRangeShape.ManhattanWithCloseDiagonals;
+                    resolvedRange = 1;
+                    return true;
+                case "barbarianragestrike":
+                    shape = SkillRangeShape.Manhattan;
+                    resolvedRange = 1;
+                    return true;
+                case "barbarianbloodfuryslash":
+                    shape = SkillRangeShape.ManhattanWithCloseDiagonals;
+                    resolvedRange = 2;
+                    return true;
+                default:
+                    shape = SkillRangeShape.Manhattan;
+                    resolvedRange = 0;
+                    return false;
+            }
+        }
+
+        private static string NormalizeSkillName(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return string.Empty;
+            }
+
+            string lower = value.ToLowerInvariant();
+            char[] buffer = new char[lower.Length];
+            int count = 0;
+            for (int i = 0; i < lower.Length; i++)
+            {
+                char c = lower[i];
+                if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9'))
+                {
+                    buffer[count] = c;
+                    count++;
+                }
+            }
+
+            return new string(buffer, 0, count);
         }
 
         private static bool ValidateBase(Unit caster, Unit target, SkillRuntime runtime, SkillData skill, int slotIndex, out string reason)

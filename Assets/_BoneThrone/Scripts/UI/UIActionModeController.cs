@@ -6,7 +6,6 @@ using BoneThrone.Skills;
 using BoneThrone.Turns;
 using BoneThrone.Units;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 namespace BoneThrone.UI
 {
@@ -113,17 +112,18 @@ namespace BoneThrone.UI
                 return;
             }
 
-            if (!Input.GetMouseButtonDown(0))
+            Vector2 pointerPosition;
+            if (!BTPrimaryPointerInput.TryGetPrimaryClick(out pointerPosition))
             {
                 return;
             }
 
-            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            if (BTPrimaryPointerInput.IsPointerOverUi(pointerPosition))
             {
                 return;
             }
 
-            HandleTargetClick();
+            HandleTargetClick(pointerPosition);
         }
 
         public void HandleMoveButtonClicked()
@@ -133,6 +133,8 @@ namespace BoneThrone.UI
                 CancelTargeting();
                 return;
             }
+
+            ExitCurrentTargetingForModeSwitch();
 
             Unit selectedUnit = selectionManager != null ? selectionManager.SelectedUnit : null;
             if (selectedUnit == null)
@@ -183,6 +185,8 @@ namespace BoneThrone.UI
                 return;
             }
 
+            ExitCurrentTargetingForModeSwitch();
+
             Unit selectedUnit = selectionManager != null ? selectionManager.SelectedUnit : null;
             if (selectedUnit == null)
             {
@@ -230,6 +234,8 @@ namespace BoneThrone.UI
                 CancelTargeting();
                 return;
             }
+
+            ExitCurrentTargetingForModeSwitch();
 
             Unit selectedUnit = selectionManager != null ? selectionManager.SelectedUnit : null;
             if (selectedUnit == null)
@@ -331,15 +337,15 @@ namespace BoneThrone.UI
             ShowPrompt("请选择一个技能目标。");
         }
 
-        private void HandleTargetClick()
+        private void HandleTargetClick(Vector2 pointerPosition)
         {
             if (currentMode == ActionMode.MoveTargeting)
             {
-                HandleMoveTargetClick(RaycastTileUnderCursor());
+                HandleMoveTargetClick(RaycastTileAtScreenPosition(pointerPosition));
                 return;
             }
 
-            Unit clickedUnit = RaycastTargetUnitUnderCursor();
+            Unit clickedUnit = RaycastTargetUnitAtScreenPosition(pointerPosition);
             if (IsCurrentSelectedUnit(clickedUnit))
             {
                 ClearSelectionAndExitModes();
@@ -499,7 +505,14 @@ namespace BoneThrone.UI
                 return;
             }
 
-            List<Tile> rangeTiles = BuildManhattanRangeTiles(caster, GetSkillRange(caster, slotIndex));
+            List<Tile> rangeTiles = new List<Tile>();
+            string rangeReason;
+            if (!skillSystem.TryFillSkillRangeTiles(caster, slotIndex, gridManager, rangeTiles, out rangeReason))
+            {
+                highlighter.ClearActionHighlights();
+                return;
+            }
+
             List<Tile> targetTiles = new List<Tile>();
             for (int i = 0; i < enemies.Length; i++)
             {
@@ -554,13 +567,6 @@ namespace BoneThrone.UI
             return attacker != null && attacker.Stats != null ? attacker.Stats.BasicAttackRange : 1;
         }
 
-        private static int GetSkillRange(Unit caster, int slotIndex)
-        {
-            SkillRuntime runtime = caster != null ? caster.GetComponent<SkillRuntime>() : null;
-            SkillData skill = runtime != null ? runtime.GetSkill(slotIndex) : null;
-            return skill != null ? skill.Range : 0;
-        }
-
         private Unit[] GetEnemyTargetsForPreview()
         {
             ActiveUnitProvider provider = ResolveActiveUnitProvider();
@@ -604,7 +610,7 @@ namespace BoneThrone.UI
             ShowPrompt("自由选择。", 1.5f);
         }
 
-        private Unit RaycastUnitUnderCursor()
+        private Unit RaycastUnitAtScreenPosition(Vector2 screenPosition)
         {
             Camera cameraToUse = inputCamera != null ? inputCamera : Camera.main;
             if (cameraToUse == null)
@@ -613,7 +619,7 @@ namespace BoneThrone.UI
                 return null;
             }
 
-            Ray ray = cameraToUse.ScreenPointToRay(Input.mousePosition);
+            Ray ray = cameraToUse.ScreenPointToRay(screenPosition);
             RaycastHit[] hits = Physics.RaycastAll(ray, maxRayDistance, targetLayerMask, QueryTriggerInteraction.Ignore);
             SortHitsByDistance(hits);
             for (int i = 0; i < hits.Length; i++)
@@ -628,19 +634,19 @@ namespace BoneThrone.UI
             return null;
         }
 
-        private Unit RaycastTargetUnitUnderCursor()
+        private Unit RaycastTargetUnitAtScreenPosition(Vector2 screenPosition)
         {
-            Tile tile = RaycastTileUnderCursor();
+            Tile tile = RaycastTileAtScreenPosition(screenPosition);
             Unit unitOnTile = FindUnitOnTile(tile);
             if (unitOnTile != null)
             {
                 return unitOnTile;
             }
 
-            return RaycastUnitUnderCursor();
+            return RaycastUnitAtScreenPosition(screenPosition);
         }
 
-        private Tile RaycastTileUnderCursor()
+        private Tile RaycastTileAtScreenPosition(Vector2 screenPosition)
         {
             Camera cameraToUse = inputCamera != null ? inputCamera : Camera.main;
             if (cameraToUse == null)
@@ -649,7 +655,7 @@ namespace BoneThrone.UI
                 return null;
             }
 
-            Ray ray = cameraToUse.ScreenPointToRay(Input.mousePosition);
+            Ray ray = cameraToUse.ScreenPointToRay(screenPosition);
             RaycastHit[] hits = Physics.RaycastAll(ray, maxRayDistance, targetLayerMask, QueryTriggerInteraction.Ignore);
             SortHitsByDistance(hits);
             for (int i = 0; i < hits.Length; i++)
@@ -738,6 +744,17 @@ namespace BoneThrone.UI
             }
 
             RestoreMovementInput();
+        }
+
+        private void ExitCurrentTargetingForModeSwitch()
+        {
+            if (currentMode == ActionMode.None)
+            {
+                return;
+            }
+
+            ExitTargetingMode();
+            ClearPrompt();
         }
 
         private void RefreshSelectedHighlight()
