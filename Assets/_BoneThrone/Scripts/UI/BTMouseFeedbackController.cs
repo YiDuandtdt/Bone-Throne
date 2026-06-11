@@ -299,6 +299,8 @@ namespace BoneThrone.UI
         private static bool trackedTouchExceededTapMovement;
         private static int lastPrimaryClickFrame = -1;
         private static Vector2 lastPrimaryClickPosition;
+        private static int lastPrimaryDragReleaseFrame = -1;
+        private static Vector2 lastPrimaryDragReleasePosition;
 
         public static bool TryGetPrimaryDown(out Vector2 screenPosition)
         {
@@ -337,6 +339,19 @@ namespace BoneThrone.UI
                 lastPrimaryClickFrame = Time.frameCount;
                 lastPrimaryClickPosition = Input.mousePosition;
                 screenPosition = lastPrimaryClickPosition;
+                return true;
+            }
+
+            screenPosition = Vector2.zero;
+            return false;
+        }
+
+        public static bool TryGetPrimaryDragRelease(out Vector2 screenPosition)
+        {
+            UpdateTrackedTouchClick();
+            if (lastPrimaryDragReleaseFrame == Time.frameCount)
+            {
+                screenPosition = lastPrimaryDragReleasePosition;
                 return true;
             }
 
@@ -389,6 +404,11 @@ namespace BoneThrone.UI
                     {
                         lastPrimaryClickFrame = Time.frameCount;
                         lastPrimaryClickPosition = touch.position;
+                    }
+                    else if (!trackedTouchStartedOverUi && trackedTouchExceededTapMovement)
+                    {
+                        lastPrimaryDragReleaseFrame = Time.frameCount;
+                        lastPrimaryDragReleasePosition = touch.position;
                     }
 
                     ClearTrackedTouch();

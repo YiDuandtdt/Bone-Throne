@@ -113,7 +113,7 @@ namespace BoneThrone.UI
             }
 
             Vector2 pointerPosition;
-            if (!BTPrimaryPointerInput.TryGetPrimaryClick(out pointerPosition))
+            if (!TryGetTargetPointerPosition(out pointerPosition))
             {
                 return;
             }
@@ -124,6 +124,22 @@ namespace BoneThrone.UI
             }
 
             HandleTargetClick(pointerPosition);
+        }
+
+        private bool TryGetTargetPointerPosition(out Vector2 pointerPosition)
+        {
+            if (BTPrimaryPointerInput.TryGetPrimaryClick(out pointerPosition))
+            {
+                return true;
+            }
+
+            if (currentMode == ActionMode.MoveTargeting && BTPrimaryPointerInput.TryGetPrimaryDragRelease(out pointerPosition))
+            {
+                return true;
+            }
+
+            pointerPosition = Vector2.zero;
+            return false;
         }
 
         public void HandleMoveButtonClicked()

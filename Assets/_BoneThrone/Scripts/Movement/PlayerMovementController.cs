@@ -42,7 +42,7 @@ namespace BoneThrone.Movement
         private void Update()
         {
             Vector2 pointerPosition;
-            if (!BTPrimaryPointerInput.TryGetPrimaryClick(out pointerPosition))
+            if (!TryGetMovementPointerPosition(out pointerPosition))
             {
                 return;
             }
@@ -64,6 +64,22 @@ namespace BoneThrone.Movement
             {
                 HandleTileClick(clickedTile);
             }
+        }
+
+        private static bool TryGetMovementPointerPosition(out Vector2 pointerPosition)
+        {
+            if (BTPrimaryPointerInput.TryGetPrimaryClick(out pointerPosition))
+            {
+                return true;
+            }
+
+            if (BTPrimaryPointerInput.TryGetPrimaryDragRelease(out pointerPosition))
+            {
+                return true;
+            }
+
+            pointerPosition = Vector2.zero;
+            return false;
         }
 
         private void HandleUnitClick(Unit unit)
