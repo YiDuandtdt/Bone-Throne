@@ -12,10 +12,10 @@ namespace BoneThrone.Editor
     {
         private const string RangerPrefabPath = "Assets/_BoneThrone/Prefabs/Units/Players/Ranger.prefab";
         private const string TargetPrefabPath = "Assets/_BoneThrone/Prefabs/Units/Enemies/Skeleton_Minion.prefab";
-        private const string ArrowPrefabPath = "Assets/_BoneThrone/Art/VFX_CandidatePack_2026-06-06/Skills/Ranger/BTVFX_Ranger_Arrow_KayKit.prefab";
-        private const string Skill1PrefabPath = "Assets/_BoneThrone/Art/VFX_CandidatePack_2026-06-06/Skills/Ranger/1.prefab";
-        private const string Skill2PrefabPath = "Assets/_BoneThrone/Art/VFX_CandidatePack_2026-06-06/Skills/Ranger/2.prefab";
-        private const string Skill3PrefabPath = "Assets/_BoneThrone/Art/VFX_CandidatePack_2026-06-06/Skills/Ranger/3.prefab";
+        private const string ArrowPrefabPath = "Assets/_BoneThrone/Art/VFX_Runtime/Skills/Ranger/BTVFX_Ranger_Arrow_KayKit.prefab";
+        private const string Skill1PrefabPath = "Assets/_BoneThrone/Art/VFX_Runtime/Skills/Ranger/1.prefab";
+        private const string Skill2PrefabPath = "Assets/_BoneThrone/Art/VFX_Runtime/Skills/Ranger/2.prefab";
+        private const string Skill3PrefabPath = "Assets/_BoneThrone/Art/VFX_Runtime/Skills/Ranger/3.prefab";
         private const string TuningScenePath = "Assets/_BoneThrone/Scenes/VFX_Tuning.unity";
         private const string TuningSceneRootName = "BoneThrone_VFX_Tuning_Scene_Root";
         private const string RangerRigName = "Ranger_VFX_TuningRig";
@@ -23,12 +23,12 @@ namespace BoneThrone.Editor
         private const string MagePrefabPath = "Assets/_BoneThrone/Prefabs/Units/Players/Mage.prefab";
         private const string SkeletonMagePrefabPath = "Assets/_BoneThrone/Prefabs/Units/Enemies/Skeleton_Mage.prefab";
         private const string SkeletonRoguePrefabPath = "Assets/_BoneThrone/Prefabs/Units/Enemies/Skeleton_Rogue.prefab";
-        private const string MageBasicImpactPath = "Assets/_BoneThrone/Art/VFX_CandidatePack_2026-06-06/Skills/Mage/BTVFX_Mage_Basic_ImpactBlue.prefab";
-        private const string MageFireballImpactPath = "Assets/_BoneThrone/Art/VFX_CandidatePack_2026-06-06/Skills/Mage/BTVFX_Mage_Fireball_ImpactFire.prefab";
-        private const string MageFrostImpactPath = "Assets/_BoneThrone/Art/VFX_CandidatePack_2026-06-06/Skills/Mage/BTVFX_Mage_FrostBolt_ImpactBlue.prefab";
-        private const string MageArcaneImpactPath = "Assets/_BoneThrone/Art/VFX_CandidatePack_2026-06-06/Skills/Mage/BTVFX_Mage_ArcaneBurst_ImpactBlue.prefab";
-        private const string MageArcaneNovaPath = "Assets/_BoneThrone/Art/VFX_CandidatePack_2026-06-06/Skills/Mage/BTVFX_Mage_ArcaneBurst_NovaBlue.prefab";
-        private const string EnemyDarkSpellPath = "Assets/_BoneThrone/Art/VFX_CandidatePack_2026-06-06/Boss/BTVFX_Boss_DarkImpact_SoulPurple.prefab";
+        private const string MageBasicImpactPath = "Assets/_BoneThrone/Art/VFX_Runtime/Skills/Mage/BTVFX_Mage_Basic_ImpactBlue.prefab";
+        private const string MageFireballImpactPath = "Assets/_BoneThrone/Art/VFX_Runtime/Skills/Mage/BTVFX_Mage_Fireball_ImpactFire.prefab";
+        private const string MageFrostImpactPath = "Assets/_BoneThrone/Art/VFX_Runtime/Skills/Mage/BTVFX_Mage_FrostBolt_ImpactBlue.prefab";
+        private const string MageArcaneImpactPath = "Assets/_BoneThrone/Art/VFX_Runtime/Skills/Mage/BTVFX_Mage_ArcaneBurst_ImpactBlue.prefab";
+        private const string MageArcaneNovaPath = "Assets/_BoneThrone/Art/VFX_Runtime/Skills/Mage/BTVFX_Mage_ArcaneBurst_NovaBlue.prefab";
+        private const string EnemyDarkSpellPath = "Assets/_BoneThrone/Art/VFX_Runtime/Boss/BTVFX_Boss_DarkImpact_SoulPurple.prefab";
         private static readonly Vector3 ArrowMeshForwardOffsetEuler = Vector3.zero;
 
         [InitializeOnLoadMethod]
