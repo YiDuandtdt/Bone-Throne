@@ -252,29 +252,37 @@ namespace BoneThrone.UI
             if (healthFillImage != null)
             {
                 healthFillImage.raycastTarget = false;
+                healthFillImage.type = Image.Type.Filled;
+                healthFillImage.fillMethod = Image.FillMethod.Horizontal;
+                healthFillImage.fillOrigin = (int)Image.OriginHorizontal.Left;
             }
 
             if (missingHealthImage != null)
             {
                 missingHealthImage.raycastTarget = false;
-                missingHealthImage.type = Image.Type.Simple;
+                missingHealthImage.type = Image.Type.Filled;
+                missingHealthImage.fillMethod = Image.FillMethod.Horizontal;
+                missingHealthImage.fillOrigin = (int)Image.OriginHorizontal.Right;
             }
+
+            // The health bar artwork is authored in the prefab. Runtime refreshes only
+            // adjust Image.fillAmount so the red/gray segments cannot drift away from it.
         }
 
         private void ApplyHealthFill(float ratio)
         {
             float clampedRatio = Mathf.Clamp01(ratio);
 
-            if (healthFillRect != null)
+            if (healthFillImage != null)
             {
-                healthFillRect.anchorMax = new Vector2(clampedRatio, 1f);
+                healthFillImage.fillAmount = clampedRatio;
             }
 
-            if (missingHealthRect != null)
+            if (missingHealthImage != null)
             {
-                missingHealthRect.anchorMin = new Vector2(clampedRatio, 0f);
-                missingHealthRect.anchorMax = Vector2.one;
+                missingHealthImage.fillAmount = 1f - clampedRatio;
             }
         }
+
     }
 }

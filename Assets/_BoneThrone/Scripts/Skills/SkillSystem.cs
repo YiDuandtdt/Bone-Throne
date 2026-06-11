@@ -1,7 +1,9 @@
 using System.Collections;
+using System.Collections.Generic;
 using BoneThrone.Audio;
 using BoneThrone.Combat;
 using BoneThrone.Core;
+using BoneThrone.Grid;
 using BoneThrone.Turns;
 using BoneThrone.Units;
 using UnityEngine;
@@ -74,6 +76,42 @@ namespace BoneThrone.Skills
             }
 
             return targetingService.CanUseSkill(caster, target, runtime, slotIndex, out reason);
+        }
+
+        public bool TryFillSkillRangeTiles(Unit caster, int slotIndex, GridManager gridManager, List<Tile> results, out string reason)
+        {
+            if (results != null)
+            {
+                results.Clear();
+            }
+
+            if (caster == null)
+            {
+                reason = "Caster is missing.";
+                return false;
+            }
+
+            SkillRuntime runtime = caster.GetComponent<SkillRuntime>();
+            if (runtime == null)
+            {
+                reason = "Caster has no SkillRuntime component.";
+                return false;
+            }
+
+            SkillData skill = runtime.GetSkill(slotIndex);
+            if (skill == null)
+            {
+                reason = "Skill slot is empty.";
+                return false;
+            }
+
+            if (targetingService == null)
+            {
+                reason = "SkillTargetingService is missing.";
+                return false;
+            }
+
+            return targetingService.TryFillRangeTiles(caster, skill, gridManager, results, out reason);
         }
 
         public bool TryUseSkill(Unit caster, Unit target, int slotIndex)

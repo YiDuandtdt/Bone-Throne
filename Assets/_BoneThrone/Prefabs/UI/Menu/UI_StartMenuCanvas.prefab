@@ -4665,7 +4665,7 @@ MonoBehaviour:
   introSceneName: IntroStory
   firstLevelSceneName: Level_1
   secondLevelSceneName: Level_2
-  thirdLevelSceneName: boss_test
+  thirdLevelSceneName: Level_3_final
   debugLogging: 0
 --- !u!1 &606827384398780032
 GameObject:

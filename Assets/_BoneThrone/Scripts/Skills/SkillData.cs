@@ -13,6 +13,15 @@ namespace BoneThrone.Skills
         AnyUnit = 3
     }
 
+    public enum SkillRangeShape
+    {
+        Automatic = 0,
+        Manhattan = 1,
+        Chebyshev = 2,
+        ManhattanWithCloseDiagonals = 3,
+        ManhattanWithCardinalTips = 4
+    }
+
     /// <summary>
     /// Minimal inspectable skill definition for Phase 11.
     /// It describes unlock level, range, cooldown, target rule, and guaranteed damage only.
@@ -24,6 +33,9 @@ namespace BoneThrone.Skills
         [SerializeField] private string displayName = "Test Skill";
         [SerializeField] private int unlockLevel = 1;
         [SerializeField] private int range = 1;
+        [SerializeField]
+        [Tooltip("Automatic chooses a skill-specific, area-based target pattern from the skill identity. Override only when this asset needs a custom pattern.")]
+        private SkillRangeShape rangeShape = SkillRangeShape.Automatic;
         [SerializeField] private int cooldownTurns = 1;
         [SerializeField] private int guaranteedDamage = 1;
         [SerializeField] private SkillTargetType targetType = SkillTargetType.Enemy;
@@ -46,6 +58,11 @@ namespace BoneThrone.Skills
         public int Range
         {
             get { return Mathf.Max(0, range); }
+        }
+
+        public SkillRangeShape RangeShape
+        {
+            get { return rangeShape; }
         }
 
         public int CooldownTurns

@@ -51,6 +51,16 @@ namespace BoneThrone.Rooms
             }
         }
 
+        public bool HasConfiguredBossLikeEnemy
+        {
+            get
+            {
+                return HasBossLikeUnit(enemyPrefabs)
+                    || HasBossLikeUnit(assignedEnemies)
+                    || HasBossLikeUnit(spawnedEnemies);
+            }
+        }
+
         private void Start()
         {
             EnsureActiveAssignedEnemyTileOccupancyAtStart();
@@ -150,6 +160,38 @@ namespace BoneThrone.Rooms
         public bool AreAllAssignedEnemiesDead()
         {
             return !HasAliveAssignedEnemy();
+        }
+
+        public bool AreAllBossLikeEnemiesDead()
+        {
+            Unit[] enemies = AssignedEnemies;
+            if (enemies == null || enemies.Length == 0)
+            {
+                return false;
+            }
+
+            bool foundBossLikeEnemy = false;
+            for (int i = 0; i < enemies.Length; i++)
+            {
+                Unit enemy = enemies[i];
+                if (enemy == null || !IsBossLikeAssignedEnemy(enemy))
+                {
+                    continue;
+                }
+
+                foundBossLikeEnemy = true;
+                if (!hasSpawnedEnemies && !enemy.gameObject.activeInHierarchy)
+                {
+                    return false;
+                }
+
+                if (enemy.gameObject.activeInHierarchy && enemy.IsAlive)
+                {
+                    return false;
+                }
+            }
+
+            return foundBossLikeEnemy;
         }
 
         public void MarkAssignedEnemiesDeadForTest()
@@ -328,6 +370,24 @@ namespace BoneThrone.Rooms
             for (int i = 0; i < units.Length; i++)
             {
                 if (units[i] != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool HasBossLikeUnit(Unit[] units)
+        {
+            if (units == null || units.Length == 0)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < units.Length; i++)
+            {
+                if (IsBossLikeAssignedEnemy(units[i]))
                 {
                     return true;
                 }

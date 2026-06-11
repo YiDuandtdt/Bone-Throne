@@ -98,17 +98,32 @@ namespace BoneThrone.UI
         {
             UpdateCursorState();
 
-            if (Input.GetMouseButtonDown(0))
+            Vector2 pointerPosition;
+            if (BTPrimaryPointerInput.TryGetPrimaryDown(out pointerPosition))
             {
-                StartCoroutine(PlayMouseClickFallbackAfterClickHandlers(Time.frameCount, IsPointerOverInteractiveUi()));
+                if (IsPointerOverInteractiveUi(pointerPosition))
+                {
+                    BTAudioService.PlayImmediateUiPressFeedback();
+                }
+            }
+
+            if (BTPrimaryPointerInput.TryGetPrimaryClick(out pointerPosition)
+                && !IsPointerOverInteractiveUi(pointerPosition))
+            {
+                StartCoroutine(PlayMouseClickFallbackAfterClickHandlers(Time.frameCount));
+            }
+
+            if (BTPrimaryPointerInput.TryGetPrimaryUpOrCanceled(out _))
+            {
+                StartCoroutine(ClearImmediateUiPressFeedbackSuppressionAtEndOfFrame());
             }
         }
 
-        private IEnumerator PlayMouseClickFallbackAfterClickHandlers(int clickFrame, bool startedOverInteractiveUi)
+        private IEnumerator PlayMouseClickFallbackAfterClickHandlers(int clickFrame)
         {
             yield return new WaitForEndOfFrame();
 
-            if (startedOverInteractiveUi || BTAudioService.WasExplicitUiClickFeedbackPlayedSinceFrame(clickFrame))
+            if (BTAudioService.WasExplicitUiClickFeedbackPlayedSinceFrame(clickFrame))
             {
                 yield break;
             }
@@ -119,6 +134,12 @@ namespace BoneThrone.UI
             {
                 BTAudioService.PlaySfx(BTAudioCueId.MouseClick);
             }
+        }
+
+        private IEnumerator ClearImmediateUiPressFeedbackSuppressionAtEndOfFrame()
+        {
+            yield return new WaitForEndOfFrame();
+            BTAudioService.ClearPendingImmediateUiPressFeedbackSuppression();
         }
 
         private void UpdateCursorState()
@@ -150,6 +171,11 @@ namespace BoneThrone.UI
 
         private bool IsPointerOverInteractiveUi()
         {
+            return IsPointerOverInteractiveUi(Input.mousePosition);
+        }
+
+        private bool IsPointerOverInteractiveUi(Vector2 screenPosition)
+        {
             EventSystem eventSystem = EventSystem.current;
             if (eventSystem == null)
             {
@@ -163,7 +189,7 @@ namespace BoneThrone.UI
             }
 
             pointerEventData.Reset();
-            pointerEventData.position = Input.mousePosition;
+            pointerEventData.position = screenPosition;
             uiRaycastResults.Clear();
             eventSystem.RaycastAll(pointerEventData, uiRaycastResults);
 
@@ -257,6 +283,203 @@ namespace BoneThrone.UI
                 interactiveCursorTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(InteractiveCursorAssetPath);
             }
 #endif
+        }
+    }
+
+    internal static class BTPrimaryPointerInput
+    {
+        private const float DefaultTouchTapMaxMovementPixels = 18f;
+
+        private static readonly List<RaycastResult> UiRaycastResults = new List<RaycastResult>(16);
+        private static PointerEventData pointerEventData;
+        private static EventSystem pointerEventSystem;
+        private static int trackedTouchFingerId = -1;
+        private static Vector2 trackedTouchStartPosition;
+        private static bool trackedTouchStartedOverUi;
+        private static bool trackedTouchExceededTapMovement;
+        private static int lastPrimaryClickFrame = -1;
+        private static Vector2 lastPrimaryClickPosition;
+        private static int lastPrimaryDragReleaseFrame = -1;
+        private static Vector2 lastPrimaryDragReleasePosition;
+
+        public static bool TryGetPrimaryDown(out Vector2 screenPosition)
+        {
+            for (int i = 0; i < Input.touchCount; i++)
+            {
+                Touch touch = Input.GetTouch(i);
+                if (touch.phase == TouchPhase.Began)
+                {
+                    TrackTouchStart(touch);
+                    screenPosition = touch.position;
+                    return true;
+                }
+            }
+
+            if (Input.GetMouseButtonDown(0))
+            {
+                screenPosition = Input.mousePosition;
+                return true;
+            }
+
+            screenPosition = Vector2.zero;
+            return false;
+        }
+
+        public static bool TryGetPrimaryClick(out Vector2 screenPosition)
+        {
+            UpdateTrackedTouchClick();
+            if (lastPrimaryClickFrame == Time.frameCount)
+            {
+                screenPosition = lastPrimaryClickPosition;
+                return true;
+            }
+
+            if (Input.GetMouseButtonDown(0))
+            {
+                lastPrimaryClickFrame = Time.frameCount;
+                lastPrimaryClickPosition = Input.mousePosition;
+                screenPosition = lastPrimaryClickPosition;
+                return true;
+            }
+
+            screenPosition = Vector2.zero;
+            return false;
+        }
+
+        public static bool TryGetPrimaryDragRelease(out Vector2 screenPosition)
+        {
+            UpdateTrackedTouchClick();
+            if (lastPrimaryDragReleaseFrame == Time.frameCount)
+            {
+                screenPosition = lastPrimaryDragReleasePosition;
+                return true;
+            }
+
+            screenPosition = Vector2.zero;
+            return false;
+        }
+
+        public static bool TryGetPrimaryUpOrCanceled(out Vector2 screenPosition)
+        {
+            for (int i = 0; i < Input.touchCount; i++)
+            {
+                Touch touch = Input.GetTouch(i);
+                if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
+                {
+                    screenPosition = touch.position;
+                    return true;
+                }
+            }
+
+            if (Input.GetMouseButtonUp(0))
+            {
+                screenPosition = Input.mousePosition;
+                return true;
+            }
+
+            screenPosition = Vector2.zero;
+            return false;
+        }
+
+        private static void UpdateTrackedTouchClick()
+        {
+            for (int i = 0; i < Input.touchCount; i++)
+            {
+                Touch touch = Input.GetTouch(i);
+                if (touch.phase == TouchPhase.Began)
+                {
+                    TrackTouchStart(touch);
+                    continue;
+                }
+
+                if (touch.fingerId != trackedTouchFingerId)
+                {
+                    continue;
+                }
+
+                UpdateTrackedTouchMovement(touch.position);
+                if (touch.phase == TouchPhase.Ended)
+                {
+                    if (!trackedTouchStartedOverUi && !trackedTouchExceededTapMovement)
+                    {
+                        lastPrimaryClickFrame = Time.frameCount;
+                        lastPrimaryClickPosition = touch.position;
+                    }
+                    else if (!trackedTouchStartedOverUi && trackedTouchExceededTapMovement)
+                    {
+                        lastPrimaryDragReleaseFrame = Time.frameCount;
+                        lastPrimaryDragReleasePosition = touch.position;
+                    }
+
+                    ClearTrackedTouch();
+                    return;
+                }
+
+                if (touch.phase == TouchPhase.Canceled)
+                {
+                    ClearTrackedTouch();
+                    return;
+                }
+            }
+        }
+
+        private static void TrackTouchStart(Touch touch)
+        {
+            trackedTouchFingerId = touch.fingerId;
+            trackedTouchStartPosition = touch.position;
+            trackedTouchStartedOverUi = IsPointerOverUi(touch.position);
+            trackedTouchExceededTapMovement = false;
+        }
+
+        private static void UpdateTrackedTouchMovement(Vector2 screenPosition)
+        {
+            if (trackedTouchFingerId < 0 || trackedTouchExceededTapMovement)
+            {
+                return;
+            }
+
+            float threshold = ResolveTouchTapMaxMovementPixels();
+            trackedTouchExceededTapMovement = (screenPosition - trackedTouchStartPosition).sqrMagnitude > threshold * threshold;
+        }
+
+        private static float ResolveTouchTapMaxMovementPixels()
+        {
+            EventSystem eventSystem = EventSystem.current;
+            if (eventSystem == null)
+            {
+                return DefaultTouchTapMaxMovementPixels;
+            }
+
+            return Mathf.Max(DefaultTouchTapMaxMovementPixels, eventSystem.pixelDragThreshold * 2f);
+        }
+
+        private static void ClearTrackedTouch()
+        {
+            trackedTouchFingerId = -1;
+            trackedTouchStartPosition = Vector2.zero;
+            trackedTouchStartedOverUi = false;
+            trackedTouchExceededTapMovement = false;
+        }
+
+        public static bool IsPointerOverUi(Vector2 screenPosition)
+        {
+            EventSystem eventSystem = EventSystem.current;
+            if (eventSystem == null)
+            {
+                return false;
+            }
+
+            if (pointerEventData == null || pointerEventSystem != eventSystem)
+            {
+                pointerEventData = new PointerEventData(eventSystem);
+                pointerEventSystem = eventSystem;
+            }
+
+            pointerEventData.Reset();
+            pointerEventData.position = screenPosition;
+            UiRaycastResults.Clear();
+            eventSystem.RaycastAll(pointerEventData, UiRaycastResults);
+            return UiRaycastResults.Count > 0;
         }
     }
 }

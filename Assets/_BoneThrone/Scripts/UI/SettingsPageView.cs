@@ -11,6 +11,7 @@ namespace BoneThrone.UI
     public sealed class SettingsPageView : MonoBehaviour
     {
         private const float DefaultSliderZeroSnapThreshold = 0.01f;
+        private const string SliderFillLimitObjectName = "FillLimit";
 
         [Header("Sliders")]
         [SerializeField] private Slider bgmSlider;
@@ -88,7 +89,8 @@ namespace BoneThrone.UI
 
         private void OnValidate()
         {
-            EnsureViewConfiguration();
+            CacheMissingReferences();
+            ResolveAudioSlidersByVerticalOrder();
         }
 
         public static float SnapAudioValue(float value)
@@ -229,6 +231,7 @@ namespace BoneThrone.UI
             slider.wholeNumbers = false;
 
             ConfigureSliderFillImage(slider);
+            ConfigureSliderInteractionBounds(slider);
 
             slider.SetValueWithoutNotify(Mathf.Clamp01(slider.value));
             RefreshSliderFillImage(slider);
@@ -255,10 +258,57 @@ namespace BoneThrone.UI
 
             fillImage.gameObject.SetActive(true);
             fillImage.raycastTarget = false;
-            fillImage.type = Image.Type.Filled;
-            fillImage.fillMethod = Image.FillMethod.Horizontal;
-            fillImage.fillOrigin = 0;
-            fillImage.fillClockwise = true;
+        }
+
+        private void ConfigureSliderInteractionBounds(Slider slider)
+        {
+            if (slider == null)
+            {
+                return;
+            }
+
+            Image fillImage = GetFillImageForSlider(slider);
+            if (fillImage == null)
+            {
+                return;
+            }
+
+            RectTransform fillRect = fillImage.rectTransform;
+
+            RectTransform fillLimitRect = FindFillLimitRect(fillRect);
+            RectTransform handleRect = ResolveSliderHandleRect(slider, fillLimitRect);
+            if (handleRect != null)
+            {
+                slider.handleRect = handleRect;
+            }
+        }
+
+        private static RectTransform FindFillLimitRect(RectTransform fillRect)
+        {
+            Transform existing = fillRect.Find(SliderFillLimitObjectName);
+            return existing as RectTransform;
+        }
+
+        private static RectTransform ResolveSliderHandleRect(Slider slider, RectTransform fillLimitRect)
+        {
+            if (slider == null)
+            {
+                return null;
+            }
+
+            Transform handle = fillLimitRect != null ? FindChildByName(fillLimitRect, "Handle") : null;
+            if (handle != null)
+            {
+                return handle as RectTransform;
+            }
+
+            if (slider.handleRect != null)
+            {
+                return slider.handleRect;
+            }
+
+            handle = FindChildByName(slider.transform, "Handle");
+            return handle as RectTransform;
         }
 
         private void RefreshSliderFillImage(Slider slider)
@@ -269,7 +319,10 @@ namespace BoneThrone.UI
                 return;
             }
 
-            fillImage.fillAmount = Mathf.Clamp01(slider.normalizedValue);
+            if (slider.fillRect == null && fillImage.type == Image.Type.Filled)
+            {
+                fillImage.fillAmount = Mathf.Clamp01(slider.normalizedValue);
+            }
         }
 
         private Image GetFillImageForSlider(Slider slider)
@@ -386,6 +439,30 @@ namespace BoneThrone.UI
                 if (image != null && image.gameObject.name == "Fill")
                 {
                     return image;
+                }
+            }
+
+            return null;
+        }
+
+        private static Transform FindChildByName(Transform root, string childName)
+        {
+            if (root == null || string.IsNullOrEmpty(childName))
+            {
+                return null;
+            }
+
+            if (root.name == childName)
+            {
+                return root;
+            }
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform result = FindChildByName(root.GetChild(i), childName);
+                if (result != null)
+                {
+                    return result;
                 }
             }
 

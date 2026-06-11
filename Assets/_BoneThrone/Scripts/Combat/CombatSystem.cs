@@ -26,6 +26,7 @@ namespace BoneThrone.Combat
         [SerializeField] [Min(0f)] private float basicAttackImpactDelay = 0.18f;
         [SerializeField] [Min(0f)] private float meleeBasicAttackImpactDelay = 0.65f;
         [SerializeField] [Min(0f)] private float axeBasicAttackSfxDelay = 0.8f;
+        [SerializeField] [Min(0f)] private float enemyAxeBasicAttackAdditionalSfxDelay = 0.5f;
 
         public event Action<Unit, Unit> BasicAttackResolved;
 
@@ -234,6 +235,11 @@ namespace BoneThrone.Combat
 
         private float GetBasicAttackSfxDelay(Unit attacker, BTAudioCueId cue)
         {
+            if (cue == BTAudioCueId.AxeChop && attacker != null && attacker.Faction == UnitFaction.Enemy)
+            {
+                return Mathf.Max(0f, axeBasicAttackSfxDelay + enemyAxeBasicAttackAdditionalSfxDelay);
+            }
+
             if (cue == BTAudioCueId.AxeChop && attacker != null && attacker.RoleId == RoleId.Barbarian)
             {
                 return Mathf.Max(0f, axeBasicAttackSfxDelay);

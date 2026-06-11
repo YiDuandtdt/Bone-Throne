@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using BoneThrone.Combat;
 using BoneThrone.Grid;
+using BoneThrone.Interactables;
 using BoneThrone.Levels;
 using BoneThrone.Movement;
 using BoneThrone.Turns;
@@ -29,6 +30,7 @@ namespace BoneThrone.AI
         [SerializeField] private CombatLog combatLog;
         [SerializeField] private TurnTransitionPopupView turnTransitionPopupView;
         [SerializeField] private TurnPacingSettings turnPacingSettings;
+        [SerializeField] private BossEncounterIntroController bossEncounterIntroController;
         [SerializeField] private float enemyActionDelay = 0.4f;
         [SerializeField] [Min(0f)] private float enemyAttackRecoveryDelay = 1.05f;
 
@@ -104,6 +106,7 @@ namespace BoneThrone.AI
             }
             else
             {
+                yield return PlayBossEncounterIntroIfNeeded();
                 yield return PlayEnemyTurnIntro();
 
                 for (int i = 0; i < activeEnemies.Count; i++)
@@ -131,6 +134,13 @@ namespace BoneThrone.AI
 
                     if (BossEnemyAIController.IsBossLikeUnit(enemy))
                     {
+                        if (bossEncounterIntroController != null && bossEncounterIntroController.ConsumeBossActionSkipThisTurn(enemy))
+                        {
+                            Debug.Log("Boss skipped its first enemy-turn action after the reveal intro.", enemy);
+                            yield return WaitForEnemyActionDelay();
+                            continue;
+                        }
+
                         yield return bossEnemyAIController.RunActionRoutine(
                             enemy,
                             activePlayers,
@@ -301,8 +311,19 @@ namespace BoneThrone.AI
 
         private static bool IsBossFightStarted()
         {
-            BossGateProgressionState progressionState = BossGateProgressionState.GetOrCreateSceneState();
-            return progressionState != null && progressionState.ShouldExposeBossFightRuntime();
+            if (BossEncounterIntroController.IsAnyEnteredBossRoomActive())
+            {
+                return true;
+            }
+
+            BossGateProgressionState progressionState = Object.FindFirstObjectByType<BossGateProgressionState>();
+            if (progressionState != null)
+            {
+                return progressionState.ShouldExposeBossFightRuntime();
+            }
+
+            BossDoor[] bossDoors = Object.FindObjectsByType<BossDoor>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            return bossDoors == null || bossDoors.Length == 0;
         }
 
         private static int CompareEnemiesForTurnOrder(Unit a, Unit b)
@@ -369,6 +390,11 @@ namespace BoneThrone.AI
                 activeUnitProvider = Object.FindFirstObjectByType<ActiveUnitProvider>();
             }
 
+            if (activeUnitProvider == null)
+            {
+                activeUnitProvider = gameObject.AddComponent<ActiveUnitProvider>();
+            }
+
             if (gridManager == null)
             {
                 gridManager = Object.FindFirstObjectByType<GridManager>();
@@ -417,6 +443,16 @@ namespace BoneThrone.AI
             if (turnPacingSettings == null && turnTransitionPopupView != null)
             {
                 turnPacingSettings = turnTransitionPopupView.PacingSettings;
+            }
+
+            if (bossEncounterIntroController == null)
+            {
+                bossEncounterIntroController = Object.FindFirstObjectByType<BossEncounterIntroController>();
+            }
+
+            if (bossEncounterIntroController == null)
+            {
+                bossEncounterIntroController = gameObject.AddComponent<BossEncounterIntroController>();
             }
         }
 
@@ -475,6 +511,16 @@ namespace BoneThrone.AI
             }
 
             yield return WaitForDelay(GetAfterEnemyTurnBannerDelay());
+        }
+
+        private IEnumerator PlayBossEncounterIntroIfNeeded()
+        {
+            if (bossEncounterIntroController == null)
+            {
+                yield break;
+            }
+
+            yield return bossEncounterIntroController.PlayIntroIfNeeded(activeEnemies);
         }
 
         private IEnumerator PlayPlayerTurnIntro()

@@ -16,14 +16,14 @@ namespace BoneThrone.UI
         [Header("Outcome")]
         [SerializeField] private GameOutcomeService outcomeService;
         [SerializeField] private bool triggerDefeatWhenAllTrackedPlayersDie = true;
-        [SerializeField] private bool triggerVictoryWhenAllTrackedEnemiesDie = true;
+        [SerializeField] private bool triggerVictoryWhenAllTrackedEnemiesDie;
         [SerializeField] private string defeatReason = "队伍全员倒下。";
         [SerializeField] private string victoryReason = "胜利。";
-        [SerializeField] [Min(0f)] private float defeatDelaySeconds = 1.2f;
+        [SerializeField] [Min(0f)] private float defeatDelaySeconds = 1f;
         [SerializeField] [Min(0f)] private float victoryDelaySeconds = 1.2f;
         [SerializeField] private bool victoryRequiresBossUnit = true;
         [SerializeField] private bool victoryRequiresBossFightStarted = true;
-        [SerializeField] private bool loadEndMenuOnVictory = true;
+        [SerializeField] private bool loadEndMenuOnVictory;
         [SerializeField] private string victorySceneName = "EndMenu";
         [SerializeField] private string bossNameContains = "Boss";
 
@@ -38,6 +38,7 @@ namespace BoneThrone.UI
 
         private Coroutine pendingDefeatRoutine;
         private Coroutine pendingVictoryRoutine;
+        private bool hasSeenPlayerUnits;
 
         private void Awake()
         {
@@ -71,15 +72,34 @@ namespace BoneThrone.UI
             trackedVictoryUnits = victoryUnits;
             autoFindPlayersByFaction = true;
             autoFindVictoryUnitsByEnemyFaction = true;
+            triggerDefeatWhenAllTrackedPlayersDie = true;
+            triggerVictoryWhenAllTrackedEnemiesDie = true;
             victoryRequiresBossUnit = true;
             victoryRequiresBossFightStarted = true;
-            loadEndMenuOnVictory = true;
+            loadEndMenuOnVictory = false;
             victorySceneName = "EndMenu";
             bossNameContains = "Boss";
             defeatReason = "演示失败。";
             victoryReason = "Boss 已被击败。";
             defeatDelaySeconds = Mathf.Max(0f, outcomeDelaySeconds);
             victoryDelaySeconds = Mathf.Max(0f, outcomeDelaySeconds);
+            ResolveOutcomeService();
+            ResolveTrackedUnitsIfNeeded();
+        }
+
+        public void ConfigureDefeatOnly(
+            GameOutcomeService service,
+            Unit[] players,
+            float outcomeDelaySeconds)
+        {
+            outcomeService = service != null ? service : outcomeService;
+            trackedPlayerUnits = players;
+            autoFindPlayersByFaction = true;
+            triggerDefeatWhenAllTrackedPlayersDie = true;
+            triggerVictoryWhenAllTrackedEnemiesDie = false;
+            loadEndMenuOnVictory = false;
+            defeatReason = "\u961F\u4F0D\u5168\u706D\u4E86\u3002";
+            defeatDelaySeconds = Mathf.Max(0f, outcomeDelaySeconds);
             ResolveOutcomeService();
             ResolveTrackedUnitsIfNeeded();
         }
@@ -94,7 +114,7 @@ namespace BoneThrone.UI
 
             ResolveTrackedUnitsIfNeeded();
 
-            if (triggerDefeatWhenAllTrackedPlayersDie && HasTrackedUnits(trackedPlayerUnits) && AreAllTrackedUnitsDefeated(trackedPlayerUnits))
+            if (triggerDefeatWhenAllTrackedPlayersDie && HasKnownPlayerUnits() && AreKnownPlayerUnitsDefeated())
             {
                 StartDefeatAfterDelay();
                 return;
@@ -135,10 +155,11 @@ namespace BoneThrone.UI
             }
 
             pendingDefeatRoutine = null;
-            if (outcomeService != null && !outcomeService.HasOutcome)
+            if (outcomeService != null && !outcomeService.HasOutcome && AreKnownPlayerUnitsDefeated())
             {
                 Log("Auto defeat triggered.");
                 outcomeService.SetDefeat(defeatReason);
+                outcomeService.ForceShowCurrentOutcomePopup();
             }
         }
 
@@ -156,6 +177,7 @@ namespace BoneThrone.UI
                 Log("Auto victory triggered.");
                 if (outcomeService.SetVictory(victoryReason))
                 {
+                    outcomeService.ForceShowCurrentOutcomePopup();
                     LoadVictorySceneIfNeeded();
                 }
             }
@@ -180,6 +202,38 @@ namespace BoneThrone.UI
             {
                 trackedVictoryUnits = FindUnitsByFaction(UnitFaction.Enemy);
             }
+
+            if (HasTrackedUnits(trackedPlayerUnits))
+            {
+                hasSeenPlayerUnits = true;
+            }
+        }
+
+        private bool HasKnownPlayerUnits()
+        {
+            if (HasTrackedUnits(trackedPlayerUnits))
+            {
+                return true;
+            }
+
+            if (!hasSeenPlayerUnits)
+            {
+                return false;
+            }
+
+            Unit[] scenePlayers = FindUnitsByFaction(UnitFaction.Player, FindObjectsInactive.Include);
+            return HasTrackedUnits(scenePlayers);
+        }
+
+        private bool AreKnownPlayerUnitsDefeated()
+        {
+            if (HasTrackedUnits(trackedPlayerUnits))
+            {
+                return AreAllTrackedUnitsDefeated(trackedPlayerUnits);
+            }
+
+            Unit[] scenePlayers = FindUnitsByFaction(UnitFaction.Player, FindObjectsInactive.Include);
+            return HasTrackedUnits(scenePlayers) && AreAllTrackedUnitsDefeated(scenePlayers);
         }
 
         private static Unit[] FindUnitsByFaction(UnitFaction faction)

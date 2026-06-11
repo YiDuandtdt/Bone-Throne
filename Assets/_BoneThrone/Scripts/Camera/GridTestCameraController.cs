@@ -5,7 +5,7 @@ namespace BoneThrone.CameraControls
 {
     /// <summary>
     /// Lightweight camera controls for the GridTest scene only.
-    /// Handles middle-mouse panning, right-mouse rotation, and mouse-wheel zoom without touching gameplay systems.
+    /// Handles middle-mouse panning, right-mouse rotation, mouse-wheel zoom, and mobile touch gestures without touching gameplay systems.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Camera))]
@@ -14,10 +14,24 @@ namespace BoneThrone.CameraControls
         private const float MinPerspectiveFieldOfView = 35f;
         private const float MaxPerspectiveFieldOfView = 75f;
 
+        private enum MobileSingleTouchDragMode
+        {
+            Rotate = 0,
+            Pan = 1
+        }
+
         [SerializeField] private bool controlsEnabled = true;
         [SerializeField] private bool blockWhenPointerOverUI = true;
         [SerializeField] private float panSpeed = 0.02f;
         [SerializeField] private float zoomSpeed = 2f;
+        [SerializeField] private bool singleTouchDragEnabled = true;
+        [SerializeField] private MobileSingleTouchDragMode singleTouchDragMode = MobileSingleTouchDragMode.Rotate;
+        [SerializeField] private float touchDragStartThresholdPixels = 18f;
+        [SerializeField] private bool requireMobileCameraJoystickForSingleTouchDrag = true;
+        [SerializeField] private Vector2 mobileCameraJoystickViewportCenter = new Vector2(0.17f, 0.16f);
+        [SerializeField] private float mobileCameraJoystickRadiusViewportHeight = 0.085f;
+        [SerializeField] private bool pinchZoomEnabled = true;
+        [SerializeField] private float pinchZoomSensitivity = 0.02f;
         [SerializeField] private float minOrthographicSize = 3f;
         [SerializeField] private float maxOrthographicSize = 14f;
         [SerializeField] private float perspectiveMinDistance = 8f;
@@ -42,9 +56,14 @@ namespace BoneThrone.CameraControls
         private Vector3 lastMousePosition;
         private Vector3 rightDragStartMousePosition;
         private Vector3 lastRightMousePosition;
+        private Vector2 touchDragStartPosition;
+        private Vector2 lastTouchPosition;
+        private int activeTouchFingerId = -1;
         private bool isDragging;
         private bool isRightMouseHeld;
         private bool isRotating;
+        private bool isSingleTouchHeld;
+        private bool isSingleTouchDragging;
         private float currentPitch;
 
         private void Awake()
@@ -69,12 +88,28 @@ namespace BoneThrone.CameraControls
                 return;
             }
 
+            if (HandlePinchZoom())
+            {
+                isDragging = false;
+                ResetRightMouseRotation();
+                ResetSingleTouchDrag();
+                return;
+            }
+
+            if (HandleSingleTouchDrag())
+            {
+                isDragging = false;
+                ResetRightMouseRotation();
+                return;
+            }
+
             HandleMouseWheelZoom();
 
             if (IsPointerOverBlockingUI())
             {
                 isDragging = false;
                 ResetRightMouseRotation();
+                ResetSingleTouchDrag();
                 return;
             }
 
@@ -103,9 +138,14 @@ namespace BoneThrone.CameraControls
             }
 
             Vector3 currentMousePosition = Input.mousePosition;
-            Vector3 delta = currentMousePosition - lastMousePosition;
+            Vector2 delta = currentMousePosition - lastMousePosition;
             lastMousePosition = currentMousePosition;
 
+            ApplyPanDelta(delta);
+        }
+
+        private void ApplyPanDelta(Vector2 delta)
+        {
             Vector3 right = targetCamera.transform.right;
             right.y = 0f;
             right.Normalize();
@@ -167,6 +207,11 @@ namespace BoneThrone.CameraControls
 
             Vector3 frameDelta = currentMousePosition - lastRightMousePosition;
             lastRightMousePosition = currentMousePosition;
+            ApplyRotationDelta(frameDelta);
+        }
+
+        private void ApplyRotationDelta(Vector2 frameDelta)
+        {
             if (Mathf.Approximately(frameDelta.x, 0f) && (!verticalRotationEnabled || Mathf.Approximately(frameDelta.y, 0f)))
             {
                 return;
@@ -184,6 +229,81 @@ namespace BoneThrone.CameraControls
             RotateAroundPivot(yawDelta);
         }
 
+        private bool HandleSingleTouchDrag()
+        {
+            if (!singleTouchDragEnabled)
+            {
+                ResetSingleTouchDrag();
+                return false;
+            }
+
+            if (Input.touchCount != 1)
+            {
+                ResetSingleTouchDrag();
+                return false;
+            }
+
+            Touch touch = Input.GetTouch(0);
+            if (touch.phase == TouchPhase.Began)
+            {
+                if (!IsScreenPositionInMobileCameraJoystick(touch.position))
+                {
+                    ResetSingleTouchDrag();
+                    return false;
+                }
+
+                if (IsTouchOverBlockingUI(touch))
+                {
+                    ResetSingleTouchDrag();
+                    return true;
+                }
+
+                activeTouchFingerId = touch.fingerId;
+                isSingleTouchHeld = true;
+                isSingleTouchDragging = false;
+                touchDragStartPosition = touch.position;
+                lastTouchPosition = touch.position;
+                return true;
+            }
+
+            if (!isSingleTouchHeld || touch.fingerId != activeTouchFingerId)
+            {
+                return false;
+            }
+
+            if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
+            {
+                ResetSingleTouchDrag();
+                return true;
+            }
+
+            if (IsTouchOverBlockingUI(touch))
+            {
+                ResetSingleTouchDrag();
+                return true;
+            }
+
+            Vector2 totalDelta = touch.position - touchDragStartPosition;
+            if (!isSingleTouchDragging && totalDelta.sqrMagnitude < touchDragStartThresholdPixels * touchDragStartThresholdPixels)
+            {
+                lastTouchPosition = touch.position;
+                return true;
+            }
+
+            isSingleTouchDragging = true;
+
+            Vector2 frameDelta = touch.position - lastTouchPosition;
+            lastTouchPosition = touch.position;
+            if (singleTouchDragMode == MobileSingleTouchDragMode.Pan)
+            {
+                ApplyPanDelta(frameDelta);
+                return true;
+            }
+
+            ApplyRotationDelta(frameDelta);
+            return true;
+        }
+
         private void HandleMouseWheelZoom()
         {
             float scroll = Input.mouseScrollDelta.y;
@@ -192,20 +312,54 @@ namespace BoneThrone.CameraControls
                 return;
             }
 
+            ApplyZoom(scroll);
+        }
+
+        private bool HandlePinchZoom()
+        {
+            if (!pinchZoomEnabled || Input.touchCount < 2)
+            {
+                return false;
+            }
+
+            Touch firstTouch = Input.GetTouch(0);
+            Touch secondTouch = Input.GetTouch(1);
+            if (IsTouchOverBlockingUI(firstTouch) || IsTouchOverBlockingUI(secondTouch))
+            {
+                return true;
+            }
+
+            Vector2 firstPreviousPosition = firstTouch.position - firstTouch.deltaPosition;
+            Vector2 secondPreviousPosition = secondTouch.position - secondTouch.deltaPosition;
+            float previousDistance = Vector2.Distance(firstPreviousPosition, secondPreviousPosition);
+            float currentDistance = Vector2.Distance(firstTouch.position, secondTouch.position);
+            float pinchDelta = currentDistance - previousDistance;
+
+            if (Mathf.Approximately(pinchDelta, 0f))
+            {
+                return true;
+            }
+
+            ApplyZoom(pinchDelta * pinchZoomSensitivity);
+            return true;
+        }
+
+        private void ApplyZoom(float zoomDelta)
+        {
             if (targetCamera.orthographic)
             {
-                float size = targetCamera.orthographicSize - scroll * zoomSpeed;
+                float size = targetCamera.orthographicSize - zoomDelta * zoomSpeed;
                 targetCamera.orthographicSize = Mathf.Clamp(size, minOrthographicSize, maxOrthographicSize);
                 return;
             }
 
             if (useForwardDollyForPerspective)
             {
-                DollyPerspectiveCamera(scroll);
+                DollyPerspectiveCamera(zoomDelta);
                 return;
             }
 
-            float fieldOfView = targetCamera.fieldOfView - scroll * zoomSpeed;
+            float fieldOfView = targetCamera.fieldOfView - zoomDelta * zoomSpeed;
             targetCamera.fieldOfView = Mathf.Clamp(fieldOfView, MinPerspectiveFieldOfView, MaxPerspectiveFieldOfView);
         }
 
@@ -270,6 +424,13 @@ namespace BoneThrone.CameraControls
             isRotating = false;
         }
 
+        private void ResetSingleTouchDrag()
+        {
+            activeTouchFingerId = -1;
+            isSingleTouchHeld = false;
+            isSingleTouchDragging = false;
+        }
+
         private float ClampPitch(float pitch)
         {
             return Mathf.Clamp(NormalizePitch(pitch), minPitch, maxPitch);
@@ -295,6 +456,37 @@ namespace BoneThrone.CameraControls
             return blockWhenPointerOverUI
                 && EventSystem.current != null
                 && EventSystem.current.IsPointerOverGameObject();
+        }
+
+        private bool IsTouchOverBlockingUI(Touch touch)
+        {
+            return blockWhenPointerOverUI
+                && EventSystem.current != null
+                && EventSystem.current.IsPointerOverGameObject(touch.fingerId);
+        }
+
+        private bool IsScreenPositionInMobileCameraJoystick(Vector2 screenPosition)
+        {
+            if (!requireMobileCameraJoystickForSingleTouchDrag)
+            {
+                return true;
+            }
+
+            Rect safeArea = Screen.safeArea;
+            if (safeArea.width <= 0f || safeArea.height <= 0f)
+            {
+                safeArea = new Rect(0f, 0f, Screen.width, Screen.height);
+            }
+
+            Vector2 clampedViewportCenter = new Vector2(
+                Mathf.Clamp01(mobileCameraJoystickViewportCenter.x),
+                Mathf.Clamp01(mobileCameraJoystickViewportCenter.y));
+            Vector2 joystickCenter = new Vector2(
+                safeArea.xMin + safeArea.width * clampedViewportCenter.x,
+                safeArea.yMin + safeArea.height * clampedViewportCenter.y);
+            float joystickRadius = Mathf.Max(1f, safeArea.height * Mathf.Max(0.01f, mobileCameraJoystickRadiusViewportHeight));
+
+            return (screenPosition - joystickCenter).sqrMagnitude <= joystickRadius * joystickRadius;
         }
     }
 }

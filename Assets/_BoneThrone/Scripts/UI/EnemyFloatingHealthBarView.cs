@@ -154,13 +154,17 @@ namespace BoneThrone.UI
             {
                 fillImage.color = HealthFillColor;
                 fillImage.raycastTarget = false;
-                fillImage.type = Image.Type.Simple;
+                fillImage.type = Image.Type.Filled;
+                fillImage.fillMethod = Image.FillMethod.Horizontal;
+                fillImage.fillOrigin = (int)Image.OriginHorizontal.Left;
             }
 
             if (missingFillImage != null)
             {
                 missingFillImage.raycastTarget = false;
-                missingFillImage.type = Image.Type.Simple;
+                missingFillImage.type = Image.Type.Filled;
+                missingFillImage.fillMethod = Image.FillMethod.Horizontal;
+                missingFillImage.fillOrigin = (int)Image.OriginHorizontal.Right;
             }
 
             ConfigureFillRect();
@@ -173,16 +177,19 @@ namespace BoneThrone.UI
                 return;
             }
 
-            fillRect.anchorMin = new Vector2(0f, 0f);
-            fillRect.pivot = new Vector2(0f, 0.5f);
-            fillRect.anchoredPosition = Vector2.zero;
-            fillRect.sizeDelta = Vector2.zero;
+            fillRect.anchorMin = Vector2.zero;
+            fillRect.anchorMax = Vector2.one;
+            fillRect.pivot = new Vector2(0.5f, 0.5f);
+            fillRect.offsetMin = Vector2.zero;
+            fillRect.offsetMax = Vector2.zero;
 
             if (missingFillRect != null)
             {
-                missingFillRect.pivot = new Vector2(0f, 0.5f);
-                missingFillRect.anchoredPosition = Vector2.zero;
-                missingFillRect.sizeDelta = Vector2.zero;
+                missingFillRect.anchorMin = Vector2.zero;
+                missingFillRect.anchorMax = Vector2.one;
+                missingFillRect.pivot = new Vector2(0.5f, 0.5f);
+                missingFillRect.offsetMin = Vector2.zero;
+                missingFillRect.offsetMax = Vector2.zero;
             }
         }
 
@@ -235,15 +242,14 @@ namespace BoneThrone.UI
         {
             float clampedRatio = Mathf.Clamp01(ratio);
 
-            if (fillRect != null)
+            if (fillImage != null)
             {
-                fillRect.anchorMax = new Vector2(clampedRatio, 1f);
+                fillImage.fillAmount = clampedRatio;
             }
 
-            if (missingFillRect != null)
+            if (missingFillImage != null)
             {
-                missingFillRect.anchorMin = new Vector2(clampedRatio, 0f);
-                missingFillRect.anchorMax = Vector2.one;
+                missingFillImage.fillAmount = 1f - clampedRatio;
             }
         }
 

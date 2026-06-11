@@ -353,6 +353,9 @@ MonoBehaviour:
   - {fileID: 3000000844}
   spawnedEnemyParent: {fileID: 184952151}
   deactivateEnemiesAtStart: 1
+  keepBossLikeAssignedEnemiesActiveAtStart: 1
+  bossNameContains: boss
+  golemNameContains: golem
 --- !u!114 &184952150
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -368,6 +371,7 @@ MonoBehaviour:
   currentState: 0
   shadowController: {fileID: 184952148}
   enemyActivator: {fileID: 184952149}
+  requireBossDoorOpenedForBossRooms: 1
 --- !u!4 &184952151
 Transform:
   m_ObjectHideFlags: 0
@@ -558,6 +562,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Rooms.RoomTrigger
   roomController: {fileID: 1519788888}
+  requireOpenedBossDoorEntryForBossRooms: 1
+  openedBossDoorEntryRadius: 4
 --- !u!65 &204368930
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -788,6 +794,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Rooms.RoomTrigger
   roomController: {fileID: 184952150}
+  requireOpenedBossDoorEntryForBossRooms: 1
+  openedBossDoorEntryRadius: 4
 --- !u!65 &361748296
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1076,6 +1084,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Movement.UnitMover
   worldPositionOffset: {x: 0, y: 0, z: 0}
   moveSpeed: 4
+  bossMoveSpeedMultiplier: 0.42
   turnDuration: 0.12
 --- !u!114 &510826839
 MonoBehaviour:
@@ -1114,6 +1123,7 @@ MonoBehaviour:
   debugHighlighter: {fileID: 510826842}
   turnManager: {fileID: 916906059}
   actionPermissionService: {fileID: 916906060}
+  activeUnitProvider: {fileID: 0}
 --- !u!114 &510826841
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1140,8 +1150,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Movement.MovementDebugHighlighter
   selectedColor: {r: 0.2, g: 0.45, b: 1, a: 1}
   reachableColor: {r: 0.25, g: 0.85, b: 0.35, a: 1}
+  actionRangeColor: {r: 1, g: 0.28, b: 0.76, a: 1}
   attackColor: {r: 0.95, g: 0.18, b: 0.16, a: 1}
   skillColor: {r: 1, g: 0.86, b: 0.12, a: 1}
+  bossIntentColor: {r: 1, g: 0.08, b: 0.02, a: 1}
+  bossIntentFootTileDarken: 0.38
   showPlayerFootTiles: 1
   playerFootTileColor: {r: 1, g: 1, b: 1, a: 1}
   endedPlayerFootTileColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
@@ -1159,6 +1172,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b8e7db7f846d4c0d96a758f49fddde22, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Movement.SelectionManager
+  turnManager: {fileID: 0}
 --- !u!4 &510826844
 Transform:
   m_ObjectHideFlags: 0
@@ -1466,7 +1480,6 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
-  m_UseReflectionProbes: 0
   m_AdditionalShaderChannelsFlag: 0
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
@@ -1882,6 +1895,9 @@ MonoBehaviour:
   spawnTiles: []
   spawnedEnemyParent: {fileID: 0}
   deactivateEnemiesAtStart: 1
+  keepBossLikeAssignedEnemiesActiveAtStart: 1
+  bossNameContains: boss
+  golemNameContains: golem
 --- !u!114 &744090641
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1897,6 +1913,7 @@ MonoBehaviour:
   currentState: 0
   shadowController: {fileID: 744090639}
   enemyActivator: {fileID: 744090640}
+  requireBossDoorOpenedForBossRooms: 1
 --- !u!4 &744090642
 Transform:
   m_ObjectHideFlags: 0
@@ -2156,6 +2173,8 @@ MonoBehaviour:
   - {fileID: 1349290702}
   - {fileID: 1557234268}
   - {fileID: 782111276}
+  autoFindPlayerUnitsIfMissing: 1
+  autoEndPlayerUnitsWithNoAvailableActions: 1
   currentPhase: 1
   currentRole: 0
   currentTurnIndex: 0
@@ -2933,6 +2952,11 @@ MonoBehaviour:
   turnManager: {fileID: 916906059}
   actionPermissionService: {fileID: 916906060}
   combatLog: {fileID: 1809320150}
+  skillImpactDelay: 0.2
+  meleeSkillImpactDelay: 0.65
+  barbarianSkillSfxDelay: 0.5
+  fighterFirstSkillSfxDelay: 0.3
+  fighterFirstSkillSfxVolumeScale: 2
 --- !u!4 &1112835312
 Transform:
   m_ObjectHideFlags: 0
@@ -3097,6 +3121,9 @@ MonoBehaviour:
   spawnTiles: []
   spawnedEnemyParent: {fileID: 0}
   deactivateEnemiesAtStart: 1
+  keepBossLikeAssignedEnemiesActiveAtStart: 1
+  bossNameContains: boss
+  golemNameContains: golem
 --- !u!114 &1158726093
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3112,6 +3139,7 @@ MonoBehaviour:
   currentState: 0
   shadowController: {fileID: 0}
   enemyActivator: {fileID: 0}
+  requireBossDoorOpenedForBossRooms: 1
 --- !u!4 &1158726094
 Transform:
   m_ObjectHideFlags: 0
@@ -3569,7 +3597,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1274979908}
   m_Enabled: 1
-  serializedVersion: 13
+  serializedVersion: 12
   m_Type: 2
   m_Color: {r: 0.48507896, g: 0.1731932, b: 0.8742138, a: 1}
   m_Intensity: 4
@@ -3621,7 +3649,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShapeRadius: 0.025
+  m_ShadowRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -3754,6 +3782,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Rooms.RoomTrigger
   roomController: {fileID: 744090641}
+  requireOpenedBossDoorEntryForBossRooms: 1
+  openedBossDoorEntryRadius: 4
 --- !u!65 &1343955775
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4753,6 +4783,9 @@ MonoBehaviour:
   spawnTiles: []
   spawnedEnemyParent: {fileID: 0}
   deactivateEnemiesAtStart: 1
+  keepBossLikeAssignedEnemiesActiveAtStart: 1
+  bossNameContains: boss
+  golemNameContains: golem
 --- !u!114 &1519788888
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4768,6 +4801,7 @@ MonoBehaviour:
   currentState: 0
   shadowController: {fileID: 1519788886}
   enemyActivator: {fileID: 1519788887}
+  requireBossDoorOpenedForBossRooms: 1
 --- !u!4 &1519788889
 Transform:
   m_ObjectHideFlags: 0
@@ -4817,11 +4851,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Levels.LevelProgressionService
   hasSharedKey: 0
+  skipSharedKeyRequirement: 0
   playerUnits:
   - {fileID: 28712471}
   - {fileID: 1349290702}
   - {fileID: 1557234268}
   - {fileID: 782111276}
+  autoFindPlayerUnitsIfMissing: 1
+  requiredBossDefeatedRooms: []
   requiredClearedRooms:
   - {fileID: 184952150}
   - {fileID: 1519788888}
@@ -4980,8 +5017,8 @@ Camera:
   m_GameObject: {fileID: 1553934665}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0.09316097, g: 0.05363475, b: 0.10188681, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -5097,6 +5134,14 @@ MonoBehaviour:
   blockWhenPointerOverUI: 1
   panSpeed: 0.02
   zoomSpeed: 2
+  singleTouchDragEnabled: 1
+  singleTouchDragMode: 0
+  touchDragStartThresholdPixels: 18
+  requireMobileCameraJoystickForSingleTouchDrag: 1
+  mobileCameraJoystickViewportCenter: {x: 0.17, y: 0.16}
+  mobileCameraJoystickRadiusViewportHeight: 0.085
+  pinchZoomEnabled: 1
+  pinchZoomSensitivity: 0.02
   minOrthographicSize: 3
   maxOrthographicSize: 14
   perspectiveMinDistance: 8
@@ -5651,6 +5696,7 @@ MonoBehaviour:
   - {fileID: 3000004364}
   - {fileID: 3000004374}
   - {fileID: 3000004384}
+  autoFindSceneTilesIfInitialTilesMissing: 1
 --- !u!4 &1636105997
 Transform:
   m_ObjectHideFlags: 0
@@ -5996,6 +6042,9 @@ MonoBehaviour:
   combatLog: {fileID: 1809320150}
   turnManager: {fileID: 916906059}
   actionPermissionService: {fileID: 916906060}
+  basicAttackImpactDelay: 0.18
+  meleeBasicAttackImpactDelay: 0.65
+  axeBasicAttackSfxDelay: 0.8
 --- !u!114 &1809320147
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6094,7 +6143,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1835100782}
   m_Enabled: 1
-  serializedVersion: 13
+  serializedVersion: 12
   m_Type: 1
   m_Color: {r: 1, g: 0.93, b: 0.78, a: 1}
   m_Intensity: 0.38
@@ -6146,7 +6195,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShapeRadius: 0
+  m_ShadowRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -64175,6 +64224,7 @@ MonoBehaviour:
   currentState: 0
   shadowController: {fileID: 5000000004}
   enemyActivator: {fileID: 5000000003}
+  requireBossDoorOpenedForBossRooms: 1
 --- !u!114 &5000000003
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -64196,6 +64246,9 @@ MonoBehaviour:
   - {fileID: 3000003754}
   spawnedEnemyParent: {fileID: 5000000001}
   deactivateEnemiesAtStart: 1
+  keepBossLikeAssignedEnemiesActiveAtStart: 1
+  bossNameContains: boss
+  golemNameContains: golem
 --- !u!114 &5000000004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -64389,6 +64442,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Rooms.RoomTrigger
   roomController: {fileID: 5000000002}
+  requireOpenedBossDoorEntryForBossRooms: 1
+  openedBossDoorEntryRadius: 4
 --- !u!1 &5000000100
 GameObject:
   m_ObjectHideFlags: 0
@@ -64440,6 +64495,7 @@ MonoBehaviour:
   currentState: 0
   shadowController: {fileID: 5000000104}
   enemyActivator: {fileID: 5000000103}
+  requireBossDoorOpenedForBossRooms: 1
 --- !u!114 &5000000103
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -64463,6 +64519,9 @@ MonoBehaviour:
   - {fileID: 3000001084}
   spawnedEnemyParent: {fileID: 5000000101}
   deactivateEnemiesAtStart: 1
+  keepBossLikeAssignedEnemiesActiveAtStart: 1
+  bossNameContains: boss
+  golemNameContains: golem
 --- !u!114 &5000000104
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -64656,6 +64715,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoneThrone.Rooms.RoomTrigger
   roomController: {fileID: 5000000102}
+  requireOpenedBossDoorEntryForBossRooms: 1
+  openedBossDoorEntryRadius: 4
 --- !u!1 &6100000000
 GameObject:
   m_ObjectHideFlags: 0
@@ -79302,7 +79363,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6400000000}
   m_Enabled: 1
-  serializedVersion: 13
+  serializedVersion: 12
   m_Type: 2
   m_Color: {r: 1, g: 0.74, b: 0.42, a: 1}
   m_Intensity: 1.5
@@ -79354,7 +79415,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShapeRadius: 0
+  m_ShadowRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -79429,7 +79490,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6400000010}
   m_Enabled: 1
-  serializedVersion: 13
+  serializedVersion: 12
   m_Type: 2
   m_Color: {r: 1, g: 0.72, b: 0.38, a: 1}
   m_Intensity: 2.7
@@ -79481,7 +79542,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShapeRadius: 0
+  m_ShadowRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -79556,7 +79617,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6400000020}
   m_Enabled: 1
-  serializedVersion: 13
+  serializedVersion: 12
   m_Type: 2
   m_Color: {r: 1, g: 0.72, b: 0.38, a: 1}
   m_Intensity: 2.5
@@ -79608,7 +79669,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShapeRadius: 0
+  m_ShadowRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -79683,7 +79744,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6400000030}
   m_Enabled: 1
-  serializedVersion: 13
+  serializedVersion: 12
   m_Type: 2
   m_Color: {r: 1, g: 0.75, b: 0.45, a: 1}
   m_Intensity: 2
@@ -79735,7 +79796,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShapeRadius: 0
+  m_ShadowRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -79810,7 +79871,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6400000040}
   m_Enabled: 1
-  serializedVersion: 13
+  serializedVersion: 12
   m_Type: 2
   m_Color: {r: 1, g: 0.7, b: 0.38, a: 1}
   m_Intensity: 3
@@ -79862,7 +79923,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShapeRadius: 0
+  m_ShadowRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -79937,7 +79998,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6400000050}
   m_Enabled: 1
-  serializedVersion: 13
+  serializedVersion: 12
   m_Type: 2
   m_Color: {r: 1, g: 0.7, b: 0.38, a: 1}
   m_Intensity: 2.6
@@ -79989,7 +80050,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShapeRadius: 0
+  m_ShadowRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -80064,7 +80125,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6400000060}
   m_Enabled: 1
-  serializedVersion: 13
+  serializedVersion: 12
   m_Type: 2
   m_Color: {r: 1, g: 0.72, b: 0.42, a: 1}
   m_Intensity: 2.8
@@ -80116,7 +80177,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShapeRadius: 0
+  m_ShadowRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -80191,7 +80252,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6400000070}
   m_Enabled: 1
-  serializedVersion: 13
+  serializedVersion: 12
   m_Type: 2
   m_Color: {r: 1, g: 0.7, b: 0.4, a: 1}
   m_Intensity: 2.8
@@ -80243,7 +80304,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShapeRadius: 0
+  m_ShadowRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -80318,7 +80379,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6400000080}
   m_Enabled: 1
-  serializedVersion: 13
+  serializedVersion: 12
   m_Type: 2
   m_Color: {r: 1, g: 0.74, b: 0.46, a: 1}
   m_Intensity: 2.2
@@ -80370,7 +80431,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShapeRadius: 0
+  m_ShadowRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -80445,7 +80506,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6400000090}
   m_Enabled: 1
-  serializedVersion: 13
+  serializedVersion: 12
   m_Type: 2
   m_Color: {r: 1, g: 0.8, b: 0.45, a: 1}
   m_Intensity: 3
@@ -80497,7 +80558,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShapeRadius: 0
+  m_ShadowRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -80572,7 +80633,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6400000100}
   m_Enabled: 1
-  serializedVersion: 13
+  serializedVersion: 12
   m_Type: 2
   m_Color: {r: 0.62, g: 0.34, b: 1, a: 1}
   m_Intensity: 2.2
@@ -80624,7 +80685,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShapeRadius: 0
+  m_ShadowRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -80699,7 +80760,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6400000110}
   m_Enabled: 1
-  serializedVersion: 13
+  serializedVersion: 12
   m_Type: 2
   m_Color: {r: 1, g: 0.72, b: 0.38, a: 1}
   m_Intensity: 2.8
@@ -80751,7 +80812,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShapeRadius: 0
+  m_ShadowRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -80826,7 +80887,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6400000120}
   m_Enabled: 1
-  serializedVersion: 13
+  serializedVersion: 12
   m_Type: 2
   m_Color: {r: 1, g: 0.72, b: 0.38, a: 1}
   m_Intensity: 2.5
@@ -80878,7 +80939,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShapeRadius: 0
+  m_ShadowRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -80953,7 +81014,7 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6400000130}
   m_Enabled: 1
-  serializedVersion: 13
+  serializedVersion: 12
   m_Type: 2
   m_Color: {r: 0.56, g: 0.32, b: 1, a: 1}
   m_Intensity: 2.8
@@ -81005,7 +81066,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShapeRadius: 0
+  m_ShadowRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1

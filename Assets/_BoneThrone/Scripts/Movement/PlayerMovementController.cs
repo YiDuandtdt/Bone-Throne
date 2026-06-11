@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using BoneThrone.Grid;
 using BoneThrone.Turns;
+using BoneThrone.UI;
 using BoneThrone.Units;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 namespace BoneThrone.Movement
 {
@@ -41,28 +41,45 @@ namespace BoneThrone.Movement
 
         private void Update()
         {
-            if (!Input.GetMouseButtonDown(0))
+            Vector2 pointerPosition;
+            if (!TryGetMovementPointerPosition(out pointerPosition))
             {
                 return;
             }
 
-            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            if (BTPrimaryPointerInput.IsPointerOverUi(pointerPosition))
             {
                 return;
             }
 
-            Unit clickedUnit = RaycastUnitUnderCursor();
+            Unit clickedUnit = RaycastUnitAtScreenPosition(pointerPosition);
             if (clickedUnit != null)
             {
                 HandleUnitClick(clickedUnit);
                 return;
             }
 
-            Tile clickedTile = RaycastTileUnderCursor();
+            Tile clickedTile = RaycastTileAtScreenPosition(pointerPosition);
             if (clickedTile != null)
             {
                 HandleTileClick(clickedTile);
             }
+        }
+
+        private static bool TryGetMovementPointerPosition(out Vector2 pointerPosition)
+        {
+            if (BTPrimaryPointerInput.TryGetPrimaryClick(out pointerPosition))
+            {
+                return true;
+            }
+
+            if (BTPrimaryPointerInput.TryGetPrimaryDragRelease(out pointerPosition))
+            {
+                return true;
+            }
+
+            pointerPosition = Vector2.zero;
+            return false;
         }
 
         private void HandleUnitClick(Unit unit)
@@ -105,7 +122,7 @@ namespace BoneThrone.Movement
 
         private void HandleTileClick(Tile tile)
         {
-            Debug.LogWarning("Tile movement is controlled by the HUD Move action. Click Move before choosing a tile.", tile);
+            Debug.LogWarning("地块移动由下方“移动”按钮控制，请先点击移动，再选择目标格。", tile);
         }
 
         public HashSet<GridPosition> GetReachablePositionsForSelected()
@@ -273,7 +290,7 @@ namespace BoneThrone.Movement
             }
         }
 
-        private Unit RaycastUnitUnderCursor()
+        private Unit RaycastUnitAtScreenPosition(Vector2 screenPosition)
         {
             Camera cameraToUse = inputCamera != null ? inputCamera : Camera.main;
             if (cameraToUse == null)
@@ -282,7 +299,7 @@ namespace BoneThrone.Movement
                 return null;
             }
 
-            Ray ray = cameraToUse.ScreenPointToRay(Input.mousePosition);
+            Ray ray = cameraToUse.ScreenPointToRay(screenPosition);
             RaycastHit[] hits = Physics.RaycastAll(ray, maxRayDistance, inputLayerMask, QueryTriggerInteraction.Ignore);
             SortHitsByDistance(hits);
             for (int i = 0; i < hits.Length; i++)
@@ -294,11 +311,11 @@ namespace BoneThrone.Movement
                 }
             }
 
-            Tile tile = RaycastTileUnderCursor();
+            Tile tile = RaycastTileAtScreenPosition(screenPosition);
             return FindSelectableUnitOnTile(tile);
         }
 
-        private Tile RaycastTileUnderCursor()
+        private Tile RaycastTileAtScreenPosition(Vector2 screenPosition)
         {
             Camera cameraToUse = inputCamera != null ? inputCamera : Camera.main;
             if (cameraToUse == null)
@@ -307,7 +324,7 @@ namespace BoneThrone.Movement
                 return null;
             }
 
-            Ray ray = cameraToUse.ScreenPointToRay(Input.mousePosition);
+            Ray ray = cameraToUse.ScreenPointToRay(screenPosition);
             RaycastHit[] hits = Physics.RaycastAll(ray, maxRayDistance, inputLayerMask, QueryTriggerInteraction.Ignore);
             SortHitsByDistance(hits);
             for (int i = 0; i < hits.Length; i++)

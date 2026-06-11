@@ -1,5 +1,6 @@
 using BoneThrone.Audio;
 using BoneThrone.Core;
+using BoneThrone.Levels;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -56,7 +57,7 @@ namespace BoneThrone.UI
         [SerializeField] private string introSceneName = "IntroStory";
         [SerializeField] private string firstLevelSceneName = "Level_1";
         [SerializeField] private string secondLevelSceneName = "Level_2";
-        [SerializeField] private string thirdLevelSceneName = "boss_test";
+        [SerializeField] private string thirdLevelSceneName = "Level_3_final";
 
         [Header("Debug")]
         [SerializeField] private bool debugLogging;
@@ -179,6 +180,7 @@ namespace BoneThrone.UI
         {
             PlayButtonClick();
             MenuProgressionState.StartNewGame();
+            PartyProgressionState.Clear();
             LoadConfiguredScene(introSceneName);
         }
 
@@ -233,6 +235,7 @@ namespace BoneThrone.UI
             }
 
             PlayButtonClick();
+            PartyProgressionState.Clear();
             LoadConfiguredScene(GetSceneNameForLevel(levelIndex));
         }
 
